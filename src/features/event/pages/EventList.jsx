@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Header from '../../../shared/components/common/Header';
 import Footer from '../../../shared/components/common/Footer';
-import { fetchEventList } from '../api/EventListAPI';
+import { fetchEventList } from '../api/EventlistAPI';
 
 // 1. 지역 ID 맵핑 (CSV 데이터 기준 10자리)
 const CITY_IDS = {

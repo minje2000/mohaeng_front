@@ -1,0 +1,160 @@
+/* src/features/user/styles/SignUp.css */
+
+.signup-page-outer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #ffffff; /* 테두리 없이 깔끔하게 배경 통일 */
+  padding: 20px;
+}
+
+.signup-container {
+  width: 100%;
+  max-width: 450px; /* 전체적인 폭 조정 */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Header */
+.signup-header {
+  text-align: center;
+  margin-bottom: 30px;
+  width: 100%;
+}
+
+.logo-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.signup-logo-img {
+  height: 35px;
+  width: auto;
+}
+
+.title-text {
+  font-size: 26px;
+  font-weight: bold;
+}
+
+/* Form Layout */
+.form-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.input-row {
+  display: grid;
+  grid-template-columns: 90px 1fr auto; /* 라벨 - 입력창 - 버튼 */
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.input-row label {
+  font-size: 14px;
+  text-align: right;
+  font-weight: 600;
+}
+
+.input-row input {
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid #333; /* 이미지와 유사한 검정 테두리 */
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+}
+
+/* Buttons */
+.action-btn {
+  height: 40px;
+  padding: 0 15px;
+  background-color: #F8B150;
+  border: none;
+  border-radius: 8px;
+  color: #333;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.submit-btn {
+  width: 100%;
+  height: 50px;
+  background-color: #F8B150;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 20px;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  color: #888;
+  text-decoration: underline;
+  cursor: pointer;
+  margin-top: 15px;
+  font-size: 14px;
+}
+
+/* Google Button Specifics */
+.gsi-material-button {
+  width: 100%;
+  height: 45px;
+  margin-bottom: 20px;
+  /* 기존에 주신 구글 스타일 적용 */
+  background-color: WHITE;
+  border: 1px solid #747775;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0 12px;
+}
+
+.gsi-material-button-content-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.gsi-material-button-icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 10px;
+}
+
+.gsi-material-button-contents {
+  font-family: 'Roboto', arial, sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  color: #1f1f1f;
+}
+
+.divider-line {
+  width: 100%;
+  text-align: center;
+  border-bottom: 1px dashed #ccc;
+  line-height: 0.1em;
+  margin: 20px 0 30px;
+  color: #666;
+  font-size: 14px;
+}
+
+.divider-line span {
+  background: #fff;
+  padding: 0 10px;
+}

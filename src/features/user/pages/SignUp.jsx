@@ -37,7 +37,7 @@ export default function SignUp() {
         </div>
 
         {/* 단계별 화면 렌더링 */}
-        {step === 1 && <Step1Selection onSelect={(type) => setStep(type === 'individual' ? 2 : 3)} />}
+        {step === 1 && <Step1Selection onSelect={(type) => setStep(type === 'personal' ? 2 : 3)} />}
         {step === 2 && <Step2IndividualForm onBack={() => setStep(1)} />}
         {step === 3 && <Step3CorporateForm onBack={() => setStep(1)} />}
       </div>

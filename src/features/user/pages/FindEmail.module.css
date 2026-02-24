@@ -1,12 +1,12 @@
-/* Login.module.css */
+/* src/features/auth/pages/FindEmail.module.css */
 .container {
-  min-height: 90vh;
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
   background-color: #fff;
   padding: 0 24px;
-  padding-bottom: 10vh;
+  padding-bottom: 10vh; /* Login 페이지와 동일하게 10% 위로 올림 */
 }
 
 .wrapper {
@@ -20,15 +20,18 @@
   margin-bottom: 40px;
 }
 
-.logoLink {
-  display: inline-block;
-  cursor: pointer;
-}
-
-.logoImg {
+.logo {
   width: 120px;
   height: auto;
   object-fit: contain;
+}
+
+.title {
+  font-size: 21px; /* Login 라벨 크기와 동일하게 */
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 24px;
+  text-align: left;
 }
 
 .form {
@@ -44,8 +47,8 @@
 }
 
 .label {
-  width: 92px;
-  font-size: 20px; 
+  width: 95px;
+  font-size: 21px; /* 요청하신 5pt 커진 크기 유지 */
   color: #1f2937;
   font-weight: 500;
 }
@@ -60,35 +63,44 @@
   outline: none;
 }
 
+/* 본인 인증 버튼이 있는 그룹용 */
+.inputWithBtn {
+  flex: 1;
+  display: flex;
+  gap: 8px;
+}
+
+.verifyBtn {
+  height: 44px;
+  padding: 0 12px;
+  background-color: #F7B23B;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
 .messageContainer {
   min-height: 24px;
   display: flex;
   justify-content: center;
   align-items: center;
+  margin: 4px 0;
 }
 
 .message {
-  text-align: center;
   font-size: 14px;
-}
-
-.error { color: #ef4444; }
-
-.links {
-  margin-top: 20px; /* 너무 멀지 않게 조정 */
   text-align: center;
-  font-size: 16px; 
-  color: #4b5563; 
 }
 
-.linkItem {
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  color: #4b5563; 
+.error {
+  color: #ef4444;
 }
 
-.loginBtn {
-  margin-top: 12px;
+.submitBtn {
+  margin-top: 28px;
   width: 100%;
   height: 52px;
   border-radius: 8px;
@@ -100,33 +112,6 @@
   cursor: pointer;
 }
 
-/* 구글 버튼 스타일 */
-.googleBtn {
-  width: 100%;
-  height: 52px; /* loginBtn과 동일하게 */
-  margin-top: 8px;
-  border-radius: 8px;
-  border: 1px solid #dadce0;
-  background-color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.googleBtn:hover {
-  background-color: #f8f9fa;
-}
-
-.googleIcon {
-  width: 20px;
-  height: 20px;
-}
-
-.googleText {
-  font-size: 16px;
-  font-weight: 500;
-  color: #3c4043;
+.submitBtn:hover {
+  filter: brightness(0.98);
 }

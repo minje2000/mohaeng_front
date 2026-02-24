@@ -1,0 +1,212 @@
+/* AuthCommon.module.css */
+.container {
+  min-height: 90vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #fff;
+  padding: 0 24px;
+  padding-bottom: 10vh;
+}
+
+.wrapper {
+  width: 100%;
+  max-width: 440px; 
+}
+
+/* 상단 로고 및 헤더 영역 */
+.headerSection {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.logoImg {
+  width: 120px;
+  height: auto;
+  object-fit: contain;
+  margin-bottom: 16px;
+}
+
+.title {
+  font-size: 21px;
+  font-weight: 600;
+  color: #1f2937;
+  text-align: left;
+  margin-bottom: 20px;
+}
+
+/* 폼 요소 공통 */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 수평 배치 레이아웃 (라벨-입력창) */
+.rowGroup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.label {
+  width: 105px; /* 고정 라벨 너비 */
+  font-size: 21px; /* 요청하신 5pt 키운 크기 */
+  color: #1f2937;
+  font-weight: 500;
+}
+
+.input {
+  flex: 1;
+  height: 44px;
+  border-radius: 8px;
+  border: 1px solid rgba(17, 24, 39, 0.8);
+  padding: 0 12px;
+  font-size: 16px;
+  outline: none;
+}
+
+.input:focus {
+  border-color: #111827;
+}
+
+/* 입력창 옆에 버튼이 있는 경우 */
+.inputWithBtn {
+  flex: 1;
+  display: flex;
+  gap: 8px;
+}
+
+/* 노란색 메인 버튼 스타일 */
+.primaryBtn {
+  width: 100%;
+  height: 52px;
+  border-radius: 8px;
+  background-color: #F7B23B;
+  color: #111827;
+  font-weight: 600;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  transition: filter 0.2s;
+}
+
+.primaryBtn:hover {
+  filter: brightness(0.95);
+}
+
+/* 보조/인증 버튼 스타일 */
+.actionBtn {
+  height: 44px;
+  padding: 0 16px;
+  background-color: #F7B23B;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* 에러 메시지 영역 고정 */
+.messageContainer {
+  min-height: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 14px;
+  color: #ef4444;
+}
+
+/* 회원가입용 카드 선택(Step1) */
+.selectionContainer {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.selectionCard {
+  flex: 1;
+  background: #fff;
+  border: 2px solid #F7B23B;
+  border-radius: 16px;
+  padding: 30px 10px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.2s;
+}
+
+.selectionCard:hover {
+  transform: translateY(-5px);
+  background-color: rgba(247, 178, 59, 0.05);
+}
+
+/* 구분선 */
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 20px 0;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.divider span {
+  padding: 0 10px;
+}
+
+.backBtn {
+  margin-top: 16px;
+  background: none;
+  border: none;
+  text-decoration: underline;
+  color: #6b7280;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+/* 구글 버튼 스타일 수정 */
+.googleBtn {
+  width: 100%;
+  height: 52px; 
+  margin-top: 8px;
+  border-radius: 8px;
+  border: 1px solid #dadce0;
+  background-color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.googleBtn:hover {
+  background-color: #f8f9fa;
+}
+
+.googleIcon {
+  width: 20px;
+  height: 20px;
+}
+
+.googleText {
+  font-size: 16px;
+  font-weight: 500;
+  color: #3c4043;
+}

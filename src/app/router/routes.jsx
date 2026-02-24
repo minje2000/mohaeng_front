@@ -9,6 +9,7 @@ import { ROLES } from '../../shared/constants/roles';
 
 import Login from '../../features/auth/pages/Login';
 import Signup from '../../features/user/pages/SignUp';
+import OAuthSuccess from '../../features/auth/pages/OAuthSuccess';
 import FindEmail from '../../features/user/pages/FindEmail';
 import FindPwd from '../../features/user/pages/FindPwd';
 import Home from '../../shared/pages/Home';
@@ -87,4 +88,6 @@ export const router = createBrowserRouter([
   { path: '/api/user/findEmail', element: <FindEmail /> },
   // 비밀번호 찾기
   { path: '/api/user/findPwd', element: <FindPwd /> },
+  // 구글 계정 연동 로그인 후 리다이렉트 페이지
+  {path: '/oauthSuccess', element: <OAuthSuccess />}
 ]);

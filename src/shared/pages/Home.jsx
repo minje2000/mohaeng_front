@@ -286,7 +286,7 @@ export default function Home() {
             tip.innerHTML = `
               <span style="font-weight:900;font-size:13px;color:#111">${labelText[key] ?? key}</span>
               <span style="display:block;font-size:12px;margin-top:2px;color:${count > 0 ? '#D97706' : '#9CA3AF'};font-weight:700">
-                ${count > 0 ? `🎉 ${count}개의 행사` : '등록된 행사 없음'}
+                ${count > 0 ? `${count}개의 행사` : '등록된 행사 없음'}
               </span>`;
             tip.style.display = "block";
             tip.style.left = (e.clientX + 14) + "px";

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { geoArea, geoMercator, geoPath } from "d3-geo";
 import styles from "./Home.module.css";
-import request from "../../app/http/request";
+import { apiJson } from '../../app/http/request';
 
 function isLoggedIn() {
   if (typeof document === "undefined") return false;
@@ -135,7 +135,7 @@ export default function Home() {
     const run = async () => {
       let countsData = [];
       try {
-        const countRes = await request.get("/api/events/counts").catch(() => null);
+        const countRes = await apiJson().get("/api/events/counts").catch(() => null);
         if (countRes) {
           const raw = countRes.data || [];
           // 구/군 단위 ID를 시/도 단위로 합산
@@ -381,8 +381,8 @@ export default function Home() {
             {loggedIn ? (
               <Link className={styles.authLink} to="/logout"><LoginIcon /> 로그아웃</Link>
             ) : (
-              <><Link className={styles.authLink} to="/join"><UserIcon /> 회원가입</Link>
-              <Link className={styles.authLink} to="/signup"><LoginIcon /> 로그인</Link></>
+              <><Link className={styles.authLink} to="/api/user/signup"><UserIcon /> 회원가입</Link>
+              <Link className={styles.authLink} to="/login"><LoginIcon /> 로그인</Link></>
             )}
           </div>
         </div>

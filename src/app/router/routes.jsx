@@ -13,6 +13,7 @@ import OAuthSuccess from '../../features/auth/pages/OAuthSuccess';
 import FindEmail from '../../features/user/pages/FindEmail';
 import FindPwd from '../../features/user/pages/FindPwd';
 import Home from '../../shared/pages/Home';
+import EventList from '../../features/event/pages/EventList';
 
 // import NoticeList from '../../features/notice/pages/NoticeList';
 // import NoticeDetail from '../../features/notice/pages/NoticeDetail';
@@ -80,6 +81,8 @@ export const router = createBrowserRouter([
   // 레이아웃 없이 페이지만 단독으로 불러옴
   // 메인 홈화면
   { path: '/', element: <Home /> },
+  // 게시판 화면
+  { path: '/events', element: <EventList />},
   // 로그인
   { path: '/login', element: <Login /> },
   // 회원가입

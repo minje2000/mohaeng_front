@@ -439,10 +439,10 @@ export default function Home() {
               </Link>
             ) : (
               <>
-                <Link className={styles.authLink} to="/join">
+                <Link className={styles.authLink} to="/api/user/signup">
                   <UserIcon /> 회원가입
                 </Link>
-                <Link className={styles.authLink} to="/signup">
+                <Link className={styles.authLink} to="/login">
                   <LoginIcon /> 로그인
                 </Link>
               </>

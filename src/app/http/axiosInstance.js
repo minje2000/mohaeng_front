@@ -1,10 +1,9 @@
+// src/app/http/axiosInstance.js
 import axios from 'axios';
+import { getApiBaseUrl } from '../config/env';
 
-const axiosInstance = axios.create({
-    baseURL: process.env.REACT_APP_API_BASE_URL,
-    headers: {
-        'Content-Type': 'application/json',
-    },
+export const axiosInstance = axios.create({
+  baseURL: getApiBaseUrl(),
+  timeout: 15000,
+  withCredentials: false,
 });
-
-export default axiosInstance;

@@ -1,10 +1,8 @@
-// src/features/event/api/EventListAPI.js
-import request from '../../../app/http/request'; 
+import { apiJson } from '../../../app/http/request';
 
 export const fetchEventList = async (params) => {
   try {
-    // 💡 드디어 찾은 진짜 주소! '/api/events' 뒤에 '/search'를 붙여줍니다.
-    const response = await request.get('/api/events/search', params);
+    const response = await apiJson().get('/api/events/search', { params });
     
     return response.data;
   } catch (error) {

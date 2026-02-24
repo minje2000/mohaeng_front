@@ -6,33 +6,69 @@ export const useSignupForm = (initialValues) => {
   const [formData, setFormData] = useState(initialValues);
   const [isLoading, setIsLoading] = useState(false);
   const [err, setErr] = useState(''); // 에러 상태 추가
+
+  // 중복 확인 상태 (null: 확인전, true: 사용가능, false: 중복/사용불가)
+  const [isIdAvailable, setIsIdAvailable] = useState(null);
   
   const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
-  // 비밀번호 유효성 검사 함수 (영문, 숫자 포함 8자 이상)
-  // const validatePassword = (password) => {
-  //   return passwordRegex.test(password);
-  // };
 
   // 실시간 비밀번호 유효성 검사
   const isPasswordValid = useMemo(() => {
-    // const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
     return passwordRegex.test(formData.userPwd || '');
   }, [formData.userPwd]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+
+    // 이메일이 변경되면 중복 확인 상태 초기화
+    if (name === 'email') {
+      setIsIdAvailable(null);
+    }
+
     setFormData((prev) => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }));
   };
 
+  // 중복 확인 로직 추가
+  const handleIdCheck = async () => {
+    if (!formData.email) {
+      alert('이메일을 입력해주세요.');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      alert('올바른 이메일 형식이 아닙니다.');
+      return;
+    }
+
+    try {
+      const res = await userApi.checkId(formData.email);
+      
+      if (res.data === 'ok') {
+        setIsIdAvailable(true);
+      } else {
+        setIsIdAvailable(false);
+      }
+    } catch (error) {
+      console.error('중복 확인 실패:', error);
+      alert('중복 확인 중 오류가 발생했습니다.');
+    }
+  };
+
   const handleSubmit = async (e, userType, navigate) => {
     e.preventDefault();
     setErr('');
 
+    // 이메일 중복 검사
+    if (isIdAvailable !== true) {
+      alert('이메일 중복 확인이 필요합니다.');
+      return;
+    }
+
     // 비밀번호 유효성 검사
-    // const passwordToTest = formData.userPwd;
     if (!isPasswordValid) {
       alert('비밀번호는 영문자와 숫자를 조합하여 8자리 이상이어야 합니다.');
       return;
@@ -87,8 +123,10 @@ export const useSignupForm = (initialValues) => {
   return { 
     formData, 
     handleChange, 
+    handleIdCheck,
     handleSubmit, 
     handleReset, 
+    isIdAvailable,
     isLoading, 
     isPasswordValid,
     err 

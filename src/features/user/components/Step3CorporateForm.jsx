@@ -9,7 +9,9 @@ const Step3CorporateForm = ({ onBack }) => {
   const { 
     formData, 
     handleChange, 
+    handleIdCheck,
     handleSubmit, 
+    isIdAvailable,
     isLoading, 
     isPasswordValid,
     err 
@@ -32,18 +34,25 @@ const Step3CorporateForm = ({ onBack }) => {
       >
         <div className={styles.inputRow}>
           <label className={styles.label}>이메일(ID)</label>
-          <div className={styles.inputWithBtn}>
-            <input
-              className={styles.input}
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-            />
-            <button type="button" className={styles.actionBtn}>
-              중복 확인
-            </button>
+          <div className={styles.inputGroup}>
+            <div className={styles.inputWithBtn}>
+              <input
+                className={styles.input}
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+              />
+              <button type="button" className={styles.actionBtn} onClick={handleIdCheck}>
+                중복 확인
+              </button>
+            </div>
+            {isIdAvailable !== null && (
+              <div className={styles.helperText} style={{ color: isIdAvailable ? 'green' : 'crimson' }}>
+              {isIdAvailable ? '사용 가능한 이메일입니다.' : '이미 사용 중인 이메일입니다.'}
+              </div>
+            )}
           </div>
         </div>
         <div className={styles.inputRow}>

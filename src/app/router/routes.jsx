@@ -26,6 +26,10 @@ import Home from '../../shared/pages/Home';
 // import MemberList from '../../features/member/pages/MemberList';
 // import MemberInfo from '../../features/member/pages/MemberInfo';
 
+import ReviewMyPage from '../../features/event/review/pages/ReviewMyPage';
+import ReviewEventDetail from '../../features/event/review/pages/ReviewEventDetail';
+import EventDetailLayout from '../../features/event/review/pages/EventDetailLayout';
+
 export const router = createBrowserRouter([
   {
     element: <MainLayout />,
@@ -58,6 +62,18 @@ export const router = createBrowserRouter([
       //     { path: '/notices/:noticeNo/edit', element: <NoticeUpdate /> },
       //   ],
       // },
+
+       //  (추가) 마이페이지 - 내 리뷰 목록
+      { path: '/mypage/reviews', element: <ReviewMyPage /> },
+
+      //  (추가) 행사 상세 - 리뷰 탭(중첩 라우팅)
+      {
+        path: '/events/:eventId',
+        element: <EventDetailLayout />,
+        children: [
+          { path: 'reviews', element: <ReviewEventDetail /> }, // /events/:eventId/reviews
+        ],
+      },
     ],
   },
   // 레이아웃 없이 페이지만 단독으로 불러옴

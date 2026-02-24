@@ -9,15 +9,17 @@ export default function Header() {
   const [q, setQ] = useState("");
 
   // ✅ 임시 로그인 판별: 토큰 존재 여부
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const isAuthed = useMemo(() => {
     return Boolean(localStorage.getItem("accessToken"));
   }, [location.key]);
 
   const onSubmit = (e) => {
-    e.preventDefault();
-    const keyword = q.trim();
-    navigate(`/events${keyword ? `?q=${encodeURIComponent(keyword)}` : ""}`);
-  };
+  e.preventDefault();
+  const keyword = q.trim();
+  // 💡 중요: 'q=' 가 아니라 'keyword=' 로 보내야 EventList가 인식합니다.
+  navigate(`/events${keyword ? `?keyword=${encodeURIComponent(keyword)}` : ""}`);
+};
 
   const onLogout = () => {
     localStorage.removeItem("accessToken");
@@ -39,7 +41,7 @@ export default function Header() {
             className={styles.searchInput}
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="검색어를 입력하세요"
+            placeholder="뽀대용"
             aria-label="검색"
           />
           <button className={styles.searchBtn} type="submit" aria-label="검색">

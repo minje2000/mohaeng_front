@@ -1,20 +1,20 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom'; // navigate 추가
-import { useSignupForm } from '../hooks/userSignupForm';
+import { useSignupForm } from '../hooks/useSignupForm';
 import styles from '../styles/SignUp.module.css';
 
 const Step3CorporateForm = ({ onBack }) => {
   const navigate = useNavigate();
 
-  const { 
-    formData, 
-    handleChange, 
+  const {
+    formData,
+    handleChange,
     handleIdCheck,
-    handleSubmit, 
+    handleSubmit,
     isIdAvailable,
-    isLoading, 
+    isLoading,
     isPasswordValid,
-    err 
+    err,
   } = useSignupForm({
     email: '',
     userPwd: '',
@@ -44,13 +44,22 @@ const Step3CorporateForm = ({ onBack }) => {
                 onChange={handleChange}
                 required
               />
-              <button type="button" className={styles.actionBtn} onClick={handleIdCheck}>
+              <button
+                type="button"
+                className={styles.actionBtn}
+                onClick={handleIdCheck}
+              >
                 중복 확인
               </button>
             </div>
             {isIdAvailable !== null && (
-              <div className={styles.helperText} style={{ color: isIdAvailable ? 'green' : 'crimson' }}>
-              {isIdAvailable ? '사용 가능한 이메일입니다.' : '이미 사용 중인 이메일입니다.'}
+              <div
+                className={styles.helperText}
+                style={{ color: isIdAvailable ? 'green' : 'crimson' }}
+              >
+                {isIdAvailable
+                  ? '사용 가능한 이메일입니다.'
+                  : '이미 사용 중인 이메일입니다.'}
               </div>
             )}
           </div>
@@ -66,8 +75,13 @@ const Step3CorporateForm = ({ onBack }) => {
               onChange={handleChange}
               required
             />
-            <div className={styles.helperText} style={{ color: isPasswordValid ? 'green' : 'crimson' }}>
-              {isPasswordValid ? '사용 가능한 비밀번호입니다.' : '영문자, 숫자 조합 8자리 이상이여야 합니다.'}
+            <div
+              className={styles.helperText}
+              style={{ color: isPasswordValid ? 'green' : 'crimson' }}
+            >
+              {isPasswordValid
+                ? '사용 가능한 비밀번호입니다.'
+                : '영문자, 숫자 조합 8자리 이상이여야 합니다.'}
             </div>
           </div>
         </div>

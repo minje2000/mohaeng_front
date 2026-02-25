@@ -102,9 +102,6 @@ export const useSignupForm = (initialValues) => {
         navigate('/login', { replace: true });
       } 
 
-      // if (navigate) {
-      //   navigate('/login', { replace: true });
-      // }
     } catch (error) {
       console.error('회원가입 실패:', error);
       const errorMsg = error?.response?.data?.message || error?.message || '회원가입 중 오류가 발생했습니다.';

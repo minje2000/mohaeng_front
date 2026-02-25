@@ -5,8 +5,10 @@ import { AuthProvider } from './app/providers/AuthProvider';
 
 export default function App() {
   return (
+    <React.StrictMode>
     <AuthProvider>
       <AppRouter />
     </AuthProvider>
+    </React.StrictMode>
   );
 }

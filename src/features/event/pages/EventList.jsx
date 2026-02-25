@@ -212,7 +212,7 @@ const EventList = () => {
                                 onChange={(e) => handleCityChange(e.target.value)} 
                                 style={{ ...selectStyle, width: '100%', border: '2px solid #FFD700', backgroundColor: '#FFFAEB' }}
                             >
-                                <option value="">- 지역선택 -</option>
+                                <option value="">- 전체 -</option>
                                 {Object.keys(REGION_DATA).map(city => <option key={city} value={city}>{city}</option>)}
                             </select>
                         </div>

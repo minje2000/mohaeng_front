@@ -9,7 +9,7 @@ export default function ReadAllButton({ onClick, disabled }) {
       style={{
         border: 0,
         background: "transparent",
-        color: "#fffc4d",
+        color: "#b9b9b9",
         fontWeight: 800,
         cursor: disabled ? "not-allowed" : "pointer",
       }}

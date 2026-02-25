@@ -26,17 +26,13 @@ function decodeJwtPayload(token) {
   }
 }
 
-// ✅ “숫자 userId”를 프론트에서만 해결
 function resolveNumericUserId() {
-  // 1) localStorage userId가 숫자면 OK
   const stored = tokenStore.getUserId();
   if (isNumericString(stored)) return String(stored);
 
-  // 2) 아니면 accessToken(JWT)에서 꺼내기
   const access = tokenStore.getAccess();
   const payload = decodeJwtPayload(access);
 
-  // 보통 JWT의 sub에 숫자 userId가 들어있음
   const candidate =
     payload?.sub ??
     payload?.userId ??
@@ -46,16 +42,11 @@ function resolveNumericUserId() {
 
   if (isNumericString(candidate)) return String(candidate);
 
-  // 여기까지 오면 프론트에서 userId를 만들 방법이 없음
   throw new Error(
     `알림 요청 실패: userId는 숫자여야 해요. (localStorage.userId=${stored})`
   );
 }
 
-/**
- * ✅ 핵심: 알림 API는 userId 헤더 + Authorization(Bearer token) 둘 다 붙여서 보낸다.
- * (백엔드 Security가 먼저 401을 때릴 수 있어서)
- */
 function requireUserHeader() {
   const userId = resolveNumericUserId();
 
@@ -66,16 +57,20 @@ function requireUserHeader() {
 
   return {
     headers: {
-      userId,                          // 백엔드 @RequestHeader("userId")
-      Authorization: `Bearer ${token}`, // Security 통과용
+      userId,
+      Authorization: `Bearer ${token}`,
     },
   };
 }
 
 export const notificationApi = {
-  async list({ page = 0, size = 5 } = {}) {
+  //  all=true 지원
+  async list({ page = 0, size = 5, all = false } = {}) {
     const cfg = requireUserHeader();
-    cfg.params = { page, size };
+
+    //  all이면 ?all=true로 보내기
+    cfg.params = all ? { all: true } : { page, size };
+
     const res = await apiJson().get("/api/notifications", cfg);
     return unwrap(res.data);
   },

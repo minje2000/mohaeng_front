@@ -6,7 +6,7 @@ import styles from './InquiryListMypage.module.css';
 
 const TABS = [
   { key: 'ALL', label: '전체' },
-  { key: 'MINE', label: '작성 문의' },
+  { key: 'WRITTEN', label: '작성 문의' },
   { key: 'RECEIVED', label: '받은 문의' },
 ];
 
@@ -42,7 +42,7 @@ export default function InquiryListMypage() {
   const onClickRow = (eventId) => {
     if (!eventId) return;
     // 행사 상세페이지의 문의 섹션으로 이동
-    navigate(`/events/${eventId}?tab=inquiries`);
+    navigate(`/events/${eventId}?tab=inquiry`);
   };
 
   return (

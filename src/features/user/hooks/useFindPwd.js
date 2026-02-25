@@ -1,15 +1,15 @@
-// src/features/user/hooks/useFindEmail.js
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { userApi } from '../api/UserApi';
+import { userApi } from "../api/UserApi";
 
-export const useFindEmail = () => {
+export const useFindPwd = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    name: "",
+    email: "",
     phone: "",
   });
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // 입력 핸들러
   const handleChange = (e) => {
@@ -18,10 +18,10 @@ export const useFindEmail = () => {
       ...prev,
       [name]: value,
     }));
-    setIsSubmitted(false); // 입력 시 에러 메시지 초기화
+    setIsSubmitted(false);
   };
 
-  // 본인 인증 버튼 핸들러 (추후 기능 구현)
+  // 본인 인증 버튼
   const handleVerify = () => {
     alert("본인 인증 절차를 시작합니다.");
   };
@@ -31,29 +31,31 @@ export const useFindEmail = () => {
     e.preventDefault();
     setIsSubmitted(true);
 
-    const { name, phone } = formData;
-    
-    // 유효성 검사
-    if (!name || !phone) return;
+    const { email, phone } = formData;
+    if (!email || !phone) return;
+
+    setIsLoading(true);
 
     try {
-      const res = await userApi.searchId(name, phone);
+      // API 호출
+      const res = await userApi.renewPwd(email, phone); 
       
-      alert(`가입하신 이메일은 ${res.data} 입니다.`);
+      alert(res.message);
       navigate("/login");
-
     } catch (error) {
       if (error.message) {
-        alert(error.data); 
+        alert(error.data);
       } else {
-        alert("서버 통신 중 오류가 발생했습니다.");
+        alert("일치하는 회원 정보가 없거나 오류가 발생했습니다.");
       }
-      // console.error("Error details:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return {
     formData,
+    isLoading,
     isSubmitted,
     handleChange,
     handleVerify,

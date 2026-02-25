@@ -1,6 +1,5 @@
 // src/features/user/pages/FindEmail.jsx
 import React from "react";
-// import { useNavigate } from 'react-router-dom'; // navigate 추가
 import { Link } from "react-router-dom";
 import { useFindEmail } from "../hooks/useFindEmail";
 import styles from "../styles/UserCommon.module.css";

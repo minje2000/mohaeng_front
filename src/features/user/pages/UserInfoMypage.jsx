@@ -1,48 +1,44 @@
-import Header from "../../../app/layouts/components/Header";
-import Footer from "../../../app/layouts/components/Footer";
-import styles from "./UserInfoMypage.module.css";
+import React from 'react';
+import { Outlet } from 'react-router-dom';
+import styles from './UserInfoMypage.module.css';
+import UserSideMenu from '../../../shared/components/common/UserSideMenu'; // ✅ 추가
 
-export default function MyPage() {
+export function UserInfoIndex() {
   return (
-    <>
-      <Header />
+    <main className={styles.content}>
+      <h2>개인 정보 관리</h2>
+      <div className={styles.profileBox}>
+        <div className={styles.bigProfile}></div>
 
-      <div className={styles.container}>
-        {/* 좌측 메뉴 */}
-        <aside className={styles.sidebar}>
-          <div className={styles.profileIcon}></div>
+        <div className={styles.info}>
+          <p>
+            <strong>이메일</strong> user1@gmail.com
+          </p>
+          <p>
+            <strong>이름</strong> 홍길동
+          </p>
+          <p>
+            <strong>전화번호</strong> 010-1234-5678
+          </p>
+        </div>
 
-          <button className={styles.active}>개인 정보 관리</button>
-          <button>행사 등록 내역</button>
-          <button>행사 참여 내역</button>
-          <button>관심 행사 목록</button>
-          <button>리뷰 작성 내역</button>
-          <button>문의 내역</button>
-          <button>부스 관리</button>
-        </aside>
-
-        {/* 본문 */}
-        <main className={styles.content}>
-          <h2>개인 정보 관리</h2>
-
-          <div className={styles.profileBox}>
-            <div className={styles.bigProfile}></div>
-
-            <div className={styles.info}>
-              <p><strong>이메일</strong> user1@gmail.com</p>
-              <p><strong>이름</strong> 홍길동</p>
-              <p><strong>전화번호</strong> 010-1234-5678</p>
-            </div>
-
-            <div className={styles.buttons}>
-              <button className={styles.primary}>개인 정보 수정</button>
-              <button className={styles.secondary}>회원 탈퇴</button>
-            </div>
-          </div>
-        </main>
+        <div className={styles.buttons}>
+          <button className={styles.primary}>개인 정보 수정</button>
+          <button className={styles.secondary}>회원 탈퇴</button>
+        </div>
       </div>
+    </main>
+  );
+}
 
-      <Footer />
-    </>
+export default function UserInfoMypage() {
+  return (
+    <div className={styles.container}>
+      {/* ✅ 공용 사이드바 */}
+      <UserSideMenu />
+
+      {/* ✅ 본문 */}
+      <Outlet />
+    </div>
   );
 }

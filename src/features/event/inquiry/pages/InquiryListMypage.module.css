@@ -1,0 +1,163 @@
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 16px 60px;
+}
+
+.pageTitle {
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 14px;
+}
+
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.tabBtn {
+  padding: 10px 14px;
+  border: 1px solid rgba(0,0,0,0.15);
+  background: #fff;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.tabActive {
+  border-color: #111;
+  font-weight: 700;
+}
+
+.tableWrap {
+  border: 1px solid rgba(0,0,0,0.12);
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table thead th {
+  text-align: left;
+  font-size: 13px;
+  padding: 14px 14px;
+  background: rgba(0,0,0,0.03);
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+}
+
+.table tbody td {
+  padding: 14px 14px;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  vertical-align: top;
+  font-size: 14px;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.colEvent { width: 280px; }
+.colTitle { width: auto; }
+.colStatus { width: 90px; }
+.colDate { width: 160px; }
+
+.eventCell {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.eventCellThumb {
+  width: 54px;
+  height: 54px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 1px solid rgba(0,0,0,0.08);
+}
+
+.eventCellTitle {
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 190px;
+}
+
+.titleCell {
+  line-height: 1.4;
+}
+
+.linkTitle {
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 600;
+  color: #111;
+}
+
+.linkTitle:hover {
+  text-decoration: underline;
+}
+
+.replyPreview {
+  margin-top: 6px;
+  font-size: 13px;
+  color: rgba(0,0,0,0.65);
+}
+
+.badge {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid rgba(0,0,0,0.15);
+}
+
+.badgeWait {
+  background: rgba(0,0,0,0.03);
+}
+
+.badgeDone {
+  background: rgba(0,0,0,0.08);
+}
+
+.empty {
+  text-align: center;
+  padding: 30px 10px;
+  color: rgba(0,0,0,0.6);
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.pageBtn {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.15);
+  background: #fff;
+  cursor: pointer;
+}
+
+.pageBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pageActive {
+  border-color: #111;
+  font-weight: 800;
+}

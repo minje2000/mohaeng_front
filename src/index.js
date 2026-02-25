@@ -11,11 +11,9 @@ initHttpClient(); // ✅ 앱 시작 시 1회
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-  <React.StrictMode>
-    <AuthProvider>
-      <App />
-    </AuthProvider>
-  </React.StrictMode>
+  <AuthProvider>
+    <App />
+  </AuthProvider>
 );
 
 reportWebVitals();

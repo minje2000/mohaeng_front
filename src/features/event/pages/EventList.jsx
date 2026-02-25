@@ -64,10 +64,20 @@ const EventList = () => {
 
     // 💡 [해결 포인트 1] ID를 이름으로 바꿔주는 도우미 함수 (컴포넌트 최상단)
     const getCityNameFromId = (id) => {
-        if (!id) return "";
-        const entry = Object.entries(CITY_IDS).find(([name, cityId]) => String(cityId) === String(id));
-        return entry ? entry[0] : "";
-    };
+    if (!id) return "";
+    const idStr = String(id);
+
+    // 1. 우선 전체 10자리가 완전히 일치하는지 확인
+    const exactMatch = Object.entries(CITY_IDS).find(([_, cityId]) => String(cityId) === idStr);
+    if (exactMatch) return exactMatch[0];
+
+    // 2. [핵심] 일치하는 게 없다면 앞 2자리(시/도 코드)가 같은지 확인
+    // 예: 1111000000(종로구) -> 앞 2자리 '11' -> 서울(1100000000) 매칭!
+    const prefix = idStr.substring(0, 2);
+    const prefixMatch = Object.entries(CITY_IDS).find(([_, cityId]) => String(cityId).startsWith(prefix));
+    
+    return prefixMatch ? prefixMatch[0] : "";
+};
 
     // 💡 [해결 포인트 2] 주소창 파라미터 한 번에 정리 (중복 선언 방지)
     const urlCity = searchParams.get("city") || "";
@@ -143,10 +153,26 @@ const EventList = () => {
 
     const handleCityChange = (city) => {
         const next = new URLSearchParams(searchParams);
-        if (city) next.set("city", city);
-        else next.delete("city");
+        
+        if (city) {
+            next.set("city", city);
+        } else {
+            // 💡 [여기 수정!] 지역을 '- 전체 -'로 선택한 경우
+            next.delete("city");
+            
+            // ⭐ 달력에서 넘어온 날짜 필터도 싹 지워버립니다!
+            next.delete("filterStart");
+            next.delete("filterEnd");
+            
+            // 혹시 모르니 키워드 검색도 지우고 싶다면 아래 줄 주석을 푸세요
+            // next.delete("keyword"); 
+        }
+        
+        // 상세 지역(구/군) 정보도 초기화
         next.delete("regionId");
+        // 첫 페이지로 이동
         next.set("page", "0");
+        
         setSearchParams(next);
     };
 
@@ -234,8 +260,8 @@ const EventList = () => {
                                             onClick={() => setFilter("regionId", town.id)}
                                             style={{ 
                                                 ...regionTagStyle, 
-                                                backgroundColor: String(currentRegionId) === String(town.id) ? '#FFD700' : '#F3F4F6', 
-                                                color: String(currentRegionId) === String(town.id) ? '#111' : '#6B7280'
+                                                backgroundColor: String(currentRegionId) === String(town.id) ? '#FFD700' : '#F3F4F6',
+color: String(currentRegionId) === String(town.id) ? '#111' : '#6B7280'
                                             }}
                                         >{town.name}</button>
                                     ))}

@@ -96,14 +96,13 @@ export const useSignupForm = (initialValues) => {
 
 
       const res = await userApi.signup(userData);
-      console.log("res", res)
+      // console.log("res", res)
       if(res.success == true){
         alert('회원가입이 완료되었습니다!');
         navigate('/login', { replace: true });
       } 
 
     } catch (error) {
-      console.error('회원가입 실패:', error);
       const errorMsg = error?.response?.data?.message || error?.message || '회원가입 중 오류가 발생했습니다.';
       setErr(errorMsg);
       alert(errorMsg);

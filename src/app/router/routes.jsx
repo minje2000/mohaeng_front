@@ -22,7 +22,7 @@ import ReviewMyPage from '../../features/event/review/pages/ReviewMyPage';
 import EventDetailLayout from '../../features/event/review/pages/EventDetailLayout';
 import InquiryListMypage from '../../features/event/inquiry/pages/InquiryListMypage';
 
-// ✅ 같은 파일에서 default + named export 둘 다 가져오기
+// 같은 파일에서 default + named export 둘 다 가져오기
 import UserInfoMypage, {
   UserInfoIndex,
 } from '../../features/user/pages/UserInfoMypage';
@@ -34,15 +34,15 @@ export const router = createBrowserRouter([
       {
         element: <RequireAuth />,
         children: [
-          // ✅ 유저만 마이페이지 접근
+          // 유저만 마이페이지 접근
           {
             element: <RequireRole allowedRoles={[ROLES.USER]} />,
             children: [
               {
                 path: '/mypage',
-                element: <UserInfoMypage />, // ✅ 사이드바 + Outlet
+                element: <UserInfoMypage />, // 사이드바 + Outlet
                 children: [
-                  { index: true, element: <UserInfoIndex /> }, // ✅ 기본은 내정보
+                  { index: true, element: <UserInfoIndex /> }, // 기본은 내정보
                   { path: 'inquiries', element: <InquiryListMypage /> },
                   { path: 'reviews', element: <ReviewMyPage /> },
                 ],
@@ -50,7 +50,7 @@ export const router = createBrowserRouter([
             ],
           },
 
-          // ✅ 관리자 마이페이지(원하면 여기 확장)
+          // 관리자 마이페이지(원하면 여기 확장)
           {
             element: <RequireRole allowedRoles={[ROLES.ADMIN]} />,
             children: [
@@ -63,7 +63,7 @@ export const router = createBrowserRouter([
         ],
       },
 
-      // ✅ 행사 상세
+      // 행사 상세
       {
         path: '/events/:eventId',
         element: <EventDetailLayout />,
@@ -72,12 +72,20 @@ export const router = createBrowserRouter([
     ],
   },
 
+  // 홈화면
   { path: '/', element: <Home /> },
+  // 행사 게시판
   { path: '/events', element: <EventList /> },
+  // 행사 달력
   { path: '/Calendar', element: <Calendar /> },
+  // 로그인
   { path: '/login', element: <Login /> },
+  // 회원가입
   { path: '/api/user/signup', element: <Signup /> },
+  // 아이디 찾기
   { path: '/api/user/findEmail', element: <FindEmail /> },
+  // 비밀번호 찾기
   { path: '/api/user/findPwd', element: <FindPwd /> },
+  // 구글 계정 연동 로그인 후 리다이렉트 페이지
   { path: '/oauthSuccess', element: <OAuthSuccess /> },
 ]);

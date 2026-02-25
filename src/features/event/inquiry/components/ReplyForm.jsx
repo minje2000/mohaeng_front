@@ -1,10 +1,8 @@
-import React, { useMemo, useState } from 'react';
-import { tokenStore } from '../../../../app/http/tokenStore';
+import React, { useState } from 'react';
 import UseReplyForm from '../hooks/UseReplyForm';
 
 export default function ReplyForm({ inqId, initialReply, onSaved }) {
-  const replyId = useMemo(() => tokenStore.getUserId?.(), []);
-  const [replyContent, setReplyContent] = useState(initialReply || '');
+const [replyContent, setReplyContent] = useState(initialReply || '');
 
   const { create, update, remove, submitting } = UseReplyForm({
     onDone: () => onSaved?.(),
@@ -13,10 +11,9 @@ export default function ReplyForm({ inqId, initialReply, onSaved }) {
   const onSubmit = (e) => {
     e.preventDefault();
     const c = replyContent.trim();
-    if (!replyId) return alert('로그인이 필요합니다.');
     if (!c) return;
 
-    const dto = { replyId: Number(replyId), replyContent: c };
+    const dto = { replyContent: c };
     if (initialReply) update(inqId, dto);
     else create(inqId, dto);
   };

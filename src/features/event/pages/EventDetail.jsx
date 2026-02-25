@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { fetchEventDetail } from '../api/EventDetailAPI';
 import EventReviewTab from '../review/components/EventReviewTab';
+import InquiryEventDetail from '../inquiry/pages/InquiryEventDetail';
 
 // ─────────────────────────────────────────────────────────────
 // 해시태그 ID → 이름 매핑 (EventList.jsx TOPICS 동일)
@@ -103,11 +104,21 @@ const TABS = ['상세정보', '지도', '리뷰', '문의'];
 // ─────────────────────────────────────────────────────────────
 export default function EventDetail() {
   const { eventId } = useParams();
+  const location = useLocation();
 
   const [detail,  setDetail]  = useState(null);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState(null);
   const [tab,     setTab]     = useState('상세정보');
+
+  useEffect(() => {
+    const q = new URLSearchParams(location.search);
+    const qt = q.get('tab');
+    if (qt === 'inquiry') setTab('문의');
+    else if (qt === 'review') setTab('리뷰');
+    else if (qt === 'map') setTab('지도');
+    else if (qt === 'detail') setTab('상세정보');
+  }, [location.search]);
 
   useEffect(() => {
     setLoading(true);
@@ -333,10 +344,7 @@ export default function EventDetail() {
 
               {tab === '문의' && (
                 <div className="ed-tab-content">
-                  <div className="ed-empty">
-                    <div style={{ fontSize: 32, marginBottom: 8 }}>📩</div>
-                    <div>문의 기능은 준비 중이에요.</div>
-                  </div>
+                  <InquiryEventDetail />
                 </div>
               )}
 

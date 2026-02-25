@@ -1,40 +1,40 @@
-import { Link, useLocation } from "react-router-dom"; // navigate는 이제 안 쓰니 지워도 됩니다!
+import { Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import styles from "./Header.module.css";
+
+// ✅ 추가
+import NotificationBell from "../../../features/notification/components/NotificationBell";
+import { tokenStore } from "../../../app/http/tokenStore";
 
 export default function Header() {
   const location = useLocation();
 
-  // 💡 1. useMemo 대신 useState로 로그인 상태 관리
+  // 로그인 상태
   const [isAuthed, setIsAuthed] = useState(() => {
     return Boolean(localStorage.getItem("accessToken"));
   });
 
-  // 💡 2. 혹시 다른 탭/페이지에서 상태가 변했을 때를 대비한 동기화
+  // 다른 페이지 이동/리다이렉트 시 동기화
   useEffect(() => {
     setIsAuthed(Boolean(localStorage.getItem("accessToken")));
   }, [location.key]);
 
-  // 💡 3. 수정한 로그아웃 함수
+  // 로그아웃
   const onLogout = () => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    
-    // 알림창과 navigate(이동) 삭제!
-    // 대신 상태를 바로 false로 바꿔서 즉시 '로그인/회원가입'으로 화면을 다시 그립니다.
-    setIsAuthed(false); 
+    // ✅ access/refresh/userId/role까지 전부 정리
+    tokenStore.clear();
+    setIsAuthed(false);
   };
 
   return (
     <header className={styles.header}>
       <div className={styles.inner}>
-        
         {/* 1. 왼쪽: 로고 */}
         <Link to="/" className={styles.logo} aria-label="홈">
           <img src="/images/moheng.png" alt="모행" className={styles.logoImg} />
         </Link>
 
-        {/* 2. 중앙: 메인 네비게이션 (글자를 살려서 직관적으로!) */}
+        {/* 2. 중앙: 메인 네비게이션 */}
         <nav className={styles.centerNav} aria-label="메인 메뉴">
           <Link to="/" className={styles.mainLink}>
             <MapIcon />
@@ -51,18 +51,17 @@ export default function Header() {
         <nav className={styles.rightNav} aria-label="유저 메뉴">
           {isAuthed ? (
             <>
-              {/* 알림 (동그란 아이콘 버튼) */}
-              <button className={styles.iconBtn} type="button" aria-label="알림" title="알림">
-                <BellIcon />
-              </button>
+              {/* ✅ 알림: 로그인 했을 때만 드롭다운 벨 */}
+              <NotificationBell
+                className={styles.iconBtn}
+                BellIcon={BellIcon}
+              />
 
-              {/* 마이페이지 (일반 텍스트 버튼) */}
               <Link className={styles.textLink} to="/mypage">
                 <UserIcon />
                 <span>마이페이지</span>
               </Link>
 
-              {/* 로그아웃 (일반 텍스트 버튼) */}
               <button className={styles.textLink} type="button" onClick={onLogout}>
                 <LogoutIcon />
                 <span>로그아웃</span>
@@ -70,17 +69,17 @@ export default function Header() {
             </>
           ) : (
             <>
-              {/* 💡 1. 회원가입: primaryBtn을 textLink로 변경해서 텍스트로 통일! */}
               <Link className={styles.textLink} to="/signup">
                 <UserPlusIcon />
                 <span>회원가입</span>
               </Link>
 
-              {/* 💡 2. 로그인: state={{ from: ... }}을 추가해서 현재 위치(게시판) 기억하게 만들기! */}
-              <Link 
-                className={styles.textLink} 
+              <Link
+                className={styles.textLink}
                 to="/login"
-                onClick={() => sessionStorage.setItem('redirectUrl', location.pathname + location.search)}
+                onClick={() =>
+                  sessionStorage.setItem("redirectUrl", location.pathname + location.search)
+                }
               >
                 <LoginIcon />
                 <span>로그인</span>

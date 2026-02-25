@@ -14,6 +14,8 @@ import FindEmail from '../../features/user/pages/FindEmail';
 import FindPwd from '../../features/user/pages/FindPwd';
 import Home from '../../shared/pages/Home';
 import EventList from '../../features/event/pages/EventList';
+import Calendar from '../../features/event/pages/Calendar';
+import EventDetail from '../../features/event/pages/EventDetail';
 
 // import NoticeList from '../../features/notice/pages/NoticeList';
 // import NoticeDetail from '../../features/notice/pages/NoticeDetail';
@@ -72,9 +74,7 @@ export const router = createBrowserRouter([
       {
         path: '/events/:eventId',
         element: <EventDetailLayout />,
-        children: [
-          { path: 'reviews', element: <ReviewEventDetail /> }, // /events/:eventId/reviews
-        ],
+        children: [{ index: true, element: <EventDetail /> }],
       },
     ],
   },
@@ -83,6 +83,8 @@ export const router = createBrowserRouter([
   { path: '/', element: <Home /> },
   // 게시판 화면
   { path: '/events', element: <EventList /> },
+  // 달력 화면
+  { path: '/Calendar', element: <Calendar /> },
   // 로그인
   { path: '/login', element: <Login /> },
   // 회원가입

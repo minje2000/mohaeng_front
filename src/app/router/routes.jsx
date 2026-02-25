@@ -15,6 +15,7 @@ import FindPwd from '../../features/user/pages/FindPwd';
 import Home from '../../shared/pages/Home';
 import EventList from '../../features/event/pages/EventList';
 import Calendar from '../../features/event/pages/Calendar';
+import EventDetail from '../../features/event/pages/EventDetail';
 
 // import NoticeList from '../../features/notice/pages/NoticeList';
 // import NoticeDetail from '../../features/notice/pages/NoticeDetail';
@@ -71,12 +72,12 @@ export const router = createBrowserRouter([
 
       //  (추가) 행사 상세 - 리뷰 탭(중첩 라우팅)
       {
-        path: '/events/:eventId',
-        element: <EventDetailLayout />,
-        children: [
-          { path: 'reviews', element: <ReviewEventDetail /> }, // /events/:eventId/reviews
-        ],
-      },
+  path: '/events/:eventId',
+  element: <EventDetailLayout />,
+  children: [
+    { index: true, element: <EventDetail /> },  
+  ],
+},
     ],
   },
   // 레이아웃 없이 페이지만 단독으로 불러옴

@@ -31,14 +31,12 @@ import EventList from '../../features/event/pages/EventList';
 import ReviewMyPage from '../../features/event/review/pages/ReviewMyPage';
 import ReviewEventDetail from '../../features/event/review/pages/ReviewEventDetail';
 import EventDetailLayout from '../../features/event/review/pages/EventDetailLayout';
+import InquiryListMypage from '../../features/event/inquiry/pages/InquiryListMypage';
 
 export const router = createBrowserRouter([
   {
     element: <MainLayout />,
     children: [
-      
-      
-
       // { path: '/notices', element: <NoticeList /> },
       // { path: '/notices/:noticeNo', element: <NoticeDetail /> },
 
@@ -65,8 +63,10 @@ export const router = createBrowserRouter([
       //   ],
       // },
 
-       //  (추가) 마이페이지 - 내 리뷰 목록
+      //  (추가) 마이페이지 - 내 리뷰 목록
       { path: '/mypage/reviews', element: <ReviewMyPage /> },
+      // ✅ 문의 내역
+      { path: '/mypage/inquiries', element: <InquiryListMypage /> },
 
       //  (추가) 행사 상세 - 리뷰 탭(중첩 라우팅)
       {
@@ -82,7 +82,7 @@ export const router = createBrowserRouter([
   // 메인 홈화면
   { path: '/', element: <Home /> },
   // 게시판 화면
-  { path: '/events', element: <EventList />},
+  { path: '/events', element: <EventList /> },
   // 로그인
   { path: '/login', element: <Login /> },
   // 회원가입
@@ -92,5 +92,5 @@ export const router = createBrowserRouter([
   // 비밀번호 찾기
   { path: '/api/user/findPwd', element: <FindPwd /> },
   // 구글 계정 연동 로그인 후 리다이렉트 페이지
-  {path: '/oauthSuccess', element: <OAuthSuccess />}
+  { path: '/oauthSuccess', element: <OAuthSuccess /> },
 ]);

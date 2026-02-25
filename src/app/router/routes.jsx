@@ -1,4 +1,5 @@
 // src/app/router/routes.jsx
+// src/app/router/routes.jsx
 import React from 'react';
 import { createBrowserRouter } from 'react-router-dom';
 
@@ -17,60 +18,52 @@ import EventList from '../../features/event/pages/EventList';
 import Calendar from '../../features/event/pages/Calendar';
 import EventDetail from '../../features/event/pages/EventDetail';
 
-// import NoticeList from '../../features/notice/pages/NoticeList';
-// import NoticeDetail from '../../features/notice/pages/NoticeDetail';
-// import NoticeWrite from '../../features/notice/pages/NoticeWrite';
-// import NoticeUpdate from '../../features/notice/pages/NoticeUpdate';
-
-// import BoardList from '../../features/board/pages/BoardList';
-// import BoardWrite from '../../features/board/pages/BoardWrite';
-// import BoardDetail from '../../features/board/pages/BoardDetail';
-// import BoardUpdate from '../../features/board/pages/BoardUpdate';
-
-// import MemberList from '../../features/member/pages/MemberList';
-// import MemberInfo from '../../features/member/pages/MemberInfo';
-
 import ReviewMyPage from '../../features/event/review/pages/ReviewMyPage';
-import ReviewEventDetail from '../../features/event/review/pages/ReviewEventDetail';
 import EventDetailLayout from '../../features/event/review/pages/EventDetailLayout';
 import InquiryListMypage from '../../features/event/inquiry/pages/InquiryListMypage';
+
+// ✅ 같은 파일에서 default + named export 둘 다 가져오기
+import UserInfoMypage, {
+  UserInfoIndex,
+} from '../../features/user/pages/UserInfoMypage';
 
 export const router = createBrowserRouter([
   {
     element: <MainLayout />,
     children: [
-      // { path: '/notices', element: <NoticeList /> },
-      // { path: '/notices/:noticeNo', element: <NoticeDetail /> },
+      {
+        element: <RequireAuth />,
+        children: [
+          // ✅ 유저만 마이페이지 접근
+          {
+            element: <RequireRole allowedRoles={[ROLES.USER]} />,
+            children: [
+              {
+                path: '/mypage',
+                element: <UserInfoMypage />, // ✅ 사이드바 + Outlet
+                children: [
+                  { index: true, element: <UserInfoIndex /> }, // ✅ 기본은 내정보
+                  { path: 'inquiries', element: <InquiryListMypage /> },
+                  { path: 'reviews', element: <ReviewMyPage /> },
+                ],
+              },
+            ],
+          },
 
-      // { path: '/boards', element: <BoardList /> },
-      // { path: '/boards/:boardNum', element: <BoardDetail /> },
+          // ✅ 관리자 마이페이지(원하면 여기 확장)
+          {
+            element: <RequireRole allowedRoles={[ROLES.ADMIN]} />,
+            children: [
+              {
+                path: '/admin/mypage',
+                element: <div style={{ padding: 24 }}>관리자 마이페이지</div>,
+              },
+            ],
+          },
+        ],
+      },
 
-      // // 로그인 필요
-      // {
-      //   element: <RequireAuth />,
-      //   children: [
-      //     { path: '/boards/new', element: <BoardWrite /> },
-      //     { path: '/boards/:boardNum/edit', element: <BoardUpdate /> },
-      //     { path: '/mypage', element: <MemberInfo /> },
-      //   ],
-      // },
-
-      // // 관리자만
-      // {
-      //   element: <RequireRole allowedRoles={[ROLES.ADMIN]} />,
-      //   children: [
-      //     { path: '/admin/members', element: <MemberList /> },
-      //     { path: '/notices/new', element: <NoticeWrite /> },
-      //     { path: '/notices/:noticeNo/edit', element: <NoticeUpdate /> },
-      //   ],
-      // },
-
-      //  (추가) 마이페이지 - 내 리뷰 목록
-      { path: '/mypage/reviews', element: <ReviewMyPage /> },
-      // ✅ 문의 내역
-      { path: '/mypage/inquiries', element: <InquiryListMypage /> },
-
-      //  (추가) 행사 상세 - 리뷰 탭(중첩 라우팅)
+      // ✅ 행사 상세
       {
         path: '/events/:eventId',
         element: <EventDetailLayout />,
@@ -78,21 +71,13 @@ export const router = createBrowserRouter([
       },
     ],
   },
-  // 레이아웃 없이 페이지만 단독으로 불러옴
-  // 메인 홈화면
+
   { path: '/', element: <Home /> },
-  // 게시판 화면
   { path: '/events', element: <EventList /> },
-  // 달력 화면
   { path: '/Calendar', element: <Calendar /> },
-  // 로그인
   { path: '/login', element: <Login /> },
-  // 회원가입
   { path: '/api/user/signup', element: <Signup /> },
-  // 아이디 찾기
   { path: '/api/user/findEmail', element: <FindEmail /> },
-  // 비밀번호 찾기
   { path: '/api/user/findPwd', element: <FindPwd /> },
-  // 구글 계정 연동 로그인 후 리다이렉트 페이지
   { path: '/oauthSuccess', element: <OAuthSuccess /> },
 ]);

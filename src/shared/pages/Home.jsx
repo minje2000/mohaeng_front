@@ -1,13 +1,8 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { geoArea, geoMercator, geoPath } from "d3-geo";
 import styles from "./Home.module.css";
 import { apiJson } from '../../app/http/request';
-
-function isLoggedIn() {
-  if (typeof document === "undefined") return false;
-  return document.cookie.includes("moheng_logged_in=1");
-}
 
 const REGION_CENTER = {
     서울: { slug: "seoul", id: 1100000000 },
@@ -117,11 +112,23 @@ function BoardIcon() { return <Icon><svg viewBox="0 0 24 24" fill="none" width="
 function RightIcon({ children }) { return <span className={styles.rightIcon} aria-hidden="true">{children}</span>; }
 function UserIcon() { return <RightIcon><svg viewBox="0 0 24 24" fill="none" width="18" height="18"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" stroke="currentColor" strokeWidth="1.6" /><path d="M4.5 20.2a7.6 7.6 0 0 1 15 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg></RightIcon>; }
 function LoginIcon() { return <RightIcon><svg viewBox="0 0 24 24" fill="none" width="18" height="18"><path d="M10 7V6a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-7a2 2 0 0 1-2-2v-1" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /><path d="M3 12h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /><path d="M9 8l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg></RightIcon>; }
+function BellIcon() { return <RightIcon><svg viewBox="0 0 24 24" fill="none" width="18" height="18"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/><path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg></RightIcon>; }
 
 export default function Home() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const loggedIn = useMemo(() => isLoggedIn(), []);
+  const [loggedIn, setLoggedIn] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return Boolean(localStorage.getItem("accessToken"));
+  });
+
+  const onLogout = () => {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    
+    setLoggedIn(false); // 👈 핵심! 토큰을 지운 즉시 로그인 상태를 false로 바꿔서 화면을 다시 그림
+    navigate("/"); // 혹시 몰라서 홈으로 확실히 쐐기 박기
+  };
   const svgRef = useRef(null);
   const tooltipRef = useRef(null);
 
@@ -379,10 +386,23 @@ export default function Home() {
           </nav>
           <div className={styles.navRight}>
             {loggedIn ? (
-              <Link className={styles.authLink} to="/logout"><LoginIcon /> 로그아웃</Link>
+              <>
+                <Link className={styles.authLink} to="/notifications"><BellIcon /> 알림</Link>
+                <Link className={styles.authLink} to="/mypage"><UserIcon /> 마이페이지</Link>
+                {/* 💡 button 대신 a 태그로 바꿔서 옆의 링크들과 폰트/규격을 완벽하게 통일! */}
+                <a 
+                  className={styles.authLink} 
+                  onClick={onLogout}
+                  style={{ cursor: "pointer" }}
+                >
+                  <LoginIcon /> 로그아웃
+                </a>
+              </>
             ) : (
-              <><Link className={styles.authLink} to="/api/user/signup"><UserIcon /> 회원가입</Link>
-              <Link className={styles.authLink} to="/login"><LoginIcon /> 로그인</Link></>
+              <>
+                <Link className={styles.authLink} to="/api/user/signup"><UserIcon /> 회원가입</Link>
+                <Link className={styles.authLink} to="/login"><LoginIcon /> 로그인</Link>
+              </>
             )}
           </div>
         </div>

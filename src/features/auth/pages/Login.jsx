@@ -42,9 +42,9 @@ export default function Login() {
 
   async function onSubmit(e) {
     e.preventDefault();
-    setIsSubmitted(true); // 버튼 클릭 시점에 true로 설정
+    setIsSubmitted(true);
 
-    if (!isValid) return; // 유효하지 않으면 여기서 중단 (에러 메시지 표시됨)
+    if (!isValid) return;
 
     setLoading(true);
     setErr("");
@@ -59,7 +59,13 @@ export default function Login() {
       if (isAdmin) {
         navigate('/admin/members', { replace: true });
       } else {
-        navigate(from, { replace: true });
+        // 🚨 무적의 방법: 세션 스토리지에서 주소를 꺼내옴 (없으면 홈으로)
+        const redirectUrl = sessionStorage.getItem('redirectUrl') || '/';
+        // 꺼낸 후에는 깔끔하게 지워줌
+        sessionStorage.removeItem('redirectUrl'); 
+        
+        // 그 주소로 이동!
+        navigate(redirectUrl, { replace: true });
       }
     } catch (e2) {
       const msg = e2?.response?.data?.message || e2?.message || '로그인 실패';

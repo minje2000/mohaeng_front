@@ -2,148 +2,135 @@
   position: sticky;
   top: 0;
   z-index: 1000;
-
   width: 100%;
-  background: #fff;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.95); /* 살짝 투명하게 해서 세련된 느낌 */
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid #f3f4f6;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03); /* 은은한 그림자 */
 }
 
 .inner {
-  height: 100px;
+  position: relative; /* 중앙 정렬을 위한 기준점 */
+  height: 90px;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0px 26px 0;
-
+  padding: 0 26px;
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between; /* ✅ 좌/우 끝 정렬 */
+  align-items: center;
+  justify-content: space-between;
   box-sizing: border-box;
 }
 
-/* Logo */
+/* 1. 왼쪽 로고 */
 .logo {
-  position: relative;
-  top: 0px;
-  margin-left: -16px;
+  display: flex;
+  align-items: center;
+  margin-left: -10px;
+  transition: transform 0.2s ease;
 }
-
+.logo:hover {
+  transform: scale(1.02);
+}
 .logoImg {
-  height: 100px; /* ✅ 로고 크게 */
+  height: 75px; /* 비율 좋게 살짝 조절 */
   width: auto;
   display: block;
 }
 
-/* Search */
-.search {
-  position: relative;
-  top: 30px;
-
-  flex: 0 0 320px; /* ✅ 검색 짧게 */
-  height: 38px;
-
+/* 2. 중앙 메인 메뉴 (지도, 달력) */
+.centerNav {
   display: flex;
   align-items: center;
-
-  border: 1px solid rgba(0, 0, 0, 0.3);
-  border-radius: 999px;
-  padding: 0 10px 0 16px;
-  background: #fff;
-  margin-left: 60px;
+  gap: 8px; /* 👈 기존 32px에서 8px로 줄여주세요! */
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
-
-.searchInput {
-  flex: 1;
-  border: none;
-  outline: none;
-  font-size: 14px;
-  background: transparent;
-}
-
-.searchBtn {
-  border: none;
-  background: transparent;
-  width: 34px;
-  height: 34px;
-  border-radius: 999px;
-  cursor: pointer;
-
-  display: grid;
-  place-items: center;
-}
-
-.searchBtn svg {
-  color: #111; /* currentColor */
-}
-
-/* Right Menu */
-.nav {
-  position: relative;
-  top: 34px;
-
-  margin-left: auto;
+.mainLink {
   display: flex;
   align-items: center;
-  gap: 18px;
-  white-space: nowrap;
+  gap: 8px;
+  text-decoration: none;
+  color: #4B5563;
+  font-size: 16px;
+  font-weight: 800;
+  padding: 10px 16px;
+  border-radius: 14px;
+  transition: all 0.2s ease;
+}
+.mainLink:hover {
+  background-color: #F3F4F6;
+  color: #111;
 }
 
+/* 3. 우측 유저 메뉴 */
+.rightNav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 .iconBtn {
   border: none;
   background: transparent;
   cursor: pointer;
-
-  width: 34px;
-  height: 34px;
-  border-radius: 999px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
   display: grid;
   place-items: center;
+  color: #4B5563;
+  transition: all 0.2s ease;
 }
-
-.iconBtn svg {
+.iconBtn:hover {
+  background-color: #F3F4F6;
+  color: #111;
+}
+.textLink {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  color: #4B5563;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 8px 14px;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+.textLink:hover {
+  background-color: #F3F4F6;
   color: #111;
 }
 
-.navLink,
-.navLinkBtn {
-  display: inline-flex;
+/* 💛 강조 버튼 (회원가입 등) */
+.primaryBtn {
+  display: flex;
   align-items: center;
   gap: 6px;
-
   text-decoration: none;
   color: #111;
   font-size: 14px;
-  font-weight: 600;
-
-  padding: 6px 8px;
-  border-radius: 10px;
-}
-
-.navLink svg,
-.navLinkBtn svg {
-  color: #111;
-}
-
-.navLinkBtn {
+  font-weight: 800;
+  padding: 10px 20px;
+  border-radius: 999px; /* 완전 둥글게 */
+  background-color: #FFD700;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   border: none;
-  background: transparent;
   cursor: pointer;
+  margin-left: 8px;
 }
-
-.navLink:hover,
-.navLinkBtn:hover,
-.iconBtn:hover {
-  background: rgba(0, 0, 0, 0.04);
+.primaryBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
 }
-
-/* Responsive */
-@media (max-width: 720px) {
-  .search {
-    flex: 1 1 auto;
-    min-width: 180px;
-  }
-
-  .navLink span,
-  .navLinkBtn span {
-    display: none;
-  }
+.centerDivider {
+  width: 1px;
+  height: 18px; 
+  /* 💡 0.06에서 0.15로 투명도를 올려서 조금 더 진하고 또렷하게 변경! */
+  background-color: rgba(0, 0, 0, 0.30); 
+  margin: 0 12px;
+  border-radius: 2px;
 }

@@ -69,7 +69,7 @@ const getStatusUI = (ev) => {
   if (boothStart && boothEnd && today >= boothStart && today <= boothEnd)
     return { key:'부스모집중', label:'부스 모집 중', color:'#8B5CF6', bg:'#F5F3FF',
       btnLabel:'부스 사용 신청하기', btnActive:true, btnColor:'#8B5CF6', btnTextColor:'#fff',
-      btnTo:`/booth-apply/${ev.eventId}` };
+      btnTo:`/events/${ev.eventId}/booth-apply` };
 
   const diff = diffDays(ev.boothStartRecruit || ev.startRecruit || ev.startDate);
   return { key:'예정', label:'행사 예정', color:'#3B82F6', bg:'#EFF6FF',

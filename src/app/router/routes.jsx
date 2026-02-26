@@ -18,6 +18,7 @@ import EventList from '../../features/event/pages/EventList';
 import Calendar from '../../features/event/pages/Calendar';
 import EventDetail from '../../features/event/pages/EventDetail';
 import EventHost from '../../features/event/host/pages/EventHost';
+import ParticipationBoothApply from '../../features/event/participation/pages/ParticipationBoothApply';
 
 import ReviewMyPage from '../../features/event/review/pages/ReviewMyPage';
 import EventDetailLayout from '../../features/event/review/pages/EventDetailLayout';
@@ -77,6 +78,7 @@ export const router = createBrowserRouter([
   { path: '/events', element: <EventList /> },
   { path: '/Calendar', element: <Calendar /> },
   { path: '/events/new', element: <EventHost /> },
+  { path: '/events/:eventId/booth-apply', element: <ParticipationBoothApply /> },
   { path: '/login', element: <Login /> },
   { path: '/api/user/signup', element: <Signup /> },
   { path: '/api/user/findEmail', element: <FindEmail /> },

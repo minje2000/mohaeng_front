@@ -673,7 +673,7 @@ export default function EventHost() {
             fontWeight:900, fontSize:15, cursor: saving ? 'not-allowed' : 'pointer',
             boxShadow: saving ? 'none' : '0 4px 14px rgba(255,215,0,0.45)',
           }}>
-            {saving ? '등록 중...' : '🚀 행사 등록하기'}
+            {saving ? '등록 중...' : '행사 등록하기'}
           </button>
         </div>
 

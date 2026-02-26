@@ -121,7 +121,7 @@ const getStatusUI = (ev) => {
       btnActive: true,
       btnColor: '#F97316',
       btnTextColor: '#fff',
-      btnTo: `/event-apply/${ev.eventId}`,
+      btnTo: `/events/${ev.eventId}/apply`,
     };
 
   if (boothEnd && today > boothEnd) {

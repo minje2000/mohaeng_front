@@ -19,6 +19,7 @@ import Calendar from '../../features/event/pages/Calendar';
 import EventDetail from '../../features/event/pages/EventDetail';
 import EventHost from '../../features/event/host/pages/EventHost';
 import ParticipationBoothApply from '../../features/event/participation/pages/ParticipationBoothApply';
+import ParticipationApply from '../../features/event/participation/pages/ParticipationApply';
 
 import ReviewMyPage from '../../features/event/review/pages/ReviewMyPage';
 import ReviewEventDetail from '../../features/event/review/pages/ReviewEventDetail';
@@ -79,20 +80,12 @@ export const router = createBrowserRouter([
     ],
   },
 
-  {
-  path: '/events/:eventId',
-  element: <EventDetailLayout />,
-  children: [
-    { index: true, element: <EventDetail /> },
-    { path: 'reviews', element: <ReviewEventDetail /> },
-  ],
-},
-
   { path: '/', element: <Home /> },
   { path: '/events', element: <EventList /> },
   { path: '/Calendar', element: <Calendar /> },
   { path: '/events/new', element: <EventHost /> },
   { path: '/events/:eventId/booth-apply', element: <ParticipationBoothApply /> },
+  { path: '/events/:eventId/apply', element: <ParticipationApply /> },
 
   { path: '/payment/success', element: <PaymentSuccess /> },
   { path: '/payment/fail', element: <PaymentFail /> },

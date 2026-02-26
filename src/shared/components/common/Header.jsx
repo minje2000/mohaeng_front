@@ -69,7 +69,7 @@ export default function Header() {
             </>
           ) : (
             <>
-              <Link className={styles.textLink} to="/signup">
+              <Link className={styles.textLink} to="/api/user/signup">
                 <UserPlusIcon />
                 <span>회원가입</span>
               </Link>

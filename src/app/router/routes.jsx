@@ -17,6 +17,7 @@ import Home from '../../shared/pages/Home';
 import EventList from '../../features/event/pages/EventList';
 import Calendar from '../../features/event/pages/Calendar';
 import EventDetail from '../../features/event/pages/EventDetail';
+import EventHost from '../../features/event/host/pages/EventHost';
 
 import ReviewMyPage from '../../features/event/review/pages/ReviewMyPage';
 import EventDetailLayout from '../../features/event/review/pages/EventDetailLayout';
@@ -75,6 +76,7 @@ export const router = createBrowserRouter([
   { path: '/', element: <Home /> },
   { path: '/events', element: <EventList /> },
   { path: '/Calendar', element: <Calendar /> },
+  { path: '/events/new', element: <EventHost /> },
   { path: '/login', element: <Login /> },
   { path: '/api/user/signup', element: <Signup /> },
   { path: '/api/user/findEmail', element: <FindEmail /> },

@@ -79,6 +79,14 @@ const EventList = () => {
     return prefixMatch ? prefixMatch[0] : "";
 };
 
+    const resetDates = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete("filterStart");
+    next.delete("filterEnd");
+    next.set("page", "0"); // 페이지도 첫 페이지로!
+    setSearchParams(next);
+};
+
     // 💡 [해결 포인트 2] 주소창 파라미터 한 번에 정리 (중복 선언 방지)
     const urlCity = searchParams.get("city") || "";
     const urlRegionId = searchParams.get("regionId") || "";
@@ -221,7 +229,7 @@ const EventList = () => {
                             <input type="date" value={currentEnd} onChange={(e) => setFilter("filterEnd", e.target.value)} style={{ ...dateInputStyle, padding: '8px 10px', border: '1px solid #E5E7EB', borderRadius: '10px', backgroundColor: '#F9FAFB' }} />
                             {(currentStart || currentEnd) && (
                                 <button
-                                    onClick={() => { setFilter("filterStart", ""); setFilter("filterEnd", ""); }}
+                                    onClick={resetDates} // 💡 위에서 만든 함수로 교체!
                                     style={{ background: 'none', border: 'none', color: '#9CA3AF', fontSize: '15px', cursor: 'pointer', padding: '0 4px', lineHeight: 1 }}
                                     title="날짜 초기화"
                                 >✕</button>

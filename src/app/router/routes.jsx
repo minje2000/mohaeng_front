@@ -28,6 +28,7 @@ import EventDetailLayout from '../../features/event/review/pages/EventDetailLayo
 import InquiryListMypage from '../../features/event/inquiry/pages/InquiryListMypage';
 import ParticipationMypage from '../../features/event/participation/pages/ParticipationMypage';
 import EventHostMypage from '../../features/event/host/pages/EventHostMypage';
+import BoothMypage from '../../features/event/participation/pages/BoothMypage';
 
 import PaymentSuccess from '../../features/payment/pages/PaymentSuccess';
 import PaymentFail from '../../features/payment/pages/PaymentFail';
@@ -54,7 +55,11 @@ export const router = createBrowserRouter([
                 children: [
                   { index: true, element: <UserInfoIndex /> }, // ✅ 기본은 내정보
                   { path: 'events/created', element: <EventHostMypage /> },
-                  { path: 'events/participated', element: <ParticipationMypage /> },
+                  {
+                    path: 'events/participated',
+                    element: <ParticipationMypage />,
+                  },
+                  { path: 'booths', element: <BoothMypage /> },
                   { path: 'inquiries', element: <InquiryListMypage /> },
                   { path: 'reviews', element: <ReviewMyPage /> },
                 ],
@@ -88,7 +93,10 @@ export const router = createBrowserRouter([
   { path: '/events', element: <EventList /> },
   { path: '/Calendar', element: <Calendar /> },
   { path: '/events/new', element: <EventHost /> },
-  { path: '/events/:eventId/booth-apply', element: <ParticipationBoothApply /> },
+  {
+    path: '/events/:eventId/booth-apply',
+    element: <ParticipationBoothApply />,
+  },
   { path: '/events/:eventId/apply', element: <ParticipationApply /> },
 
   { path: '/payment/success', element: <PaymentSuccess /> },
@@ -99,6 +107,4 @@ export const router = createBrowserRouter([
   { path: '/api/user/findEmail', element: <FindEmail /> },
   { path: '/api/user/findPwd', element: <FindPwd /> },
   { path: '/oauthSuccess', element: <OAuthSuccess /> },
-
-  
 ]);

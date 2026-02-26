@@ -51,7 +51,7 @@
 .mh-userName { font-weight: 900; margin-bottom: 6px; }
 .mh-avgLine { display: flex; align-items: center; gap: 8px; }
 .mh-avgNum { font-size: 12px; color: #666; }
-/* ✅ 소수점 별점(반별) */
+/*  소수점 별점(반별) */
 .mh-starWrap {
   position: relative;
   display: inline-block;
@@ -66,7 +66,7 @@
   position: absolute;
   left: 0;
   top: 0;
-  overflow: hidden;   /* ✅ width 만큼 잘려서 반별 표현 */
+  overflow: hidden;   /*  width 만큼 잘려서 반별 표현 */
   white-space: nowrap;
   color: #e0b400;     /* 채워진 별 */
 }

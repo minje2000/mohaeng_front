@@ -25,6 +25,8 @@ import ReviewEventDetail from '../../features/event/review/pages/ReviewEventDeta
 
 import EventDetailLayout from '../../features/event/review/pages/EventDetailLayout';
 import InquiryListMypage from '../../features/event/inquiry/pages/InquiryListMypage';
+import ParticipationMypage from '../../features/event/participation/pages/ParticipationMypage';
+import EventHostMypage from '../../features/event/host/pages/EventHostMypage';
 
 // ✅ 같은 파일에서 default + named export 둘 다 가져오기
 import UserInfoMypage, {
@@ -47,6 +49,8 @@ export const router = createBrowserRouter([
                 element: <UserInfoMypage />, // ✅ 사이드바 + Outlet
                 children: [
                   { index: true, element: <UserInfoIndex /> }, // ✅ 기본은 내정보
+                  { path: 'events/created', element: <EventHostMypage /> },
+                  { path: 'events/participated', element: <ParticipationMypage /> },
                   { path: 'inquiries', element: <InquiryListMypage /> },
                   { path: 'reviews', element: <ReviewMyPage /> },
                 ],

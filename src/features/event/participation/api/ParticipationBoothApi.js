@@ -1,6 +1,19 @@
 // src/features/participation/api/ParticipationBoothApi.js
 import { apiForm, apiJson } from '../../../../app/http/request'; 
 
+export const ParticipationBoothApi = {
+  // ✅ 마이페이지(토큰 기반)
+  async getMyParticipationBoothList() {
+    const res = await apiJson().get('/api/mypage/events/booths');
+    return res.data;
+  },
+
+  async submitBoothApply(eventId, dto) {
+    const res = await apiJson().post('/api/eventParticipation/submitBoothApply', dto, {
+      params: { eventId },
+    });
+    return res.data; // Long pctBoothId
+  },
 // 1. 행사 상세 정보 + 부스/시설 정보 불러오기 (기존 상세페이지 API 재활용!)
 export const getBoothApplicationInfo = async (eventId) => {
     const response = await apiJson().get(`/api/events/${eventId}`);

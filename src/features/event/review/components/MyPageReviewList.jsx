@@ -1,3 +1,4 @@
+// src/features/event/review/components/MyPageReviewList.jsx
 import React from 'react';
 import MyPageReviewItem from './MyPageReviewItem';
 
@@ -14,7 +15,12 @@ export default function MyPageReviewList({ items = [], onClickItem }) {
       </div>
 
       {items.map((it, idx) => (
-        <MyPageReviewItem key={it.reviewId ?? idx} index={idx} item={it} onClick={() => onClickItem(it)} />
+        <MyPageReviewItem
+          key={it.reviewId ?? idx}
+          index={idx}
+          item={it}
+          onClick={() => onClickItem(it)} //  그대로
+        />
       ))}
     </div>
   );

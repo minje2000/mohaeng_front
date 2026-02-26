@@ -23,7 +23,7 @@ export default function EventReviewItem({ item }) {
         <div className="mh-userName">{item.userName ?? "작성자"}</div>
 
         <div className="mh-avgLine">
-          {/* ✅ 평균 별점: 반별 표시 */}
+          {/*  평균 별점: 반별 표시 */}
           <StarsDecimal value={avg} />
           <span className="mh-avgNum">{Number.isFinite(avg) ? avg.toFixed(1) : "0.0"}</span>
         </div>

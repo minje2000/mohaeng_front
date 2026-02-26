@@ -48,7 +48,8 @@ export default function ReviewMyPage() {
 
   const onClickItem = (item) => {
     if (!item?.eventId) return;
-    navigate(`/events/${item.eventId}/reviews`);
+    //  행사 상세페이지로 이동하면서 리뷰 탭 자동 오픈
+    navigate(`/events/${item.eventId}?tab=review`);
   };
 
   return (

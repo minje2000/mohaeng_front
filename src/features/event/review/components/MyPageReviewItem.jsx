@@ -13,7 +13,7 @@ export default function MyPageReviewItem({ index, item, onClick }) {
       <div className="mh-cell">{index + 1}</div>
       <div className="mh-cell mh-eventTitle">{item.eventTitle ?? "(제목 없음)"}</div>
       <div className="mh-cell">
-        {/* ✅ 평균 별점 반별 표시 */}
+        {/*  평균 별점 반별 표시 */}
         <span className="mh-avgLine">
           <StarsDecimal value={avg} />
           <span className="mh-avgNum">{avg.toFixed(1)}</span>

@@ -21,6 +21,8 @@ import EventHost from '../../features/event/host/pages/EventHost';
 import ParticipationBoothApply from '../../features/event/participation/pages/ParticipationBoothApply';
 
 import ReviewMyPage from '../../features/event/review/pages/ReviewMyPage';
+import ReviewEventDetail from '../../features/event/review/pages/ReviewEventDetail';
+
 import EventDetailLayout from '../../features/event/review/pages/EventDetailLayout';
 import InquiryListMypage from '../../features/event/inquiry/pages/InquiryListMypage';
 
@@ -73,6 +75,15 @@ export const router = createBrowserRouter([
       },
     ],
   },
+
+  {
+  path: '/events/:eventId',
+  element: <EventDetailLayout />,
+  children: [
+    { index: true, element: <EventDetail /> },
+    { path: 'reviews', element: <ReviewEventDetail /> },
+  ],
+},
 
   { path: '/', element: <Home /> },
   { path: '/events', element: <EventList /> },

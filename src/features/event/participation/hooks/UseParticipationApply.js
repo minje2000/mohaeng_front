@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ParticipationApi } from '../api/ParticipationApi';
+import { ParticipationApi } from '../api/ParticipationAPI';
 
 export default function UseParticipationApply({ eventId, onDone }) {
   const [submitting, setSubmitting] = useState(false);

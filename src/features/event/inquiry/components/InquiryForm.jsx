@@ -1,10 +1,8 @@
-import React, { useMemo, useState } from 'react';
-import { tokenStore } from '../../../../app/http/tokenStore';
+import React, { useState } from 'react';
 import UseInquiryForm from '../hooks/UseInquiryForm';
 
 export default function InquiryForm({ eventId, onSaved }) {
-  const userId = useMemo(() => tokenStore.getUserId?.(), []);
-  const [content, setContent] = useState('');
+const [content, setContent] = useState('');
 
   const { create, submitting, error } = UseInquiryForm({
     eventId,
@@ -18,11 +16,7 @@ export default function InquiryForm({ eventId, onSaved }) {
     e.preventDefault();
     const c = content.trim();
     if (!c) return;
-    if (!userId) {
-      alert('로그인이 필요합니다.');
-      return;
-    }
-    create({ userId: Number(userId), content: c });
+    create({ content: c });
   };
 
   return (

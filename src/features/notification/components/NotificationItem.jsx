@@ -23,18 +23,22 @@ export default function NotificationItem({ item, onClick }) {
       onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
     >
       <div style={{ fontWeight: 900, fontSize: 13 }}>• {typeName}</div>
+
       <div
         style={{
           fontSize: 12,
           opacity: 0.86,
           marginTop: 4,
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
+
+          //  줄바꿈 + 긴 단어(링크/영문)도 끊기
+          whiteSpace: "pre-wrap",
+          wordBreak: "break-word",
+          overflowWrap: "anywhere",
         }}
       >
         {contents}
       </div>
+
       {createdAt ? (
         <div style={{ fontSize: 11, opacity: 0.6, marginTop: 4 }}>{String(createdAt)}</div>
       ) : null}

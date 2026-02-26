@@ -27,21 +27,36 @@ export default function NotificationDropdown({
         boxShadow: "0 12px 26px rgba(0,0,0,0.14)",
         overflow: "hidden",
         zIndex: 9999,
+
+        //  헤더/푸터 고정 + 가운데만 스크롤
+        display: "flex",
+        flexDirection: "column",
+        maxHeight: 520, // 필요하면 600으로 조절
       }}
     >
+      {/*  헤더(고정) */}
       <div
         style={{
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           padding: "10px 12px",
+          flex: "0 0 auto",
         }}
       >
         <div style={{ fontWeight: 900 }}>알림 ({count})</div>
         <ReadAllButton onClick={onReadAll} disabled={count === 0 || loading} />
       </div>
 
-      <div style={{ padding: "6px 10px 10px" }}>
+      {/*  본문(스크롤 영역) */}
+      <div
+        style={{
+          padding: "6px 10px 10px",
+          overflowY: "auto",
+          overflowX: "hidden",
+          flex: "1 1 auto",
+        }}
+      >
         {loading && (
           <div style={{ padding: "18px 10px", textAlign: "center", opacity: 0.72 }}>
             불러오는 중...
@@ -66,8 +81,8 @@ export default function NotificationDropdown({
         {!loading && !error && <NotificationList items={items} onItemClick={onItemClick} />}
       </div>
 
-      {/* ✅ /notifications 이동 없음 */}
-      <div style={{ borderTop: "1px solid #eee", padding: "10px 12px" }}>
+      {/*  푸터(고정) */}
+      <div style={{ borderTop: "1px solid #eee", padding: "10px 12px", flex: "0 0 auto" }}>
         <button
           type="button"
           onClick={onClose}

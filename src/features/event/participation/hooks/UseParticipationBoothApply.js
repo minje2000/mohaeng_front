@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ParticipationBoothApi } from '../api/ParticipationBoothApi';
+import { ParticipationBoothApi } from '../api/ParticipationBoothAPI';
 
 export default function UseParticipationBoothApply({ eventId, onDone }) {
   const [submitting, setSubmitting] = useState(false);

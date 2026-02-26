@@ -170,9 +170,9 @@ export default function ParticipationBoothApply() {
       try {
         setLoading(true);
         const [eventRes, userRes] = await Promise.all([
-          ParticipationBoothApi.getBoothApplicationInfo(eventId), // 보따리 이름 추가
-          ParticipationBoothApi.getMyProfile(), // 보따리 이름 추가
-        ]);
+  ParticipationBoothApi.getBoothApplicationInfo(eventId), 
+  ParticipationBoothApi.getMyProfile()
+]);
         setEventData(eventRes);
         if (userRes)
           setProfile({
@@ -248,11 +248,7 @@ export default function ParticipationBoothApply() {
       };
 
       // 1. 부스 신청 저장
-      const submitResult = await ParticipationBoothApi.submitBoothApplication(
-        eventId,
-        dto,
-        files
-      );
+      const submitResult = await ParticipationBoothApi.submitBoothApplication(eventId, dto, files);
       const pctBoothId =
         submitResult?.data?.pctBoothId || submitResult?.pctBoothId;
 

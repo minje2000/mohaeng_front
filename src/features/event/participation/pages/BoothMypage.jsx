@@ -2,8 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { tokenStore } from '../../../../app/http/tokenStore';
 import eventThumbUrl from '../../../../shared/utils/eventThumbUrl';
-// ❌ import { ParticipationBoothApi } from '../api/ParticipationBoothApi';
-import { cancelBoothParticipation } from '../api/ParticipationBoothApi';
+import { ParticipationBoothApi } from '../api/ParticipationBoothAPI';
 import UseBoothMypage from '../hooks/UseBoothMypage';
 
 function formatDateRange(startDate, endDate) {
@@ -33,7 +32,7 @@ export default function BoothMypage() {
   const onCancel = async (pctBoothId) => {
     if (!pctBoothId) return;
     if (!window.confirm('부스 신청을 취소할까요?')) return;
-    await cancelBoothParticipation(pctBoothId);
+    await ParticipationBoothApi.cancelBoothParticipation(pctBoothId);   
     reload();
   };
 

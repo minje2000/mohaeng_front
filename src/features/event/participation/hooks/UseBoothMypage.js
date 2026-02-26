@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { getMyParticipationBoothList } from '../api/ParticipationBoothApi';
+import { ParticipationBoothApi } from '../api/ParticipationBoothAPI';
 
 function formatDateTime(v) {
   if (!v) return '-';
@@ -14,8 +14,8 @@ export default function UseBoothMypage(page, size) {
   const reload = useCallback(async () => {
     setLoading(true);
     try {
-      const list = await getMyParticipationBoothList();
-      const arr = Array.isArray(list) ? list : [];
+      const res = await ParticipationBoothApi.getMyParticipationBoothList(page, size);
+      const arr = Array.isArray(res) ? res : (Array.isArray(res?.content) ? res.content : []);
       const normalized = arr.map((x) => ({
         ...x,
         _createdAtText: formatDateTime(x.createdAt),
@@ -24,7 +24,7 @@ export default function UseBoothMypage(page, size) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page, size]); // ← page, size 의존성 추가
 
   useEffect(() => {
     reload();

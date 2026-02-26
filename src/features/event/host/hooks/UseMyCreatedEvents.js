@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { MypageEventApi } from '../api/MypageEventApi';
+import { MypageEventApi } from '../api/MypageEventAPI';
 
 export default function UseMyCreatedEvents(page, size) {
   const [items, setItems] = useState([]);

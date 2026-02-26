@@ -26,6 +26,9 @@ import ReviewEventDetail from '../../features/event/review/pages/ReviewEventDeta
 import EventDetailLayout from '../../features/event/review/pages/EventDetailLayout';
 import InquiryListMypage from '../../features/event/inquiry/pages/InquiryListMypage';
 
+import PaymentSuccess from '../../features/payment/pages/PaymentSuccess';
+import PaymentFail from '../../features/payment/pages/PaymentFail';
+
 // ✅ 같은 파일에서 default + named export 둘 다 가져오기
 import UserInfoMypage, {
   UserInfoIndex,
@@ -90,9 +93,15 @@ export const router = createBrowserRouter([
   { path: '/Calendar', element: <Calendar /> },
   { path: '/events/new', element: <EventHost /> },
   { path: '/events/:eventId/booth-apply', element: <ParticipationBoothApply /> },
+
+  { path: '/payment/success', element: <PaymentSuccess /> },
+  { path: '/payment/fail', element: <PaymentFail /> },
+
   { path: '/login', element: <Login /> },
   { path: '/api/user/signup', element: <Signup /> },
   { path: '/api/user/findEmail', element: <FindEmail /> },
   { path: '/api/user/findPwd', element: <FindPwd /> },
   { path: '/oauthSuccess', element: <OAuthSuccess /> },
+
+  
 ]);

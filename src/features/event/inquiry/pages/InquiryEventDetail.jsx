@@ -1,52 +1,78 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { tokenStore } from '../../../../app/http/tokenStore';
-import { fetchEventDetail } from '../../api/EventDetailAPI';
-import UseInquiryList from '../hooks/UseInquiryList';
 import InquiryForm from '../components/InquiryForm';
 import InquiryListView from '../components/InquiryListView';
+import UseInquiryList from '../hooks/UseInquiryList';
+import { useParams } from 'react-router-dom';
+import { axiosInstance } from '../../../../app/http/axiosInstance';
 
-export default function InquiryEventDetail() {
+export default function InquiryEventDetail({ hostId, hostName }) {
   const { eventId } = useParams();
-  const eid = Number(eventId);
+  const eid = useMemo(() => Number(eventId), [eventId]);
 
-  const me = useMemo(() => Number(tokenStore.getUserId?.() || 0), []);
-  const [hostId, setHostId] = useState(null);
+  // ✅ 문의 목록(로그인 불필요)
+  const { items, loading, error, refetch } = UseInquiryList({ eventId: eid });
 
-  const { items, loading, error, reload } = UseInquiryList(eid);
+  // eventId가 바뀌면 1번만 새로고침
+  useEffect(() => {
+    if (!eid) return;
+    refetch?.();
+  }, [eid]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const refresh = () => refetch?.();
+
+  // ✅ 로그인 코드(토큰 저장 방식)는 건드리지 않고, /me로 userId만 조회해서 사용
+  const [meId, setMeId] = useState(null);
 
   useEffect(() => {
-    let mounted = true;
-    fetchEventDetail(eid)
-      .then((d) => {
-        // ✅ 백엔드에서 hostId를 내려주도록 맞춥니다(EventDetailDto.hostId)
-        const hid = d?.hostId ?? d?.eventInfo?.hostId ?? null;
-        if (mounted) setHostId(hid != null ? Number(hid) : null);
-      })
-      .catch(() => {
-        if (mounted) setHostId(null);
-      });
-    return () => { mounted = false; };
-  }, [eid]);
+    let alive = true;
 
-  const isHost = Boolean(me && hostId && me === hostId);
+    const loadMe = async () => {
+      // 프로젝트마다 prefix가 달라질 수 있어서 순서대로 시도
+      const candidates = ['/api/user/me', '/api/me', '/me'];
+
+      for (const url of candidates) {
+        try {
+          const res = await axiosInstance.get(url);
+          const dto = res?.data?.data ?? res?.data; // ApiResponse 래핑/비래핑 대응
+          const uid = dto?.userId;
+          if (uid != null) {
+            if (alive) setMeId(Number(uid));
+            return;
+          }
+        } catch (e) {
+          // 다음 후보로 계속
+        }
+      }
+      if (alive) setMeId(null);
+    };
+
+    loadMe();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const isHost =
+    hostId != null && meId != null && Number(hostId) === Number(meId);
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 14 }}>
-      <h2 style={{ margin: '8px 0' }}>행사 문의</h2>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {/* ✅ 문의 작성(로그인 필요) */}
+      <InquiryForm eventId={eid} onSaved={refresh} />
 
-      <InquiryForm eventId={eid} onSaved={reload} />
-
-      {!isHost && (
-        <div style={{ padding: 10, borderRadius: 10, background: '#f8fafc', border: '1px solid #e5e7eb', color: '#374151' }}>
-          답변은 <b>행사 주최자</b>만 작성할 수 있습니다.
-        </div>
+      {/* ✅ 문의 목록(로그인 불필요) */}
+      {loading && <div style={{ padding: 12 }}>불러오는 중...</div>}
+      {error && (
+        <div style={{ padding: 12, color: 'crimson' }}>{String(error)}</div>
       )}
 
-      {loading && <div>불러오는 중...</div>}
-      {error && <div style={{ color: 'crimson' }}>문의 목록 로딩 실패</div>}
-
-      <InquiryListView items={items} onChanged={reload} enableReply={isHost} />
+      <InquiryListView
+        items={items || []}
+        meId={meId}
+        isHost={isHost}
+        hostName={hostName || '주최자'}
+        onChanged={refresh}
+      />
     </div>
   );
 }

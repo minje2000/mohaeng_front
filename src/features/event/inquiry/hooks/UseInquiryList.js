@@ -1,18 +1,18 @@
 import { useCallback, useEffect, useState } from 'react';
 import { InquiryApi } from '../api/InquiryApi';
 
-export default function UseInquiryList(eventId) {
+export default function UseInquiryList({ eventId }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const reload = useCallback(async () => {
+  const refetch = useCallback(async () => {
     if (!eventId) return;
     setLoading(true);
     setError(null);
     try {
-      const data = await InquiryApi.list(eventId);
-      setItems(Array.isArray(data) ? data : []);
+      const res = await InquiryApi.list(eventId); // ✅ 숫자만 전달
+      setItems(res ?? []);
     } catch (e) {
       setError(e);
     } finally {
@@ -20,7 +20,9 @@ export default function UseInquiryList(eventId) {
     }
   }, [eventId]);
 
-  useEffect(() => { reload(); }, [reload]);
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
 
-  return { items, loading, error, reload };
+  return { items, loading, error, refetch };
 }

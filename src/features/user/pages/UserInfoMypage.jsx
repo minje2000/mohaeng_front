@@ -1,16 +1,20 @@
-import React, { useState } from 'react';
+// src/features/user/pages/UserInfoMypage
+import React from 'react';
 import styles from '../styles/UserInfoMypage.module.css';
 import { useUserInfo } from '../hooks/useUserInfo';
 
 export function UserInfoIndex() {
-  const { userInfo, passwords, loading, isEditing, isPasswordValid, isPasswordMatch, isSaveDisabled,
-    handleInputChange, handlePwdChange, handleSave, toggleEditing  } = useUserInfo();
+  const { userInfo, passwords, loading, isEditing, isPasswordValid, isPasswordMatch, isSaveDisabled, fileInputRef,
+    handleInputChange, handlePwdChange, handleSave, toggleEditing, handleImageChange, handleEditPhotoClick  } = useUserInfo();
 
   if (loading) return <div className={styles.loading}>로딩 중...</div>;
 
   const isPersonal = userInfo.userType === 'PERSONAL';
   const isCompany = userInfo.userType === 'COMPANY';
   const isBASIC = userInfo.signupType === 'BASIC';
+
+  const IMG_URL = process.env.REACT_APP_API_BASE_URL + 'upload_files/photo';
+  console.log(IMG_URL);
 
   return (
     <main className={styles.content}>
@@ -21,17 +25,33 @@ export function UserInfoIndex() {
         <div className={styles.profileWrapper}>
           <div className={styles.bigProfile}>
             {userInfo.profileImg ? (
-              <img src={userInfo.profileImg} alt="Profile" />
+              <img src={ userInfo.profileImg.startsWith('data:')  // 새로 업로드한 이미지인지
+                        ? userInfo.profileImg // 새로 업로드한 미리보기 데이터
+                        : `${IMG_URL}/${userInfo.profileImg}` // 서버에서 가져온 기존 파일명
+                    } alt="Profile" />
             ) : (
               <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" /></svg>
             )}
           </div>
           {isEditing && (
-            <button className={styles.editPhotoBtn} onClick={() => alert('이미지 업로드')}>
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="white">
-                <path d="M3 4V1h2v3h3v2H5v3H3V6H0V4h3zm3 6V7h3V4h7l1.83 2H21c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V10h3zm7 9c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-3.2-5c0 1.77 1.43 3.2 3.2 3.2s3.2-1.43 3.2-3.2-1.43-3.2-3.2-3.2-3.2 1.43-3.2 3.2z"/>
-              </svg>
-            </button>
+            <>
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleImageChange} 
+                accept="image/*" 
+                style={{ display: 'none' }} 
+              />
+              <button 
+                className={styles.editPhotoBtn} 
+                onClick={handleEditPhotoClick}
+                type="button"
+              >
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="white">
+                  <path d="M3 4V1h2v3h3v2H5v3H3V6H0V4h3zm3 6V7h3V4h7l1.83 2H21c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V10h3zm7 9c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-3.2-5c0 1.77 1.43 3.2 3.2 3.2s3.2-1.43 3.2-3.2-1.43-3.2-3.2-3.2-3.2 1.43-3.2 3.2z"/>
+                </svg>
+              </button>
+            </>
           )}
         </div>
 

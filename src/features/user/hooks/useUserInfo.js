@@ -1,5 +1,5 @@
 // src/features/user/hooks/useUserInfo.js
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { getProfile, updateProfile } from '../api/UserApi';
 
 export function useUserInfo() {
@@ -8,9 +8,12 @@ export function useUserInfo() {
     email: '', name: '', userPwd: '', phone: '', businessNum: '',
     userType: '', signupType: '', profileImg: ''
   });
+  const [selectedFile, setSelectedFile] = useState(null); // 새 파일 객체 (newPhoto)
+  const [deletePhoto, setDeletePhoto] = useState(false); // 사진 삭제 여부
   const [passwords, setPasswords] = useState({ newPwd: '', confirmPwd: '' });
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const fileInputRef = useRef(null);    // 파일 input 태그에 접근하기 위한 변수
 
   const fetchUserInfo = async () => {
     try {
@@ -29,6 +32,30 @@ export function useUserInfo() {
 
   const isBASIC = userInfo.signupType === 'BASIC';
   const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[^\s]{8,}$/;
+
+  // 이미지 선택 핸들러
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // 기존 사진이 존재할 경우
+      if (userInfo.profileImg) {
+        setDeletePhoto(true);
+      }
+      // 새 파일 상태 저장
+      setSelectedFile(file);
+      // 브라우저 미리보기를 위해 URL 생성
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setUserInfo(prev => ({ ...prev, profileImg: reader.result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // 카메라 아이콘 클릭 시 input 실행
+  const handleEditPhotoClick = () => {
+    fileInputRef.current?.click();
+  };
 
   // 데이터 변경 여부
   const isDataChanged = useMemo(() => {
@@ -73,7 +100,7 @@ export function useUserInfo() {
   };
 
   const handleSave = async () => {
-    // 비번 검증
+    // 비밀번호 검증
     if (isBASIC && (passwords.newPwd || passwords.confirmPwd)) {
       if (!isPasswordValid) return alert("비밀번호 형식을 확인해주세요.");
       if (!isPasswordMatch) return alert("비밀번호가 일치하지 않습니다.");
@@ -82,10 +109,12 @@ export function useUserInfo() {
     try {
       setLoading(true);
       userInfo.userPwd = isBASIC ? passwords.confirmPwd : null;
-      await updateProfile(userInfo);
+      await updateProfile(userInfo, deletePhoto, selectedFile);
       alert('정보가 수정되었습니다.');
       setInitialInfo(userInfo); // 초기값 동기화
       setIsEditing(false);
+      setSelectedFile(null);
+      setDeletePhoto(false);
       setPasswords({ newPwd: '', confirmPwd: '' });
     } catch (error) {
       alert("수정 중 오류가 발생했습니다.");
@@ -97,13 +126,16 @@ export function useUserInfo() {
   const toggleEditing = () => {
     if (isEditing) {
       setUserInfo(initialInfo); // 취소 시 초기 데이터로 복구
+      setSelectedFile(null);
+      setDeletePhoto(false);
       setPasswords({ newPwd: '', confirmPwd: '' });
     }
     setIsEditing(!isEditing);
   };
 
   return { 
-    userInfo, passwords, loading, isEditing, isPasswordValid, isPasswordMatch, isSaveDisabled,
-    handleInputChange, handlePwdChange, handleSave, setIsEditing, toggleEditing 
+    userInfo, passwords, loading, isEditing, isPasswordValid, isPasswordMatch, isSaveDisabled, 
+    fileInputRef, handleImageChange, handleEditPhotoClick,
+    handleInputChange, handlePwdChange, handleSave, setIsEditing, toggleEditing, handleImageChange, handleEditPhotoClick
   };
 }

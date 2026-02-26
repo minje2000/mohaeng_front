@@ -57,18 +57,8 @@ export const getProfile = async () => {
 };
 
 // 개인 정보 수정(마이페이지 - 개인 정보 관리)
-export const updateProfile = async (userInfo) => {
-  try {
-    const { message } = await apiJson().patch('/api/user/profile');
-    return message;
-  } catch (error) {
-    console.error('개인 정보 조회 중 오류 발생:', error);
-    throw error;
-  }
-};
-
  // multipart라서 fetch 사용 (apiJson은 Content-Type 자동 설정 안 됨)
-export async function createEvent({ userInfo, deletePhoto, newPhoto}) {
+export async function updateProfile(userInfo, deletePhoto, newPhoto) {
   const formData = new FormData();
 
   // @RequestPart 에 대응 — JSON을 Blob으로 감싸야 함
@@ -77,7 +67,9 @@ export async function createEvent({ userInfo, deletePhoto, newPhoto}) {
     new Blob([JSON.stringify(userInfo)], { type: 'application/json' })
   );
   formData.append('deletePhoto', deletePhoto);
-  formData.append('newPhoto', newPhoto);
+  if (newPhoto && newPhoto instanceof File) {
+    formData.append('newPhoto', newPhoto);
+  }
 
   const token = tokenStore.getAccess();
   const res = await fetch('/api/user/profile', {
@@ -87,10 +79,9 @@ export async function createEvent({ userInfo, deletePhoto, newPhoto}) {
     body: formData,
   });
 
-  console.log(`res ${res}`);
   const json = await res.json().catch(() => null);
   if (!res.ok) throw new Error(json?.message || `서버 오류 (${res.status})`);
-  return json; // 생성된 eventId (Long)
+  return json;
 }
 
 // 훅에서 접근할 수 있도록 객체로 묶어서 export

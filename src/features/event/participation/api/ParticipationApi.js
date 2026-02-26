@@ -1,10 +1,9 @@
 import { apiJson } from '../../../../app/http/request';
 
 export const ParticipationApi = {
-  async getParticipationList(userId) {
-    const res = await apiJson().get('/api/eventParticipation/getParticipationList', {
-      params: { userId },
-    });
+  // ✅ 마이페이지(토큰 기반)
+  async getMyParticipationList() {
+    const res = await apiJson().get('/api/mypage/events/participations');
     return res.data;
   },
 

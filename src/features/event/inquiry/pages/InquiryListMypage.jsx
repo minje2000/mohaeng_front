@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 import UseMyInquiryList from '../hooks/UseMyInquiryList';
 import styles from './InquiryListMypage.module.css';
+import eventThumbUrl from '../../../../shared/utils/eventThumbUrl';
 
 const TABS = [
   { key: 'ALL', label: '전체' },
@@ -78,11 +79,15 @@ export default function InquiryListMypage() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={4} className={styles.empty}>로딩중...</td>
+                <td colSpan={4} className={styles.empty}>
+                  로딩중...
+                </td>
               </tr>
             ) : items.length === 0 ? (
               <tr>
-                <td colSpan={4} className={styles.empty}>문의 내역이 없습니다.</td>
+                <td colSpan={4} className={styles.empty}>
+                  문의 내역이 없습니다.
+                </td>
               </tr>
             ) : (
               items.map((row) => (
@@ -91,14 +96,17 @@ export default function InquiryListMypage() {
                     <div className={styles.eventCell}>
                       <img
                         className={styles.eventCellThumb}
-                        src={row.eventThumbnail ? `/images/${row.eventThumbnail}` : '/images/moheng.png'}
+                        src={eventThumbUrl(row.eventThumbnail)}
                         alt="event"
                         onError={(e) => {
                           // fallback
                           e.currentTarget.src = '/images/moheng.png';
                         }}
                       />
-                      <div className={styles.eventCellTitle} title={row.eventTitle || ''}>
+                      <div
+                        className={styles.eventCellTitle}
+                        title={row.eventTitle || ''}
+                      >
                         {row.eventTitle || `행사 #${row.eventId}`}
                       </div>
                     </div>
@@ -114,7 +122,9 @@ export default function InquiryListMypage() {
                       {row.content}
                     </button>
                     {row.replyContent ? (
-                      <div className={styles.replyPreview}>답변: {row.replyContent}</div>
+                      <div className={styles.replyPreview}>
+                        답변: {row.replyContent}
+                      </div>
                     ) : null}
                   </td>
 

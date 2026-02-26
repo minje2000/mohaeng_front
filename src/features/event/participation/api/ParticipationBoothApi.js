@@ -1,10 +1,9 @@
 import { apiJson } from '../../../../app/http/request';
 
 export const ParticipationBoothApi = {
-  async getParticipationBoothList(userId) {
-    const res = await apiJson().get('/api/eventParticipation/getParticipationBoothList', {
-      params: { userId },
-    });
+  // ✅ 마이페이지(토큰 기반)
+  async getMyParticipationBoothList() {
+    const res = await apiJson().get('/api/mypage/events/booths');
     return res.data;
   },
 

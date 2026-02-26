@@ -10,7 +10,7 @@ export const useSignupForm = (initialValues) => {
   // 중복 확인 상태 (null: 확인전, true: 사용가능, false: 중복/사용불가)
   const [isIdAvailable, setIsIdAvailable] = useState(null);
   
-  const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+  const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[^\s]{8,}$/;
 
   // 실시간 비밀번호 유효성 검사
   const isPasswordValid = useMemo(() => {

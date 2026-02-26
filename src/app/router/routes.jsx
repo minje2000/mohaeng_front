@@ -4,6 +4,7 @@ import React from 'react';
 import { createBrowserRouter } from 'react-router-dom';
 
 import MainLayout from '../layouts/MainLayout';
+import UserMyPageLayout from '../layouts/UserMyPageLayout';
 import RequireAuth from './guards/RequireAuth';
 import RequireRole from './guards/RequireRole';
 import { ROLES } from '../../shared/constants/roles';
@@ -40,7 +41,7 @@ export const router = createBrowserRouter([
             children: [
               {
                 path: '/mypage',
-                element: <UserInfoMypage />, // 사이드바 + Outlet
+                element: <UserMyPageLayout />, // 사이드바 + Outlet
                 children: [
                   { index: true, element: <UserInfoIndex /> }, // 기본은 내정보
                   { path: 'inquiries', element: <InquiryListMypage /> },

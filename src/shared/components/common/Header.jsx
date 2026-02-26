@@ -2,26 +2,21 @@ import { Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import styles from "./Header.module.css";
 
-// ✅ 추가
 import NotificationBell from "../../../features/notification/components/NotificationBell";
 import { tokenStore } from "../../../app/http/tokenStore";
 
 export default function Header() {
   const location = useLocation();
 
-  // 로그인 상태
   const [isAuthed, setIsAuthed] = useState(() => {
     return Boolean(localStorage.getItem("accessToken"));
   });
 
-  // 다른 페이지 이동/리다이렉트 시 동기화
   useEffect(() => {
     setIsAuthed(Boolean(localStorage.getItem("accessToken")));
   }, [location.key]);
 
-  // 로그아웃
   const onLogout = () => {
-    // ✅ access/refresh/userId/role까지 전부 정리
     tokenStore.clear();
     setIsAuthed(false);
   };
@@ -29,39 +24,43 @@ export default function Header() {
   return (
     <header className={styles.header}>
       <div className={styles.inner}>
-        {/* 1. 왼쪽: 로고 */}
-        <Link to="/" className={styles.logo} aria-label="홈">
-          <img src="/images/moheng.png" alt="모행" className={styles.logoImg} />
-        </Link>
 
-        {/* 2. 중앙: 메인 네비게이션 */}
-        <nav className={styles.centerNav} aria-label="메인 메뉴">
-          <Link to="/" className={styles.mainLink}>
-            <MapIcon />
-            <span>행사 지도</span>
+        {/* ✅ 왼쪽 그룹: 로고 + 네비 */}
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <Link to="/" className={styles.logo} aria-label="홈">
+            <img src="/images/moheng.png" alt="모행" className={styles.logoImg} />
           </Link>
-          <div className={styles.centerDivider}></div>
-          <Link to="/calendar" className={styles.mainLink}>
-            <CalendarIcon />
-            <span>행사 달력</span>
-          </Link>
-        </nav>
 
-        {/* 3. 오른쪽: 유저 메뉴 */}
+          <nav className={styles.centerNav} aria-label="메인 메뉴">
+            <Link to="/" className={styles.mainLink}>
+              <MapIcon />
+              <span>행사 지도</span>
+            </Link>
+            <div className={styles.centerDivider}></div>
+            <Link to="/calendar" className={styles.mainLink}>
+              <CalendarIcon />
+              <span>행사 달력</span>
+            </Link>
+            <div className={styles.centerDivider}></div>
+            <Link to="/events" className={styles.mainLink}>
+              <BoardIcon />
+              <span>행사 게시판</span>
+            </Link>
+          </nav>
+        </div>
+
+        {/* 오른쪽: 유저 메뉴 */}
         <nav className={styles.rightNav} aria-label="유저 메뉴">
           {isAuthed ? (
             <>
-              {/* ✅ 알림: 로그인 했을 때만 드롭다운 벨 */}
               <NotificationBell
                 className={styles.iconBtn}
                 BellIcon={BellIcon}
               />
-
               <Link className={styles.textLink} to="/mypage">
                 <UserIcon />
                 <span>마이페이지</span>
               </Link>
-
               <button className={styles.textLink} type="button" onClick={onLogout}>
                 <LogoutIcon />
                 <span>로그아웃</span>
@@ -73,7 +72,6 @@ export default function Header() {
                 <UserPlusIcon />
                 <span>회원가입</span>
               </Link>
-
               <Link
                 className={styles.textLink}
                 to="/login"
@@ -87,6 +85,7 @@ export default function Header() {
             </>
           )}
         </nav>
+
       </div>
     </header>
   );
@@ -153,6 +152,15 @@ function UserPlusIcon() {
       <path d="M2.5 20c.8-4 4-6 6.5-6s5.7 2 6.5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       <path d="M19 8v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       <path d="M16 11h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+function BoardIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M4 20V10.2c0-.6.3-1.2.9-1.5l6.2-3.5c.6-.3 1.2-.3 1.8 0l6.2 3.5c.6.3.9.9.9 1.5V20" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M9 20v-6h6v6" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M4 20h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
     </svg>
   );
 }

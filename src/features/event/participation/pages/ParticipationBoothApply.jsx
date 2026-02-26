@@ -1,7 +1,7 @@
 // src/features/participation/pages/ParticipationBoothApply.jsx
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { submitBoothApplication, getBoothApplicationInfo, getMyProfile } from '../api/ParticipationBoothAPI';
+import { ParticipationBoothApi } from '../api/ParticipationBoothAPI';
 import { preparePayment } from '../../../payment/api/PaymentAPI';
 import Header from '../../../../shared/components/common/Header';
 
@@ -90,7 +90,10 @@ export default function ParticipationBoothApply() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [eventRes, userRes] = await Promise.all([getBoothApplicationInfo(eventId), getMyProfile()]);
+        const [eventRes, userRes] = await Promise.all([
+  ParticipationBoothApi.getBoothApplicationInfo(eventId), // 보따리 이름 추가
+  ParticipationBoothApi.getMyProfile()                    // 보따리 이름 추가
+]);
         setEventData(eventRes);
         if (userRes) setProfile({ name: userRes.name || null, phone: userRes.phone || null, email: userRes.email || null, url: '' });
       } catch (e) {
@@ -136,7 +139,7 @@ export default function ParticipationBoothApply() {
       };
 
       // 1. 부스 신청 저장
-      const submitResult = await submitBoothApplication(eventId, dto, files);
+      const submitResult = await ParticipationBoothApi.submitBoothApplication(eventId, dto, files);
       const pctBoothId = submitResult?.data?.pctBoothId || submitResult?.pctBoothId;
 
       // 2. 무료(0원)면 완료 처리

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ParticipationApi } from '../api/ParticipationApi';
+import { ParticipationApi } from '../api/ParticipationAPI';
 import { fetchEventDetail } from '../../api/EventDetailAPI';
 
 /**

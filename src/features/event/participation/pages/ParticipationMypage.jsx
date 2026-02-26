@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { tokenStore } from '../../../../app/http/tokenStore';
 import UseParticipationMypage from '../hooks/UseParticipationMypage';
-import { ParticipationApi } from '../api/ParticipationApi';
+import { ParticipationApi } from '../api/ParticipationAPI';
 import eventThumbUrl from '../../../../shared/utils/eventThumbUrl';
 
 function formatDateRange(startDate, endDate) {

@@ -23,6 +23,7 @@ import ParticipationBoothApply from '../../features/event/participation/pages/Pa
 import ParticipationApply from '../../features/event/participation/pages/ParticipationApply';
 
 import ReviewMyPage from '../../features/event/review/pages/ReviewMyPage';
+import WishMyPage from '../../features/event/wishlist/pages/WishMyPage';
 import ReviewEventDetail from '../../features/event/review/pages/ReviewEventDetail';
 
 import EventDetailLayout from '../../features/event/review/pages/EventDetailLayout';
@@ -63,6 +64,7 @@ export const router = createBrowserRouter([
                   { path: 'booths', element: <BoothMypage /> },
                   { path: 'inquiries', element: <InquiryListMypage /> },
                   { path: 'reviews', element: <ReviewMyPage /> },
+                  { path: 'wishlist', element: <WishMyPage /> },
                 ],
               },
             ],

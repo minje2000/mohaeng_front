@@ -10,10 +10,10 @@ export default function useReadAllNotifications() {
       setLoading(true);
       setError(null);
       await notificationApi.readAll();
-      return true;
+      // ✅ 성공이면 그냥 끝 (return 불필요)
     } catch (e) {
       setError(e);
-      return false;
+      throw e; // ✅ 실패는 throw로 통일
     } finally {
       setLoading(false);
     }

@@ -1,8 +1,29 @@
 import React from "react";
 
+const TYPE_LABEL = {
+  EVENT_DAY_BEFORE: "행사 하루 전 알림",
+  EVENT_DAY_OF: "행사 당일 알림",
+
+  INQUIRY_RECEIVER: "문의 접수 알림",
+  INQUIRY_SENDER: "문의 답변 알림",
+
+  REPORT_RECEIVER: "신고 접수 알림",
+  REPORT_ACCEPT: "신고 승인 알림",
+  REPORT_REJECT: "신고 반려 알림",
+
+  BOOTH_RECEIVER: "부스 신청 알림(주최자)",
+  BOOTH_ACCEPT: "부스 승인 알림",
+  BOOTH_REJECT: "부스 반려 알림",
+};
+
 export default function NotificationItem({ item, onClick }) {
   const id = item.notificationId ?? item.id;
-  const typeName = item.notiTypeName ?? item.typeName ?? "알림";
+
+  // ✅ 원본 타입(코드명)
+  const rawType = item.notiTypeName ?? item.typeName ?? "알림";
+  // ✅ 코드명이면 한글로 변환
+  const typeName = TYPE_LABEL[rawType] ?? rawType;
+
   const contents = item.contents ?? item.message ?? "";
   const createdAt = item.createdAt ?? "";
 
@@ -30,7 +51,7 @@ export default function NotificationItem({ item, onClick }) {
           opacity: 0.86,
           marginTop: 4,
 
-          //  줄바꿈 + 긴 단어(링크/영문)도 끊기
+          // ✅ 줄바꿈 + 긴 단어(링크/영문)도 끊기
           whiteSpace: "pre-wrap",
           wordBreak: "break-word",
           overflowWrap: "anywhere",
@@ -40,7 +61,9 @@ export default function NotificationItem({ item, onClick }) {
       </div>
 
       {createdAt ? (
-        <div style={{ fontSize: 11, opacity: 0.6, marginTop: 4 }}>{String(createdAt)}</div>
+        <div style={{ fontSize: 11, opacity: 0.6, marginTop: 4 }}>
+          {String(createdAt)}
+        </div>
       ) : null}
     </button>
   );

@@ -7,7 +7,7 @@ import { AuthProvider } from './app/providers/AuthProvider';
 // src/index.js
 import { initHttpClient } from './app/http/request';
 
-initHttpClient(); // ✅ 앱 시작 시 1회
+initHttpClient(); // 앱 시작 시 1회
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

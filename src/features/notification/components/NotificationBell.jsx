@@ -20,7 +20,7 @@ export default function NotificationBell({ className, BellIcon }) {
   const refreshList = async () => {
     await Promise.all([
       refetchCount(),
-      fetchList({ page: 0, size: 5 }),
+      fetchList({ all: true }), //  전체 조회
     ]);
   };
 
@@ -74,7 +74,7 @@ export default function NotificationBell({ className, BellIcon }) {
         onClick={toggle}
         style={
           className
-            ? { position: "relative" } // ✅ 뱃지 absolute 기준 보장
+            ? { position: "relative" }
             : { border: 0, background: "transparent", cursor: "pointer", padding: 6, position: "relative" }
         }
       >

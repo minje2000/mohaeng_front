@@ -10,16 +10,16 @@
 }
 
 .inner {
-  position: relative; /* 중앙 정렬을 위한 기준점 */
   height: 90px;
-  max-width: 1200px;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 0 26px;
+  padding: 0 40px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   box-sizing: border-box;
 }
+
 
 /* 1. 왼쪽 로고 */
 .logo {
@@ -41,18 +41,17 @@
 .centerNav {
   display: flex;
   align-items: center;
-  gap: 8px; /* 👈 기존 32px에서 8px로 줄여주세요! */
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+  gap: 8px;
+  margin-left: 20px; /* 로고와 간격 */
 }
 .mainLink {
   display: flex;
   align-items: center;
-  gap: 8px;
+  flex-direction: column; /* ✅ 세로 배치 */
+  gap: 4px; /* 아이콘-텍스트 간격 살짝 줄이기 */
   text-decoration: none;
   color: #4B5563;
-  font-size: 16px;
+  font-size: 13px; /* ✅ 아이콘 아래 텍스트라 살짝 작게 */
   font-weight: 800;
   padding: 10px 16px;
   border-radius: 14px;

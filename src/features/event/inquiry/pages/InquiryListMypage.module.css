@@ -161,3 +161,20 @@
   border-color: #111;
   font-weight: 800;
 }
+
+
+.eventCellBtn {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.eventCellBtn:hover .eventCellTitle {
+  text-decoration: underline;
+}

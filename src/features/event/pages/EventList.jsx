@@ -62,30 +62,28 @@ const EventList = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const navigate = useNavigate();
 
-    // 💡 [해결 포인트 1] ID를 이름으로 바꿔주는 도우미 함수 (컴포넌트 최상단)
     const getCityNameFromId = (id) => {
-    if (!id) return "";
-    const idStr = String(id);
+        if (!id) return "";
+        const idStr = String(id);
+        const exactMatch = Object.entries(CITY_IDS).find(([_, cityId]) => String(cityId) === idStr);
+        if (exactMatch) return exactMatch[0];
+        const prefix = idStr.substring(0, 2);
+        const prefixMatch = Object.entries(CITY_IDS).find(([_, cityId]) => String(cityId).startsWith(prefix));
+        return prefixMatch ? prefixMatch[0] : "";
+    };
 
-    // 1. 우선 전체 10자리가 완전히 일치하는지 확인
-    const exactMatch = Object.entries(CITY_IDS).find(([_, cityId]) => String(cityId) === idStr);
-    if (exactMatch) return exactMatch[0];
+    const resetDates = () => {
+        const next = new URLSearchParams(searchParams);
+        next.delete("filterStart");
+        next.delete("filterEnd");
+        next.set("page", "0");
+        setSearchParams(next);
+    };
 
-    // 2. [핵심] 일치하는 게 없다면 앞 2자리(시/도 코드)가 같은지 확인
-    // 예: 1111000000(종로구) -> 앞 2자리 '11' -> 서울(1100000000) 매칭!
-    const prefix = idStr.substring(0, 2);
-    const prefixMatch = Object.entries(CITY_IDS).find(([_, cityId]) => String(cityId).startsWith(prefix));
-    
-    return prefixMatch ? prefixMatch[0] : "";
-};
-
-    // 💡 [해결 포인트 2] 주소창 파라미터 한 번에 정리 (중복 선언 방지)
     const urlCity = searchParams.get("city") || "";
     const urlRegionId = searchParams.get("regionId") || "";
-    
-    // 만약 city는 없는데 regionId(지도로부터 온 값)가 있다면 이름을 찾아옵니다.
-    const currentCity = urlCity || getCityNameFromId(urlRegionId); 
-    const currentRegionId = urlRegionId; 
+    const currentCity = urlCity || getCityNameFromId(urlRegionId);
+    const currentRegionId = urlRegionId;
     const currentCategoryId = searchParams.get("categoryId") || "";
     const currentTopics = searchParams.getAll("topicIds");
     const currentKeyword = searchParams.get("keyword") || "";
@@ -95,21 +93,15 @@ const EventList = () => {
     const isCheckFree = searchParams.get("checkFree") === "true";
     const currentPage = parseInt(searchParams.get("page") || "0");
 
-    // ✅ 수정: 의존성 배열을 [searchParams] 하나로만 유지
-    // 기존에 currentTopics 등 searchParams에서 파생된 값들이 들어있어서
-    // 매 렌더마다 새 배열/값이 생성되어 useEffect가 불필요하게 반복 실행됐습니다.
     useEffect(() => {
         const loadData = async () => {
             setLoading(true);
             try {
                 let regionId = searchParams.get("regionId") || null;
                 const city = searchParams.get("city") || "";
-                
-                // 시/도 이름만 있을 경우 ID로 변환해서 백엔드 전달
                 if (!regionId && city && CITY_IDS[city]) {
                     regionId = CITY_IDS[city];
                 }
-
                 const params = {
                     page: parseInt(searchParams.get("page") || "0"),
                     keyword: searchParams.get("keyword") || "",
@@ -121,58 +113,43 @@ const EventList = () => {
                     hideClosed: searchParams.get("hideClosed") === "true",
                     topicIds: searchParams.getAll("topicIds").join(',') || null
                 };
-
                 const data = await fetchEventList(params);
                 setEvents(data.content || []);
                 setPageInfo(data);
-            } catch (error) { 
-                console.error("데이터 로딩 실패:", error); 
-            } finally { 
-                setLoading(false); 
+            } catch (error) {
+                console.error("데이터 로딩 실패:", error);
+            } finally {
+                setLoading(false);
             }
         };
         loadData();
-    }, [searchParams]); // ✅ searchParams 하나만
+    }, [searchParams]);
 
     const setFilter = (key, value) => {
         const next = new URLSearchParams(searchParams);
-        
         if (!value || value === "false") {
             next.delete(key);
         } else {
             next.set(key, value);
         }
-        
         if (key !== "page") {
             next.set("page", "0");
         }
-        
         setSearchParams(next);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const handleCityChange = (city) => {
         const next = new URLSearchParams(searchParams);
-        
         if (city) {
             next.set("city", city);
         } else {
-            // 💡 [여기 수정!] 지역을 '- 전체 -'로 선택한 경우
             next.delete("city");
-            
-            // ⭐ 달력에서 넘어온 날짜 필터도 싹 지워버립니다!
             next.delete("filterStart");
             next.delete("filterEnd");
-            
-            // 혹시 모르니 키워드 검색도 지우고 싶다면 아래 줄 주석을 푸세요
-            // next.delete("keyword"); 
         }
-        
-        // 상세 지역(구/군) 정보도 초기화
         next.delete("regionId");
-        // 첫 페이지로 이동
         next.set("page", "0");
-        
         setSearchParams(next);
     };
 
@@ -200,10 +177,10 @@ const EventList = () => {
 
             <Header />
             <main style={{ flexGrow: 1, maxWidth: '1200px', width: '100%', margin: '0 auto', padding: '40px 20px' }}>
-                
+
                 <div style={{ backgroundColor: '#FFF', padding: '20px 25px', borderRadius: '20px', boxShadow: '0 4px 15px rgba(0,0,0,0.03)', marginBottom: '20px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        {/* 검색창 - 너비 고정 */}
+                        {/* 검색창 */}
                         <input
                             type="text"
                             placeholder="행사 제목, 한줄설명 검색... (입력 후 Enter)"
@@ -216,12 +193,31 @@ const EventList = () => {
                         {/* 날짜 필터 */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                             <span style={{ fontSize: '13px', fontWeight: '700', color: '#6B7280', whiteSpace: 'nowrap' }}>📅 기간</span>
-                            <input type="date" value={currentStart} onChange={(e) => setFilter("filterStart", e.target.value)} style={{ ...dateInputStyle, padding: '8px 10px', border: '1px solid #E5E7EB', borderRadius: '10px', backgroundColor: '#F9FAFB' }} />
+                            {/* ✅ 시작일: 변경 시 종료일이 시작일보다 이전이면 종료일 초기화 */}
+                            <input
+                                type="date"
+                                value={currentStart}
+                                onChange={(e) => {
+                                    const newStart = e.target.value;
+                                    setFilter("filterStart", newStart);
+                                    if (currentEnd && newStart > currentEnd) {
+                                        setFilter("filterEnd", "");
+                                    }
+                                }}
+                                style={{ ...dateInputStyle, padding: '8px 10px', border: '1px solid #E5E7EB', borderRadius: '10px', backgroundColor: '#F9FAFB' }}
+                            />
                             <span style={{ color: '#9CA3AF', fontWeight: 'bold' }}>~</span>
-                            <input type="date" value={currentEnd} onChange={(e) => setFilter("filterEnd", e.target.value)} style={{ ...dateInputStyle, padding: '8px 10px', border: '1px solid #E5E7EB', borderRadius: '10px', backgroundColor: '#F9FAFB' }} />
+                            {/* ✅ 종료일: 시작일 이상만 선택 가능 */}
+                            <input
+                                type="date"
+                                value={currentEnd}
+                                min={currentStart || undefined}
+                                onChange={(e) => setFilter("filterEnd", e.target.value)}
+                                style={{ ...dateInputStyle, padding: '8px 10px', border: '1px solid #E5E7EB', borderRadius: '10px', backgroundColor: '#F9FAFB' }}
+                            />
                             {(currentStart || currentEnd) && (
                                 <button
-                                    onClick={() => { setFilter("filterStart", ""); setFilter("filterEnd", ""); }}
+                                    onClick={resetDates}
                                     style={{ background: 'none', border: 'none', color: '#9CA3AF', fontSize: '15px', cursor: 'pointer', padding: '0 4px', lineHeight: 1 }}
                                     title="날짜 초기화"
                                 >✕</button>
@@ -233,16 +229,16 @@ const EventList = () => {
                 <div style={{ backgroundColor: '#FFF', padding: '25px', borderRadius: '20px', boxShadow: '0 4px 15px rgba(0,0,0,0.03)', marginBottom: '40px' }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '25px' }}>
                         <div style={{ minWidth: '160px' }}>
-                            <select 
-                                value={currentCity} 
-                                onChange={(e) => handleCityChange(e.target.value)} 
+                            <select
+                                value={currentCity}
+                                onChange={(e) => handleCityChange(e.target.value)}
                                 style={{ ...selectStyle, width: '100%', border: '2px solid #FFD700', backgroundColor: '#FFFAEB' }}
                             >
                                 <option value="">- 전체 -</option>
                                 {Object.keys(REGION_DATA).map(city => <option key={city} value={city}>{city}</option>)}
                             </select>
                         </div>
-                        
+
                         <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap', gap: '10px', paddingTop: '4px' }}>
                             {!currentCity ? (
                                 <div style={{ color: '#9CA3AF', fontSize: '14px', padding: '8px 0', fontWeight: 'bold' }}>
@@ -250,18 +246,19 @@ const EventList = () => {
                                 </div>
                             ) : (
                                 <>
-                                    <button 
-                                        onClick={() => setFilter("regionId", "")}
-                                        style={{ ...regionTagStyle, backgroundColor: !currentRegionId ? '#FFD700' : '#F3F4F6', color: !currentRegionId ? '#111' : '#6B7280' }}
-                                    >전체</button>
+                                    <button
+    onClick={() => setFilter("regionId", CITY_IDS[currentCity])}
+    style={{ ...regionTagStyle, backgroundColor: (!currentRegionId || String(currentRegionId) === String(CITY_IDS[currentCity])) ? '#FFD700' : '#F3F4F6',
+color: (!currentRegionId || String(currentRegionId) === String(CITY_IDS[currentCity])) ? '#111' : '#6B7280' }}
+>전체</button>
                                     {REGION_DATA[currentCity].map(town => (
-                                        <button 
+                                        <button
                                             key={town.id}
                                             onClick={() => setFilter("regionId", town.id)}
-                                            style={{ 
-                                                ...regionTagStyle, 
+                                            style={{
+                                                ...regionTagStyle,
                                                 backgroundColor: String(currentRegionId) === String(town.id) ? '#FFD700' : '#F3F4F6',
-color: String(currentRegionId) === String(town.id) ? '#111' : '#6B7280'
+                                                color: String(currentRegionId) === String(town.id) ? '#111' : '#6B7280'
                                             }}
                                         >{town.name}</button>
                                     ))}
@@ -278,7 +275,6 @@ color: String(currentRegionId) === String(town.id) ? '#111' : '#6B7280'
                                 <h3 style={sidebarTitleStyle}>CATEGORIES</h3>
                                 <ul style={sidebarListStyle}>
                                     <li onClick={() => setFilter("categoryId", "")} style={{ color: !currentCategoryId ? '#FFD700' : '#4B5563', fontWeight: !currentCategoryId ? '900' : '600' }}>전체 보기</li>
-                                    {/* 💡 에러 해결: === 연산자로 비교 변경 */}
                                     {CATEGORIES.map(cat => (
                                         <li key={cat.id} onClick={() => setFilter("categoryId", cat.id)} style={{ color: String(currentCategoryId) === String(cat.id) ? '#FFD700' : '#4B5563', fontWeight: String(currentCategoryId) === String(cat.id) ? '900' : '600' }}>
                                             • {cat.name}
@@ -292,11 +288,11 @@ color: String(currentRegionId) === String(town.id) ? '#111' : '#6B7280'
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                                     {TOPICS.map(topic => (
                                         <label key={topic.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '14px', color: '#4B5563', cursor: 'pointer', fontWeight: '600' }}>
-                                            <input 
-                                                type="checkbox" 
+                                            <input
+                                                type="checkbox"
                                                 checked={currentTopics.includes(String(topic.id))}
                                                 onChange={() => handleTopicToggle(topic.id)}
-                                                style={{ accentColor: '#FFD700', width: '18px', height: '18px', cursor: 'pointer' }} 
+                                                style={{ accentColor: '#FFD700', width: '18px', height: '18px', cursor: 'pointer' }}
                                             /> {topic.name}
                                         </label>
                                     ))}
@@ -309,16 +305,16 @@ color: String(currentRegionId) === String(town.id) ? '#111' : '#6B7280'
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', paddingBottom: '15px', borderBottom: '2px solid #F3F4F6' }}>
                             <div style={{ display: 'flex', gap: '25px', fontSize: '14px', fontWeight: '800', color: '#4B5563' }}>
                                 <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <input type="checkbox" checked={isHideClosed} onChange={(e) => setFilter("hideClosed", e.target.checked)} style={{ accentColor: '#FFD700', width: '16px', height: '16px' }} /> 
+                                    <input type="checkbox" checked={isHideClosed} onChange={(e) => setFilter("hideClosed", e.target.checked)} style={{ accentColor: '#FFD700', width: '16px', height: '16px' }} />
                                     종료된 행사 가리기
                                 </label>
                                 <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <input type="checkbox" checked={isCheckFree} onChange={(e) => setFilter("checkFree", e.target.checked)} style={{ accentColor: '#FFD700', width: '16px', height: '16px' }} /> 
+                                    <input type="checkbox" checked={isCheckFree} onChange={(e) => setFilter("checkFree", e.target.checked)} style={{ accentColor: '#FFD700', width: '16px', height: '16px' }} />
                                     무료 행사만 보기
                                 </label>
                             </div>
-                            
-                            <button 
+
+                            <button
                                 onClick={() => navigate('/events/new')}
                                 style={{ backgroundColor: '#FFD700', color: '#111', border: 'none', padding: '12px 28px', borderRadius: '12px', fontWeight: '900', fontSize: '15px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(255,215,0,0.4)', transition: 'transform 0.1s' }}
                             >✨ 행사 만들기</button>
@@ -338,16 +334,14 @@ color: String(currentRegionId) === String(town.id) ? '#111' : '#6B7280'
                                 {events.map(event => (
                                     <div key={event.eventId} className="mohaeng-card" onClick={() => navigate(`/events/${event.eventId}`)} style={cardStyle}>
                                         <div style={{ height: '190px', backgroundColor: '#F3F4F6', overflow: 'hidden', position: 'relative' }}>
-<img 
-    // 💡 주소 앞에 http://localhost:8080 을 꼭 붙여주세요!
-    src={`http://localhost:8080/upload_files/event/${event.thumbnail}`} 
-    alt={event.title} 
-    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-    onError={(e) => { 
-        // 💡 가끔 placeholder 사이트가 안 뜰 때가 있어서, 더 확실한 곳으로 바꿨습니다.
-        e.target.src = "https://dummyimage.com/400x300/f3f4f6/666666.png&text=Mohaeng"; 
-    }} 
-/>
+                                            <img
+                                                src={`http://localhost:8080/upload_files/event/${event.thumbnail}`}
+                                                alt={event.title}
+                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                onError={(e) => {
+                                                    e.target.src = "https://dummyimage.com/400x300/f3f4f6/666666.png&text=Mohaeng";
+                                                }}
+                                            />
                                             <div style={{ position: 'absolute', top: '15px', left: '15px', backgroundColor: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(4px)', padding: '5px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: '900', color: '#FFD700', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}>
                                                 {event.category?.categoryName || event.category?.name || '이벤트'}
                                             </div>
@@ -369,9 +363,9 @@ color: String(currentRegionId) === String(town.id) ? '#111' : '#6B7280'
                             <div style={{ marginTop: '70px', display: 'flex', justifyContent: 'center', gap: '8px' }}>
                                 <button disabled={pageInfo.first} onClick={() => setFilter("page", currentPage - 1)} style={pageBtnStyle(false, pageInfo.first)}>이전</button>
                                 {[...Array(pageInfo.totalPages)].map((_, i) => (
-                                    <button 
-                                        key={i} 
-                                        onClick={() => setFilter("page", i)} 
+                                    <button
+                                        key={i}
+                                        onClick={() => setFilter("page", i)}
                                         style={pageBtnStyle(currentPage === i, false)}
                                     >{i + 1}</button>
                                 ))}

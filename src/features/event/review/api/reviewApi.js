@@ -1,119 +1,28 @@
 // src/features/event/review/api/reviewApi.js
-// ✅ 리뷰 API 전용 수정본 (토큰 줄바꿈/공백/중복 Bearer 정리 포함)
-// - tokenStore로 통일
-// - tokenStore.userId 없으면 accessToken(JWT) payload에서 userId 추출해서 저장
-// - Authorization + userId 헤더 자동 부착
-// - Authorization 토큰에 줄바꿈이 섞여 INVALID_TOKEN 나는 문제 방지
-
 import { tokenStore } from '../../../../app/http/tokenStore';
 
-const API_BASE = process.env.REACT_APP_API_BASE_URL || ''; // 보통 "" (CRA proxy 사용)
+const API_BASE = process.env.REACT_APP_API_BASE_URL || '';
 
-// ✅ 추가: accessToken 정규화
-// - 줄바꿈/탭/공백 제거
-// - 혹시 저장된 값이 "Bearer xxx" 형태면 Bearer 제거
 function normalizeAccessToken(raw) {
   if (!raw) return '';
   return String(raw)
     .trim()
-    .replace(/^Bearer\s+/i, '') // ✅ "Bearer "가 이미 들어있으면 제거(중복 방지)
-    .replace(/\s+/g, '');       // ✅ 남아있는 모든 공백/줄바꿈/탭 제거(토큰 깨짐 방지)
+    .replace(/^Bearer\s+/i, '')
+    .replace(/\s+/g, '');
 }
 
-// ---------- JWT payload decode (base64url) ----------
-function decodeJwtPayload(accessToken) {
-  try {
-    // ✅ 변경: 디코딩 전에 토큰 정규화(줄바꿈/공백 제거)
-    const normalized = normalizeAccessToken(accessToken);
-    if (!normalized) return null;
-
-    const parts = String(normalized).split('.');
-    if (parts.length < 2) return null;
-
-    const base64Url = parts[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
-
-    const json = decodeURIComponent(
-      atob(padded)
-        .split('')
-        .map((c) => '%' + c.charCodeAt(0).toString(16).padStart(2, '0'))
-        .join('')
-    );
-
-    return JSON.parse(json);
-  } catch {
-    return null;
-  }
-}
-
-function extractUserIdFromAccessToken(accessToken) {
-  const p = decodeJwtPayload(accessToken);
-  if (!p) return null;
-
-  // 프로젝트마다 키가 달라서 흔한 후보들 다 시도
-  const candidates = [
-    p.userId,
-    p.userid,
-    p.user_id,
-    p.id,
-    p.memberId,
-    p.sub, // sub에 userId가 들어있는 경우 많음
-  ];
-
-  for (const c of candidates) {
-    const n = Number(c);
-    if (Number.isFinite(n) && n > 0) return n;
-  }
-  return null;
-}
-
-// ---------- userId 확보(토큰/저장소 기반) ----------
-function requireUserId() {
-  // 1) tokenStore에 이미 저장된 userId 우선
-  const stored = tokenStore.getUserId?.();
-  const n1 = Number(stored);
-  if (Number.isFinite(n1) && n1 > 0) return n1;
-
-  // 2) 없으면 accessToken(JWT)에서 추출해서 tokenStore에 저장
-  // ✅ 변경: accessToken도 정규화 후 사용(줄바꿈 섞여도 안전)
-  const rawAccess = tokenStore.getAccess?.();
-  const access = normalizeAccessToken(rawAccess);
-
-  const extracted = extractUserIdFromAccessToken(access);
-
-  if (extracted) {
-    tokenStore.setUserId?.(String(extracted)); // tokenStore는 localStorage에 저장함
-    return extracted;
-  }
-
-  throw new Error(
-    'userId를 찾지 못했어요. (로그인 응답에 userId 포함 또는 JWT payload에 userId/sub 필요)'
-  );
-}
-
-// ---------- 공통 헤더 생성 ----------
 function buildHeaders(extra = {}) {
   const headers = { ...extra };
-
-  // ✅ 변경: Authorization 토큰을 정규화해서 "Bearer <token>" 한 줄로 고정
   const rawAccess = tokenStore.getAccess?.();
   const access = normalizeAccessToken(rawAccess);
   if (access) headers.Authorization = `Bearer ${access}`;
-
-  // ✅ 백엔드가 @RequestHeader("userId")를 요구하므로 항상 붙임
-  headers.userId = String(requireUserId());
-
   return headers;
 }
 
-// ---------- 공통 요청 ----------
 async function request(path, { method = 'GET', params, body, headers } = {}) {
   const url = new URL(API_BASE + path, window.location.origin);
   if (params) {
-    Object.entries(params).forEach(([k, v]) =>
-      url.searchParams.set(k, String(v))
-    );
+    Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, String(v)));
   }
 
   const res = await fetch(url.toString().replace(window.location.origin, ''), {
@@ -138,18 +47,11 @@ async function request(path, { method = 'GET', params, body, headers } = {}) {
 
 function pickPageContent(pageData) {
   if (!pageData) return [];
-  return (
-    pageData.content || pageData.items || pageData.list || pageData.records || []
-  );
+  return pageData.content || pageData.items || pageData.list || pageData.records || [];
 }
 
-// =====================================================
-// ✅ API 함수들 (컨트롤러 매핑 그대로)
-// =====================================================
-
 export async function fetchMyReviews({ page = 0, size = 10 } = {}) {
-  const userId = requireUserId();
-  const data = await request(`/api/users/${userId}/reviews`, {
+  const data = await request(`/api/users/reviews`, {
     params: { page, size },
     headers: buildHeaders(),
   });

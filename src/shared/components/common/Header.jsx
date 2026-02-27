@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import styles from "./Header.module.css";
 
@@ -9,6 +9,7 @@ import { useAuth } from "../../../app/providers/AuthProvider";
 export default function Header() {
   const location = useLocation();
   const { isAdmin } = useAuth();
+  const navigate = useNavigate();
 
   const [isAuthed, setIsAuthed] = useState(() => {
     return Boolean(localStorage.getItem("accessToken"));
@@ -21,6 +22,7 @@ export default function Header() {
   const onLogout = () => {
     tokenStore.clear();
     setIsAuthed(false);
+    navigate("/");
   };
 
   return (

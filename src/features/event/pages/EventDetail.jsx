@@ -587,13 +587,14 @@ export default function EventDetail() {
                 {statusUI &&
                   (statusUI.btnActive && statusUI.btnTo ? (
                     <Link
-                      to={statusUI.btnTo}
-                      className="ed-main-btn active"
-                      style={{
-                        background: statusUI.btnColor,
-                        color: statusUI.btnTextColor,
-                      }}
-                    >
+  to={statusUI.btnTo}
+  state={{ hostId: hostId }}  /* 👈 이 줄을 추가해서 다음 페이지로 몰래 넘깁니다! */
+  className="ed-main-btn active"
+  style={{
+    background: statusUI.btnColor,
+    color: statusUI.btnTextColor,
+  }}
+>
                       {statusUI.btnLabel}
                     </Link>
                   ) : (

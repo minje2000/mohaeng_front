@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { tokenStore } from '../../../../app/http/tokenStore';
 import UseMyCreatedEvents from '../hooks/UseMyCreatedEvents';
-import { MypageEventApi } from '../api/MypageEventAPI';
+import { MypageEventApi } from '../api/MypageEventApi';
 
 function formatDateRange(startDate, endDate) {
   if (!startDate && !endDate) return '-';

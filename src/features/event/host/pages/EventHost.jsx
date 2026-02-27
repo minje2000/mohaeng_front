@@ -1,7 +1,7 @@
 // src/features/event/host/pages/EventHost.jsx
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createEvent } from '../api/EventHostApi';
+import { createEvent } from '../api/EventHostAPI';
 import Header from '../../../../shared/components/common/Header';
 import { apiJson } from '../../../../app/http/request';
 

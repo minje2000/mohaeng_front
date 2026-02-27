@@ -1,5 +1,4 @@
 // src/app/router/routes.jsx
-// src/app/router/routes.jsx
 import React from 'react';
 import { createBrowserRouter } from 'react-router-dom';
 
@@ -33,6 +32,9 @@ import BoothMypage from '../../features/event/participation/pages/BoothMypage';
 import PaymentSuccess from '../../features/payment/pages/PaymentSuccess';
 import PaymentFail from '../../features/payment/pages/PaymentFail';
 
+import AdminMypage from '../layouts/AdminMypage';
+import EventStats from '../../features/admin/eventstats/pages/EventStats';
+
 // ✅ 같은 파일에서 default + named export 둘 다 가져오기
 import UserInfoMypage, {
   UserInfoIndex,
@@ -45,20 +47,17 @@ export const router = createBrowserRouter([
       {
         element: <RequireAuth />,
         children: [
-          // ✅ 유저만 마이페이지 접근
+          // ✅ 유저 마이페이지
           {
             element: <RequireRole allowedRoles={[ROLES.USER]} />,
             children: [
               {
                 path: '/mypage',
-                element: <UserInfoMypage />, // ✅ 사이드바 + Outlet
+                element: <UserInfoMypage />,
                 children: [
-                  { index: true, element: <UserInfoIndex /> }, // ✅ 기본은 내정보
+                  { index: true, element: <UserInfoIndex /> },
                   { path: 'events/created', element: <EventHostMypage /> },
-                  {
-                    path: 'events/participated',
-                    element: <ParticipationMypage />,
-                  },
+                  { path: 'events/participated', element: <ParticipationMypage /> },
                   { path: 'booths', element: <BoothMypage /> },
                   { path: 'inquiries', element: <InquiryListMypage /> },
                   { path: 'reviews', element: <ReviewMyPage /> },
@@ -67,13 +66,19 @@ export const router = createBrowserRouter([
             ],
           },
 
-          // ✅ 관리자 마이페이지(원하면 여기 확장)
+          // ✅ 관리자 마이페이지
           {
             element: <RequireRole allowedRoles={[ROLES.ADMIN]} />,
             children: [
               {
-                path: '/admin/mypage',
-                element: <div style={{ padding: 24 }}>관리자 마이페이지</div>,
+                path: '/admin',
+                element: <AdminMypage />,
+                children: [
+                  { path: 'events',   element: <div style={{ padding: 24 }}>행사 전체 관리</div> },
+                  { path: 'reports',  element: <div style={{ padding: 24 }}>행사 신고 관리</div> },
+                  { path: 'stats',    element: <div style={{ padding: 24 }}>운영 통계</div> },
+                  { path: 'analysis', element: <EventStats /> },
+                ],
               },
             ],
           },
@@ -93,10 +98,7 @@ export const router = createBrowserRouter([
   { path: '/events', element: <EventList /> },
   { path: '/Calendar', element: <Calendar /> },
   { path: '/events/new', element: <EventHost /> },
-  {
-    path: '/events/:eventId/booth-apply',
-    element: <ParticipationBoothApply />,
-  },
+  { path: '/events/:eventId/booth-apply', element: <ParticipationBoothApply /> },
   { path: '/events/:eventId/apply', element: <ParticipationApply /> },
 
   { path: '/payment/success', element: <PaymentSuccess /> },

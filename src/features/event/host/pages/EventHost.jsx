@@ -231,6 +231,7 @@ const checkStyle = { accentColor:'#FFD700', width:16, height:16, cursor:'pointer
 export default function EventHost() {
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
   const today = new Date().toISOString().split('T')[0];
 
   const [thumbnail,   setThumbnail]   = useState(null);
@@ -265,11 +266,29 @@ export default function EventHost() {
   const updateFaci  = (i, f, v) => setFacis( p => p.map((x,idx) => idx===i ? {...x,[f]:v} : x));
 
   const [hostInfo, setHostInfo] = useState({ name:'', email:'', phone:'' });
+  
   useEffect(() => {
     apiJson().get('/api/user/me')
-      .then(res => { const d = res.data?.data || res.data; setHostInfo({ name: d.name||'', email: d.email||'', phone: d.phone||'' }); })
-      .catch(err => console.warn('주최자 정보 로딩 실패:', err));
-  }, []);
+      .then(res => { 
+        const d = res.data?.data || res.data; 
+        
+        // 📍 1. 데이터는 왔지만 유저 정보가 비어있는 경우 (로그아웃 상태 등)
+        if (!d || (!d.name && !d.email)) {
+          alert('로그인이 필요한 서비스입니다.');
+          navigate('/login'); // 👈 실제 로그인 페이지 경로로 맞춰주세요
+          return;
+        }
+
+        setHostInfo({ name: d.name||'', email: d.email||'', phone: d.phone||'' }); 
+        setLoading(false);
+      })
+      .catch(err => {
+        // 📍 2. 401 Unauthorized 등 권한 에러로 로딩 실패한 경우
+        console.warn('주최자 정보 로딩 실패:', err);
+        alert('로그인이 필요한 서비스입니다.');
+        navigate('/login'); // 👈 실제 로그인 페이지 경로로 맞춰주세요
+      });
+  }, [navigate]);
 
   const [form, setForm] = useState({
     title:'', simpleExplain:'', description:'', categoryId:'',
@@ -375,6 +394,8 @@ export default function EventHost() {
       setSaving(false);
     }
   };
+
+  if (loading) return <div style={{ minHeight: '100vh', background: '#F9FAFB' }} />;
 
   return (
     <div style={{minHeight:'100vh', background:'#F9FAFB', fontFamily:"'Pretendard',-apple-system,sans-serif"}}>

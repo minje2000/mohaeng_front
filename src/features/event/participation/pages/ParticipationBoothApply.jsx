@@ -1,6 +1,6 @@
 // src/features/participation/pages/ParticipationBoothApply.jsx
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ParticipationBoothApi } from '../api/ParticipationBoothAPI';
 import { preparePayment } from '../../../payment/api/PaymentAPI';
 import Header from '../../../../shared/components/common/Header';
@@ -142,6 +142,7 @@ const StockBadge = ({ remain, total, color = THEME.secondary }) => {
 export default function ParticipationBoothApply() {
   const { eventId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const fileInputRef = useRef();
 
   const [loading, setLoading] = useState(true);
@@ -151,6 +152,7 @@ export default function ParticipationBoothApply() {
   const [selectedBoothId, setSelectedBoothId] = useState('');
   const [selectedFacilities, setSelectedFacilities] = useState([]);
   const [profile, setProfile] = useState({
+    userId: null,
     name: null,
     phone: null,
     email: null,
@@ -169,27 +171,57 @@ export default function ParticipationBoothApply() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [eventRes, userRes] = await Promise.all([
-  ParticipationBoothApi.getBoothApplicationInfo(eventId), 
-  ParticipationBoothApi.getMyProfile()
-]);
+
+        // 📍 1. 유저 정보부터 먼저 요청해서 로그인 여부 확실히 검사
+        const userRes = await ParticipationBoothApi.getMyProfile().catch(() => null);
+
+        // 유저 정보가 없으면 알림 띄우고 로그인 페이지로 이동!
+        if (!userRes) {
+          alert('로그인이 필요한 서비스입니다.');
+          navigate('/login'); // 로그인 페이지 주소로 맞춰주세요!
+          return; // 로그인 안 했으면 여기서 멈추고 쫓아냄
+        }
+
+        // 📍 2. 로그인이 확인된 후에만 부스 행사 정보 요청
+        const eventRes = await ParticipationBoothApi.getBoothApplicationInfo(eventId);
+
+        // 📍 3. 이전 페이지(EventDetail)에서 넘겨준 hostId 꺼내서 본인 여부 확인
+        const eventHostId = location.state?.hostId; 
+        const loggedInUserId = userRes?.userId || userRes?.userNo || userRes?.id;
+
+        if (eventHostId && loggedInUserId && String(eventHostId) === String(loggedInUserId)) {
+          alert('본인이 주최한 행사는 부스에 참여할 수 없습니다.');
+          navigate(`/events/${eventId}`);
+          return;
+        }
+
         setEventData(eventRes);
-        if (userRes)
-          setProfile({
-            name: userRes.name || null,
-            phone: userRes.phone || null,
-            email: userRes.email || null,
-            url: '',
-          });
+        
+        // userRes가 무조건 존재하므로 바로 세팅
+        setProfile({
+          userId: loggedInUserId,
+          name: userRes.name || null,
+          phone: userRes.phone || null,
+          email: userRes.email || null,
+          url: '',
+        });
+
       } catch (e) {
-        alert('정보를 불러올 수 없습니다.');
-        navigate(-1);
+        console.error(e);
+        // 혹시 모를 권한 에러 방어
+        if (e.response?.status === 401 || e.response?.status === 403) {
+          alert('로그인이 필요한 서비스입니다.');
+          navigate('/login');
+        } else {
+          alert('정보를 불러올 수 없습니다.');
+          navigate(-1);
+        }
       } finally {
         setLoading(false);
       }
     };
     fetchData();
-  }, [eventId, navigate]);
+  }, [eventId, navigate, location.state]);
 
   const { boothPrice, facilityPrice, totalPrice } = useMemo(() => {
     if (!eventData) return { boothPrice: 0, facilityPrice: 0, totalPrice: 0 };
@@ -220,9 +252,12 @@ export default function ParticipationBoothApply() {
   const { eventInfo, booths, facilities } = eventData;
 
   const handleSubmit = async () => {
+    if (location.state?.hostId && profile.userId && String(location.state.hostId) === String(profile.userId)) {
+      return alert('본인이 주최한 행사는 부스에 참여할 수 없습니다.');
+    }
+
     if (!selectedBoothId) return alert('참여하실 부스를 선택해주세요.');
-    if (!plan.title.trim() || !plan.topic.trim() || !plan.items.trim())
-      return alert('운영 계획의 필수 항목을 작성해주세요.');
+    if (!plan.title.trim() || !plan.topic.trim() || !plan.items.trim()) return alert('운영 계획의 필수 항목을 작성해주세요.');
     if (!isAgreed) return alert('개인정보 제3자 제공 동의에 체크해주세요.');
 
     setIsSubmitting(true);

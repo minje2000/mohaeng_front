@@ -4,6 +4,7 @@ import { geoArea, geoMercator, geoPath } from "d3-geo";
 import styles from "./Home.module.css";
 import { apiJson } from '../../app/http/request';
 import NotificationBell from "../../features/notification/components/NotificationBell";
+import { useAuth } from '../../app/providers/AuthProvider';
 
 const REGION_CENTER = {
     서울: { slug: "seoul", id: 1100000000 },
@@ -118,6 +119,7 @@ function BellIcon() { return <RightIcon><svg viewBox="0 0 24 24" fill="none" wid
 export default function Home() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const { isAdmin } = useAuth();
   const [loggedIn, setLoggedIn] = useState(() => {
     if (typeof window === "undefined") return false;
     return Boolean(localStorage.getItem("accessToken"));
@@ -389,7 +391,7 @@ export default function Home() {
             {loggedIn ? (
               <>
                 <NotificationBell className={styles.authLink} BellIcon={BellIcon} />
-                <Link className={styles.authLink} to="/mypage"><UserIcon /> 마이페이지</Link>
+                <Link className={styles.authLink} to={isAdmin ? "/admin" : "/mypage"}><UserIcon /> 마이페이지</Link>
                 {/* 💡 button 대신 a 태그로 바꿔서 옆의 링크들과 폰트/규격을 완벽하게 통일! */}
                 <a 
                   className={styles.authLink} 

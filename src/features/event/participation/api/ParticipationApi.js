@@ -37,4 +37,9 @@ export const ParticipationApi = {
   async cancelParticipation(pctId) {
     await apiJson().delete('/api/eventParticipation/cancelParticipation', { params: { pctId } });
   },
+
+  // ✅ (소프트삭제) 참여내역 삭제 -> 상태를 '참여삭제'로 변경
+  async deleteParticipation(pctId) {
+    await apiJson().put('/api/eventParticipation/deleteParticipation', null, { params: { pctId } });
+  },
 };

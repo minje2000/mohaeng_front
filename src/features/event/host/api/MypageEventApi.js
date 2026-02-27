@@ -8,4 +8,9 @@ export const MypageEventApi = {
     });
     return res.data;
   },
+
+  // ✅ 소프트 삭제 (DB eventStatus = 'DELETED')
+  async deleteMyCreatedEvent(eventId) {
+    await apiJson().put(`/api/mypage/events/created/${eventId}/delete`);
+  },
 };

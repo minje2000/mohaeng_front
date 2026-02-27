@@ -47,6 +47,26 @@ const STATUS_OPTIONS = [
 ];
 
 const PIE_COLORS = ["#6366F1","#F59E0B","#10B981","#EF4444","#3B82F6","#EC4899","#8B5CF6","#14B8A6"];
+
+const TOPIC_MAP = {
+  1:'IT', 2:'비즈니스/창업', 3:'마케팅/브랜딩', 4:'디자인/아트',
+  5:'재테크/투자', 6:'취업/이직', 7:'자기계발', 8:'인문/사회/과학',
+  9:'환경/ESG', 10:'건강/스포츠', 11:'요리/베이킹', 12:'음료/주류',
+  13:'여행/아웃도어', 14:'인테리어/리빙', 15:'패션/뷰티', 16:'반려동물',
+  17:'음악/공연', 18:'영화/만화/게임', 19:'사진/영상제작', 20:'핸드메이드/공예',
+  21:'육아/교육', 22:'심리/명상', 23:'연애/결혼', 24:'종교', 25:'기타',
+};
+
+const HASHTAG_MAP = {
+  1:'즐거운', 2:'평온한', 3:'열정적인', 4:'디지털디톡스',
+  5:'창의적인', 6:'영감을주는', 7:'활기찬', 8:'편안한',
+  9:'트렌디한', 10:'전문적인', 11:'교육적인', 12:'감성적인',
+  13:'도전적인', 14:'따뜻한', 15:'유익한', 16:'색다른',
+  17:'미니멀한', 18:'역동적인', 19:'신선한', 20:'친근한',
+  21:'화려한', 22:'조용한', 23:'성장하는', 24:'함께하는',
+  25:'지속가능한', 26:'흥미진진한', 27:'진지한', 28:'자유로운',
+  29:'집중하는', 30:'친환경적인',
+};
 const GENDER_COLORS = { 남: "#3B82F6", 여: "#EC4899" };
 const THUMBNAIL_BASE = "http://localhost:8080/upload_files/event/";
 
@@ -379,8 +399,11 @@ function EventDetailView({ eventId, eventTitle, onBack }) {
   if (loading) return <div style={{ padding:40, textAlign:"center", color:"#9CA3AF" }}>분석 데이터 불러오는 중...</div>;
   if (!detail)  return <div style={{ padding:40, textAlign:"center", color:"#EF4444" }}>데이터를 불러올 수 없습니다.</div>;
 
-  const hashtags = detail.hashtags
-    ? detail.hashtags.split(",").map(h => h.trim()).filter(Boolean)
+  const topics = detail.topicIds
+    ? detail.topicIds.split(",").map(id => TOPIC_MAP[Number(id.trim())]).filter(Boolean)
+    : [];
+  const hashtags = detail.hashtagIds
+    ? detail.hashtagIds.split(",").map(id => HASHTAG_MAP[Number(id.trim())]).filter(Boolean)
     : [];
 
   // 성별 차트
@@ -437,12 +460,26 @@ function EventDetailView({ eventId, eventTitle, onBack }) {
             </div>
           </div>
 
-          {hashtags.length > 0 && (
-            <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginBottom:14 }}>
-              {hashtags.map((tag, i) => (
-                <span key={i} style={{ background:"#F3F4F6", borderRadius:999,
-                  padding:"3px 10px", fontSize:12, color:"#374151" }}>#{tag}</span>
-              ))}
+          {(topics.length > 0 || hashtags.length > 0) && (
+            <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:14 }}>
+              {topics.length > 0 && (
+                <div style={{ display:"flex", flexWrap:"wrap", alignItems:"center", gap:6 }}>
+                  <span style={{ fontSize:11, fontWeight:800, color:"#9CA3AF", whiteSpace:"nowrap" }}>주제</span>
+                  {topics.map((tag, i) => (
+                    <span key={i} style={{ background:"#FFF7ED", color:"#F97316", borderRadius:999,
+                      padding:"3px 10px", fontSize:12, fontWeight:800 }}>{tag}</span>
+                  ))}
+                </div>
+              )}
+              {hashtags.length > 0 && (
+                <div style={{ display:"flex", flexWrap:"wrap", alignItems:"center", gap:6 }}>
+                  <span style={{ fontSize:11, fontWeight:800, color:"#9CA3AF", whiteSpace:"nowrap" }}>태그</span>
+                  {hashtags.map((tag, i) => (
+                    <span key={i} style={{ background:"#F3F4F6", color:"#6B7280", borderRadius:999,
+                      padding:"3px 10px", fontSize:12, fontWeight:700 }}>#{tag}</span>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -616,7 +653,7 @@ const emptyStyle = {
 };
 
 const pageBtnStyle = (isActive, isDisabled) => ({
-  padding:"8px 14px", minWidth:38, height:38, border:"none", borderRadius:8,
+  padding:"8px 14px", minWidth:38, height:38, borderRadius:8,
   fontSize:13, fontWeight:900, cursor: isDisabled ? "not-allowed" : "pointer",
   backgroundColor: isActive ? "#111" : "#fff",
   color: isActive ? "#fff" : (isDisabled ? "#D1D5DB" : "#374151"),

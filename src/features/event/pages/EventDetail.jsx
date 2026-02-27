@@ -5,32 +5,26 @@ import EventReviewTab from '../review/components/EventReviewTab';
 import InquiryEventDetail from '../inquiry/pages/InquiryEventDetail';
 import useWishlistSyncOnEventDetail from '../wishlist/hooks/useWishlistSyncOnEventDetail';
 
+// 분야/주제
+const TOPIC_MAP = {
+  1:'IT', 2:'비즈니스/창업', 3:'마케팅/브랜딩', 4:'디자인/아트',
+  5:'재테크/투자', 6:'취업/이직', 7:'자기계발', 8:'인문/사회/과학',
+  9:'환경/ESG', 10:'건강/스포츠', 11:'요리/베이킹', 12:'음료/주류',
+  13:'여행/아웃도어', 14:'인테리어/리빙', 15:'패션/뷰티', 16:'반려동물',
+  17:'음악/공연', 18:'영화/만화/게임', 19:'사진/영상제작', 20:'핸드메이드/공예',
+  21:'육아/교육', 22:'심리/명상', 23:'연애/결혼', 24:'종교', 25:'기타',
+};
+
+// 해시태그
 const HASHTAG_MAP = {
-  1: 'IT',
-  2: '비즈니스/창업',
-  3: '마케팅/브랜딩',
-  4: '디자인/아트',
-  5: '재테크/투자',
-  6: '취업/이직',
-  7: '자기계발',
-  8: '인문/사회/과학',
-  9: '환경/ESG',
-  10: '건강/스포츠',
-  11: '요리/베이킹',
-  12: '음료/주류',
-  13: '여행/아웃도어',
-  14: '인테리어/리빙',
-  15: '패션/뷰티',
-  16: '반려동물',
-  17: '음악/공연',
-  18: '영화/만화/게임',
-  19: '사진/영상제작',
-  20: '핸드메이드/공예',
-  21: '육아/교육',
-  22: '심리/명상',
-  23: '연애/결혼',
-  24: '종교',
-  25: '기타',
+  1:'즐거운', 2:'평온한', 3:'열정적인', 4:'디지털디톡스',
+  5:'창의적인', 6:'영감을주는', 7:'활기찬', 8:'편안한',
+  9:'트렌디한', 10:'전문적인', 11:'교육적인', 12:'감성적인',
+  13:'도전적인', 14:'따뜻한', 15:'유익한', 16:'색다른',
+  17:'미니멀한', 18:'역동적인', 19:'신선한', 20:'친근한',
+  21:'화려한', 22:'조용한', 23:'성장하는', 24:'함께하는',
+  25:'지속가능한', 26:'흥미진진한', 27:'진지한', 28:'자유로운',
+  29:'집중하는', 30:'친환경적인',
 };
 
 const fmt = (d) => {
@@ -262,12 +256,12 @@ export default function EventDetail() {
   const showFaci =
     ev.hasFacility && facilities?.length > 0 && shouldShowBooth(statusKey);
 
-  const hashtags = ev.hashtagIds
-    ? ev.hashtagIds
-        .split(',')
-        .map((id) => HASHTAG_MAP[Number(id.trim())])
-        .filter(Boolean)
-    : [];
+  const topics = ev.topicIds
+  ? ev.topicIds.split(',').map(id => TOPIC_MAP[Number(id.trim())]).filter(Boolean)
+  : [];
+const hashtags = ev.hashtagIds
+  ? ev.hashtagIds.split(',').map(id => HASHTAG_MAP[Number(id.trim())]).filter(Boolean)
+  : [];
 
   // 상태 뱃지 옆에 표시할 날짜 (상태에 맞는 기간만)
   const statusPeriod = (() => {
@@ -557,16 +551,30 @@ export default function EventDetail() {
               </div>
             </div>
 
-            {/* ── 해시태그 ── */}
-            {hashtags.length > 0 && (
-              <div className="ed-tags">
-                {hashtags.map((tag, i) => (
-                  <span key={i} className="ed-tag">
-                    #{tag}
-                  </span>
-                ))}
-              </div>
-            )}
+            {(topics.length > 0 || hashtags.length > 0) && (
+  <div style={{ padding:'14px 26px', borderTop:'1px solid #F3F4F6', marginTop:22, display:'flex', flexDirection:'column', gap:10 }}>
+    {topics.length > 0 && (
+      <div style={{ display:'flex', flexWrap:'wrap', alignItems:'center', gap:7 }}>
+        <span style={{ fontSize:11, fontWeight:800, color:'#9CA3AF', marginRight:2 }}>주제</span>
+        {topics.map((tag, i) => (
+          <span key={i} style={{ padding:'4px 11px', borderRadius:20, background:'#FFF7ED', color:'#F97316', fontSize:12, fontWeight:800 }}>
+            {tag}
+          </span>
+        ))}
+      </div>
+    )}
+    {hashtags.length > 0 && (
+      <div style={{ display:'flex', flexWrap:'wrap', alignItems:'center', gap:7 }}>
+        <span style={{ fontSize:11, fontWeight:800, color:'#9CA3AF', marginRight:2 }}>태그</span>
+        {hashtags.map((tag, i) => (
+          <span key={i} style={{ padding:'4px 11px', borderRadius:20, background:'#F3F4F6', color:'#6B7280', fontSize:12, fontWeight:700 }}>
+            #{tag}
+          </span>
+        ))}
+      </div>
+    )}
+  </div>
+)}
 
             {/* ── 주최자 + 버튼 + 추가 정보 + 부스/시설 ── */}
             <div className="ed-host-section">

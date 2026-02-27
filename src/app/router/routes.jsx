@@ -4,6 +4,7 @@ import { createBrowserRouter } from 'react-router-dom';
 
 import MainLayout from '../layouts/MainLayout';
 import UserInfoMypage, { UserInfoIndex } from '../../features/user/pages/UserInfoMypage';
+import UserMyPageLayout from '../layouts/UserMyPageLayout';
 import RequireAuth from './guards/RequireAuth';
 import RequireRole from './guards/RequireRole';
 import { ROLES } from '../../shared/constants/roles';
@@ -49,7 +50,7 @@ export const router = createBrowserRouter([
             children: [
               {
                 path: '/mypage',
-                element: <UserInfoMypage />,
+                element: <UserMyPageLayout />,
                 children: [
                   { index: true, element: <UserInfoIndex /> },
                   { path: 'events/created',      element: <EventHostMypage /> },

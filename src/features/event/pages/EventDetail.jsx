@@ -223,7 +223,8 @@ export default function EventDetail() {
   const [error, setError] = useState(null);
   const [tab, setTab] = useState('상세정보');
   const [liked, setLiked] = useState(false);
-
+  useWishlistSyncOnEventDetail({ eventId: Number(eventId), liked, setLiked });
+  
   useEffect(() => {
     const q = new URLSearchParams(location.search);
     const qt = q.get('tab');

@@ -34,6 +34,7 @@ import PaymentFail from '../../features/payment/pages/PaymentFail';
 
 import AdminMypage from '../layouts/AdminMypage';
 import EventStats from '../../features/admin/eventstats/pages/EventStats';
+import UserMyPageLayout from '../layouts/UserMyPageLayout';
 
 export const router = createBrowserRouter([
   {
@@ -48,7 +49,7 @@ export const router = createBrowserRouter([
             children: [
               {
                 path: '/mypage',
-                element: <UserInfoMypage />,
+                element: <UserMyPageLayout />,
                 children: [
                   { index: true, element: <UserInfoIndex /> },
                   { path: 'events/created',      element: <EventHostMypage /> },

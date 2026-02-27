@@ -5,7 +5,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
 } from 'recharts';
-import { EventStatsApi } from '../api/EventStatsAPI';
+import { EventStatsApi } from '../api/EventStatsApi';
 
 // ─────────── 지역 데이터 ───────────
 const CITY_IDS = {

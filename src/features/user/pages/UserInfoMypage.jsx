@@ -2,6 +2,7 @@
 import React from 'react';
 import styles from '../styles/UserInfoMypage.module.css';
 import { useUserInfo } from '../hooks/useUserInfo';
+import { Outlet } from 'react-router-dom';
 
 export function UserInfoIndex() {
   const { userInfo, passwords, loading, isEditing, isPasswordValid, isPasswordMatch, isSaveDisabled, fileInputRef,
@@ -158,4 +159,8 @@ export function UserInfoIndex() {
       </div>
     </main>
   );
+}
+
+export default function UserInfoMypage() {
+  return <Outlet />;
 }

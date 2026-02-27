@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { getEventParticipationInfo, getMyProfile, submitParticipation } from '../api/ParticipationAPI';
+import { getEventParticipationInfo, getMyProfile, submitParticipation } from '../api/ParticipationApi';
 import { preparePayment } from '../../../payment/api/PaymentAPI';
 import Header from '../../../../shared/components/common/Header';
 

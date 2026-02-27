@@ -10,7 +10,7 @@ export const useSignupForm = (initialValues) => {
   // 중복 확인 상태 (null: 확인전, true: 사용가능, false: 중복/사용불가)
   const [isIdAvailable, setIsIdAvailable] = useState(null);
   
-  const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+  const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[^\s]{8,}$/;
 
   // 실시간 비밀번호 유효성 검사
   const isPasswordValid = useMemo(() => {
@@ -96,14 +96,13 @@ export const useSignupForm = (initialValues) => {
 
 
       const res = await userApi.signup(userData);
-      console.log("res", res)
+      // console.log("res", res)
       if(res.success == true){
         alert('회원가입이 완료되었습니다!');
         navigate('/login', { replace: true });
       } 
 
     } catch (error) {
-      console.error('회원가입 실패:', error);
       const errorMsg = error?.response?.data?.message || error?.message || '회원가입 중 오류가 발생했습니다.';
       setErr(errorMsg);
       alert(errorMsg);

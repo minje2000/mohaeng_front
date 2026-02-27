@@ -38,17 +38,37 @@ export const useFindEmail = () => {
 
     try {
       const res = await userApi.searchId(name, phone);
-      
-      alert(`가입하신 이메일은 ${res.data} 입니다.`);
-      navigate("/login");
+      const data = res.data;
+      // console.log(`data ${data}`)
+
+      // data가 1개일 경우
+      if (typeof data === "string") {
+        alert(`가입하신 이메일은 ${data} 입니다.`);
+      } else if (typeof data === "object" && data !== null) {
+        // 여러 개일 경우
+        const { googleEmails, normalEmails } = data;
+
+        let message = "";
+
+        if (googleEmails.length > 0) {
+          message += `구글 계정 연동 가입 이메일 : ${googleEmails.join(", ")}\n`;
+        }
+
+        if (normalEmails.length > 0) {
+          message += `일반 회원가입 이메일 : ${normalEmails.join(", ")}`;
+        }
+
+        alert(message);
+        navigate("/login");
+      }
 
     } catch (error) {
-      if (error.message) {
-        alert(error.data); 
+      // console.log(error)
+      if (error.data) {
+        alert(error.data || "회원 정보를 찾을 수 없습니다."); 
       } else {
         alert("서버 통신 중 오류가 발생했습니다.");
       }
-      // console.error("Error details:", error);
     }
   };
 

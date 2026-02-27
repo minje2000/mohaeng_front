@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Header from '../../../shared/components/common/Header';
 import Footer from '../../../shared/components/common/Footer';
-import { fetchEventList } from '../api/EventlistAPI';
+import { fetchEventList } from '../api/EventlistApi';
 
 const CITY_IDS = {
     "서울": 1100000000, "부산": 2600000000, "대구": 2700000000, "인천": 2800000000,

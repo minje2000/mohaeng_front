@@ -34,7 +34,7 @@ import PaymentFail from '../../features/payment/pages/PaymentFail';
 
 import AdminMypage from '../layouts/AdminMypage';
 import EventStats from '../../features/admin/eventstats/pages/EventStats';
-import UserMyPageLayout from '../layouts/UserMyPageLayout';
+import UserStats from '../../features/admin/userstats/pages/UserStats';
 
 export const router = createBrowserRouter([
   {
@@ -49,7 +49,7 @@ export const router = createBrowserRouter([
             children: [
               {
                 path: '/mypage',
-                element: <UserMyPageLayout />,
+                element: <UserInfoMypage />,
                 children: [
                   { index: true, element: <UserInfoIndex /> },
                   { path: 'events/created',      element: <EventHostMypage /> },
@@ -73,7 +73,7 @@ export const router = createBrowserRouter([
                 children: [
                   { path: 'events',   element: <div style={{ padding: 24 }}>행사 전체 관리</div> },
                   { path: 'reports',  element: <div style={{ padding: 24 }}>행사 신고 관리</div> },
-                  { path: 'stats',    element: <div style={{ padding: 24 }}>운영 통계</div> },
+                  { path: 'stats', element: <UserStats /> },
                   { path: 'analysis', element: <EventStats /> },
                 ],
               },

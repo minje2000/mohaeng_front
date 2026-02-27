@@ -24,7 +24,7 @@ export default function UserSideMenu() {
           행사 참여 내역
         </NavLink>
 
-        <NavLink to="/mypage/favorites" className={linkClass}>
+        <NavLink to="/mypage/wishlist" className={linkClass}>
           관심 행사 목록
         </NavLink>
 

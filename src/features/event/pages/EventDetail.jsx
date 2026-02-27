@@ -3,6 +3,7 @@ import { useParams, Link, useLocation } from 'react-router-dom';
 import { fetchEventDetail } from '../api/EventDetailAPI';
 import EventReviewTab from '../review/components/EventReviewTab';
 import InquiryEventDetail from '../inquiry/pages/InquiryEventDetail';
+import useWishlistSyncOnEventDetail from '../wishlist/hooks/useWishlistSyncOnEventDetail';
 
 const HASHTAG_MAP = {
   1: 'IT',

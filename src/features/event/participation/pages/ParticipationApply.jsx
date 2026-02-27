@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getEventParticipationInfo, getMyProfile, submitParticipation } from '../api/ParticipationAPI';
+import { getEventParticipationInfo, getMyProfile, submitParticipation } from '../api/ParticipationApi';
 import Header from '../../../../shared/components/common/Header';
 
 const THEME = { primary: '#FFD700', secondary: '#D97706', bg: '#F9FAFB', border: '#E5E7EB', text: '#111827', subText: '#9CA3AF' };

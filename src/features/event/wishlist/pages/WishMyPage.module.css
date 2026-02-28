@@ -1,0 +1,223 @@
+/* src/features/event/wishlist/pages/WishMyPage.module.css */
+
+.wrap {
+  padding: 16px;
+  /* ✅ 카드가 참여내역처럼 넓게 보이도록 */
+  max-width: 1200px;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.refreshBtn {
+  border: 1px solid #ddd;
+  background: #fff;
+  border-radius: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.refreshBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ✅ 카드(테이블 박스) 크기: 참여내역 느낌으로 더 크게 */
+.table {
+  width: 100%;
+  max-width: 1120px; /* ✅ 여기로 전체 박스 크기 조절 */
+  border: 1px solid #e6e6e6;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+}
+
+/* ✅ 컬럼 폭도 넓게 */
+.row {
+  display: grid;
+  grid-template-columns: 90px 1fr 140px 140px; /* 번호 / 행사 / 관심 / 알림 */
+  align-items: center;
+  min-height: 96px;
+  border-top: 1px dashed #d8d8d8;
+  cursor: default; /* ✅ 행 전체는 클릭 이동 아님 */
+}
+
+.row:first-child {
+  border-top: none;
+}
+
+.head {
+  min-height: 46px;
+  cursor: default;
+  background: #fafafa;
+  border-top: none;
+  font-weight: 700;
+}
+
+.colNo,
+.colInfo,
+.colLike,
+.colNoti {
+  padding: 12px 14px;
+}
+
+.colNo {
+  text-align: center;
+  border-right: 1px dashed #d8d8d8;
+}
+
+/* ✅ “관심 행사” 영역만 클릭 이동 */
+.colInfo {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  border-right: 1px dashed #d8d8d8;
+  cursor: pointer; /* ✅ 여기만 포인터 */
+}
+
+.colInfo:hover .eventTitle {
+  text-decoration: underline;
+}
+
+.colLike {
+  display: flex;
+  justify-content: center;
+  border-right: 1px dashed #d8d8d8;
+}
+
+.colNoti {
+  display: flex;
+  justify-content: center;
+}
+
+/* ✅ 썸네일 조금 더 여유 */
+.thumb {
+  width: 48px;
+  height: 64px;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  overflow: hidden;
+  flex: 0 0 auto;
+  background: #f5f5f5;
+}
+
+.thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.thumbFallback {
+  width: 100%;
+  height: 100%;
+  background: #efefef;
+}
+
+.infoText {
+  min-width: 0;
+}
+
+.eventTitle {
+  font-weight: 800;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ✅ 아이콘 버튼 공통 */
+.heartBtn,
+.bellBtn {
+  border: none;
+  background: transparent;
+  font-size: 24px;
+  line-height: 1;
+  transform-origin: center;
+  cursor: pointer; /* ✅ 아이콘 위에서만 커서 변경 */
+  transition: opacity 160ms ease, transform 160ms ease, filter 160ms ease;
+}
+
+.heartBtn:disabled,
+.bellBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ✅ hover 시 살짝 커짐 */
+.heartBtn:hover,
+.bellBtn:hover {
+  transform: scale(1.12);
+}
+
+/* ✅ 눌렀을 때 살짝 줄어드는 느낌 */
+.heartBtn:active,
+.bellBtn:active {
+  transform: scale(0.96);
+}
+
+/* ✅ 알림 OFF: 아주 희미 + 흑백 느낌(극명) */
+.bellOff {
+  opacity: 0.15;
+  filter: grayscale(1) brightness(0.6);
+  transform: scale(0.92);
+}
+
+/* ✅ 알림 ON: 선명 + 빛나는 느낌(극명) */
+.bellOn {
+  opacity: 1;
+  filter: brightness(1.25) contrast(1.2);
+  transform: scale(1.10);
+  text-shadow: 0 0 8px rgba(255, 193, 7, 0.95),
+    0 0 16px rgba(255, 193, 7, 0.75);
+}
+
+/* ✅ 상태 문구 */
+.state,
+.stateErr {
+  padding: 18px;
+  text-align: center;
+  border-top: 1px dashed #d8d8d8;
+}
+
+.stateErr {
+  color: crimson;
+}
+
+/* ✅ 페이지네이션: 카드 아래 가운데 */
+.pager {
+  width: 100%;
+  max-width: 1120px; /* ✅ table과 동일 */
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.pageBtn {
+  border: 1px solid #ddd;
+  background: #fff;
+  border-radius: 10px;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+.pageBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pageInfo {
+  font-weight: 800;
+}

@@ -3,8 +3,23 @@ import { apiJson } from '../../../app/http/request';
 import { tokenStore } from '../../../app/http/tokenStore';
 import { normalizeApiError } from '../../../app/http/errorMapper';
 
+
 function unwrap(body) {
   return body?.data ?? body;
+}
+
+function decodeJwt(token) {
+  try {
+    const part = token.split('.')[1];
+    const pad = part.length % 4;
+    const normalized = part.replace(/-/g, '+').replace(/_/g, '/')
+      + (pad ? '='.repeat(4 - pad) : '');
+    return JSON.parse(decodeURIComponent(
+      atob(normalized).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')
+    ));
+  } catch {
+    return {};
+  }
 }
 
 function normalizeTokenPayload(payload) {
@@ -12,8 +27,11 @@ function normalizeTokenPayload(payload) {
   const accessToken =
     p.accessToken || p.access || p.token || p.jwt || p.access_token || null;
   const refreshToken = p.refreshToken || p.refresh || p.refresh_token || null;
-  const role = p.role || p.authority || p.auth || null;
   const userId = p.userId || p.userid || p.username || null;
+
+  const jwtPayload = accessToken ? decodeJwt(accessToken) : {};
+  const role = p.role || p.authority || p.auth || jwtPayload.role || null;
+
   return { accessToken, refreshToken, userId, role, raw: p };
 }
 

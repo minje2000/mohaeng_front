@@ -50,24 +50,14 @@ export default function Login() {
     setErr("");
 
     try {
-      const token = await login({ userId, userPwd }); 
-      setTokens(token); 
+  const token = await login({ userId, userPwd });
+  setTokens(token);
 
-      const role = token?.role;
-      const isAdmin = [ROLES.ADMIN, 'ROLE_ADMIN', 'admin', 'ADMIN'].includes(role);
+  // ✅ 로그인 후 무조건 홈으로
+  sessionStorage.removeItem('redirectUrl');
+  navigate('/', { replace: true });
 
-      if (isAdmin) {
-        navigate('/admin/members', { replace: true });
-      } else {
-        // 🚨 무적의 방법: 세션 스토리지에서 주소를 꺼내옴 (없으면 홈으로)
-        const redirectUrl = sessionStorage.getItem('redirectUrl') || '/';
-        // 꺼낸 후에는 깔끔하게 지워줌
-        sessionStorage.removeItem('redirectUrl'); 
-        
-        // 그 주소로 이동!
-        navigate(redirectUrl, { replace: true });
-      }
-    } catch (e2) {
+} catch (e2) {
       const msg = e2?.response?.data?.message || e2?.message || '로그인 실패';
       setErr(msg.includes('제한') ? '로그인 제한 회원입니다.' : msg);
     } finally {

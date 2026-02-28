@@ -144,7 +144,15 @@
   border-color: #111827;
 }
 
-.colEvent { width: 46%; }
-.colPeriod { width: 22%; }
-.colStatus { width: 16%; }
-.colCreated { width: 16%; }
+.colEvent {
+  width: 46%;
+}
+.colPeriod {
+  width: 22%;
+}
+.colStatus {
+  width: 16%;
+}
+.colCreated {
+  width: 16%;
+}

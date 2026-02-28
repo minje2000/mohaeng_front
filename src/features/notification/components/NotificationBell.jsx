@@ -20,7 +20,7 @@ export default function NotificationBell({ className, BellIcon }) {
   const refreshList = async () => {
     await Promise.all([
       refetchCount(),
-      fetchList({ all: true }), //  전체 조회
+      fetchList({ all: true }), // 전체 조회
     ]);
   };
 
@@ -47,9 +47,10 @@ export default function NotificationBell({ className, BellIcon }) {
   const onItemClick = async (notificationId) => {
     if (!notificationId) return;
 
-    const ok = await read(notificationId);
-    if (!ok) return;
+    // ✅ 성공하면 read()는 throw 안 하고 끝난다고 가정
+    await read(notificationId);
 
+    // ✅ UI 즉시 반영
     setItems((prev) => prev.filter((it) => (it.notificationId ?? it.id) !== notificationId));
     setCount((c) => Math.max(0, Number(c) - 1));
   };
@@ -57,9 +58,10 @@ export default function NotificationBell({ className, BellIcon }) {
   const onReadAll = async () => {
     if (count <= 0) return;
 
-    const ok = await readAll();
-    if (!ok) return;
+    // ✅ 성공하면 readAll()은 throw 안 하고 끝난다고 가정
+    await readAll();
 
+    // ✅ UI 즉시 반영
     setItems([]);
     setCount(0);
   };

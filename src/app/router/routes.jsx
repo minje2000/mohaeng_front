@@ -1,9 +1,9 @@
 // src/app/router/routes.jsx
-// src/app/router/routes.jsx
 import React from 'react';
 import { createBrowserRouter } from 'react-router-dom';
 
 import MainLayout from '../layouts/MainLayout';
+import UserInfoMypage, { UserInfoIndex } from '../../features/user/pages/UserInfoMypage';
 import UserMyPageLayout from '../layouts/UserMyPageLayout';
 import RequireAuth from './guards/RequireAuth';
 import RequireRole from './guards/RequireRole';
@@ -27,6 +27,7 @@ import ReviewEventDetail from '../../features/event/review/pages/ReviewEventDeta
 
 //회원 마이페이지
 import WithdrawalMypage from '../../features/user/pages/UserWithdrawalMypage';
+import WishMyPage from '../../features/event/wishlist/pages/WishMyPage';
 import EventDetailLayout from '../../features/event/review/pages/EventDetailLayout';
 import InquiryListMypage from '../../features/event/inquiry/pages/InquiryListMypage';
 import ParticipationMypage from '../../features/event/participation/pages/ParticipationMypage';
@@ -36,10 +37,9 @@ import BoothMypage from '../../features/event/participation/pages/BoothMypage';
 import PaymentSuccess from '../../features/payment/pages/PaymentSuccess';
 import PaymentFail from '../../features/payment/pages/PaymentFail';
 
-// 같은 파일에서 default + named export 둘 다 가져오기
-import UserInfoMypage, {
-  UserInfoIndex,
-} from '../../features/user/pages/UserInfoMypage';
+import AdminMypage from '../layouts/AdminMypage';
+import EventStats from '../../features/admin/eventstats/pages/EventStats';
+import UserStats from '../../features/admin/userstats/pages/UserStats';
 
 export const router = createBrowserRouter([
   {
@@ -48,36 +48,40 @@ export const router = createBrowserRouter([
       {
         element: <RequireAuth />,
         children: [
-          // 유저만 마이페이지 접근
+          // 유저 마이페이지
           {
             element: <RequireRole allowedRoles={[ROLES.USER]} />,
             children: [
               {
                 path: '/mypage',
-                element: <UserMyPageLayout />, // 사이드바 + Outlet
+                element: <UserMyPageLayout />,
                 children: [
                   { index: true, element: <UserInfoIndex /> }, // 기본은 내정보
                   { path: 'withdrawal', element: <WithdrawalMypage /> },
-                  { path: 'events/created', element: <EventHostMypage /> },
-                  {
-                    path: 'events/participated',
-                    element: <ParticipationMypage />,
-                  },
-                  { path: 'booths', element: <BoothMypage /> },
-                  { path: 'inquiries', element: <InquiryListMypage /> },
-                  { path: 'reviews', element: <ReviewMyPage /> },
+                  { path: 'events/created',      element: <EventHostMypage /> },
+                  { path: 'events/participated',  element: <ParticipationMypage /> },
+                  { path: 'booths',              element: <BoothMypage /> },
+                  { path: 'inquiries',           element: <InquiryListMypage /> },
+                  { path: 'reviews',             element: <ReviewMyPage /> },
+                  { path: 'wishlist',            element: <WishMyPage /> },
                 ],
               },
             ],
           },
 
-          // 관리자 마이페이지(원하면 여기 확장)
+          // 관리자 마이페이지
           {
             element: <RequireRole allowedRoles={[ROLES.ADMIN]} />,
             children: [
               {
-                path: '/admin/mypage',
-                element: <div style={{ padding: 24 }}>관리자 마이페이지</div>,
+                path: '/admin',
+                element: <AdminMypage />,
+                children: [
+                  { path: 'events',   element: <div style={{ padding: 24 }}>행사 전체 관리</div> },
+                  { path: 'reports',  element: <div style={{ padding: 24 }}>행사 신고 관리</div> },
+                  { path: 'stats', element: <UserStats /> },
+                  { path: 'analysis', element: <EventStats /> },
+                ],
               },
             ],
           },
@@ -93,30 +97,19 @@ export const router = createBrowserRouter([
     ],
   },
 
-  // 홈화면
-  { path: '/', element: <Home /> },
-  // 행사 게시판
-  { path: '/events', element: <EventList /> },
-  // 행사 달력
-  { path: '/Calendar', element: <Calendar /> },
-
-  { path: '/events/new', element: <EventHost /> },
-  {
-    path: '/events/:eventId/booth-apply',
-    element: <ParticipationBoothApply />,
-  },
-  { path: '/events/:eventId/apply', element: <ParticipationApply /> },
+  { path: '/',               element: <Home /> },
+  { path: '/events',         element: <EventList /> },
+  { path: '/Calendar',       element: <Calendar /> },
+  { path: '/events/new',     element: <EventHost /> },
+  { path: '/events/:eventId/booth-apply', element: <ParticipationBoothApply /> },
+  { path: '/events/:eventId/apply',       element: <ParticipationApply /> },
 
   { path: '/payment/success', element: <PaymentSuccess /> },
-  { path: '/payment/fail', element: <PaymentFail /> },
-  // 로그인
-  { path: '/login', element: <Login /> },
-  // 회원가입
-  { path: '/api/user/signup', element: <Signup /> },
-  // 아이디 찾기
+  { path: '/payment/fail',    element: <PaymentFail /> },
+
+  { path: '/login',              element: <Login /> },
+  { path: '/api/user/signup',    element: <Signup /> },
   { path: '/api/user/findEmail', element: <FindEmail /> },
-  // 비밀번호 찾기
-  { path: '/api/user/findPwd', element: <FindPwd /> },
-  // 구글 계정 연동 로그인 후 리다이렉트 페이지
-  { path: '/oauthSuccess', element: <OAuthSuccess /> },
+  { path: '/api/user/findPwd',   element: <FindPwd /> },
+  { path: '/oauthSuccess',       element: <OAuthSuccess /> },
 ]);

@@ -2,11 +2,14 @@
 import React from 'react';
 import styles from '../styles/UserInfoMypage.module.css';
 import { useUserInfo } from '../hooks/useUserInfo';
+import { useNavigate } from 'react-router-dom';
 
 export function UserInfoIndex() {
   const { userInfo, passwords, loading, isEditing, isPasswordValid, isPasswordMatch, isSaveDisabled, fileInputRef,
     handleInputChange, handlePwdChange, handleSave, toggleEditing, handleImageChange, handleEditPhotoClick  } = useUserInfo();
-
+    
+  const navigate = useNavigate();
+  
   if (loading) return <div className={styles.loading}>로딩 중...</div>;
 
   const isPersonal = userInfo.userType === 'PERSONAL';
@@ -14,7 +17,6 @@ export function UserInfoIndex() {
   const isBASIC = userInfo.signupType === 'BASIC';
 
   const IMG_URL = process.env.REACT_APP_API_BASE_URL + 'upload_files/photo';
-  console.log(IMG_URL);
 
   return (
     <main className={styles.content}>
@@ -151,7 +153,7 @@ export function UserInfoIndex() {
           ) : (
             <>
               <button className={styles.primary} onClick={toggleEditing}>정보 수정</button>
-              <button className={styles.secondary} onClick={() => alert('탈퇴 프로세스 시작')}>회원 탈퇴</button>
+              <button className={styles.secondary} onClick={() => navigate('/mypage/withdrawal')}>회원 탈퇴</button>
             </>
           )}
         </div>

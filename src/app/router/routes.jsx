@@ -23,6 +23,10 @@ import ParticipationBoothApply from '../../features/event/participation/pages/Pa
 import ParticipationApply from '../../features/event/participation/pages/ParticipationApply';
 
 import ReviewMyPage from '../../features/event/review/pages/ReviewMyPage';
+import ReviewEventDetail from '../../features/event/review/pages/ReviewEventDetail';
+
+//회원 마이페이지
+import WithdrawalMypage from '../../features/user/pages/UserWithdrawalMypage';
 import WishMyPage from '../../features/event/wishlist/pages/WishMyPage';
 import EventDetailLayout from '../../features/event/review/pages/EventDetailLayout';
 import InquiryListMypage from '../../features/event/inquiry/pages/InquiryListMypage';
@@ -52,7 +56,8 @@ export const router = createBrowserRouter([
                 path: '/mypage',
                 element: <UserMyPageLayout />,
                 children: [
-                  { index: true, element: <UserInfoIndex /> },
+                  { index: true, element: <UserInfoIndex /> }, // 기본은 내정보
+                  { path: 'withdrawal', element: <WithdrawalMypage /> },
                   { path: 'events/created',      element: <EventHostMypage /> },
                   { path: 'events/participated',  element: <ParticipationMypage /> },
                   { path: 'booths',              element: <BoothMypage /> },

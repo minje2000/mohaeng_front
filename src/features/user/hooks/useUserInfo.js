@@ -2,6 +2,8 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { getProfile, updateProfile } from '../api/UserApi';
 
+const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d)[^\s]{8,}$/;
+
 export function useUserInfo() {
   const [initialInfo, setInitialInfo] = useState({}); // 초기값 저장 (비교용)
   const [userInfo, setUserInfo] = useState({
@@ -31,7 +33,6 @@ export function useUserInfo() {
   useEffect(() => { fetchUserInfo(); }, []);
 
   const isBASIC = userInfo.signupType === 'BASIC';
-  const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[^\s]{8,}$/;
 
   // 이미지 선택 핸들러
   const handleImageChange = (e) => {
@@ -65,7 +66,7 @@ export function useUserInfo() {
   // 비밀번호 유효성 검사
   const isPasswordValid = useMemo(() => {
     if (!isBASIC) return true; // 소셜 로그인은 체크 불필요
-    return passwordRegex.test(passwords.newPwd || '');
+    return PASSWORD_REGEX.test(passwords.newPwd || '');
   }, [passwords.newPwd, isBASIC]);
 
   // 비밀번호 일치 검사
@@ -136,6 +137,6 @@ export function useUserInfo() {
   return { 
     userInfo, passwords, loading, isEditing, isPasswordValid, isPasswordMatch, isSaveDisabled, 
     fileInputRef, handleImageChange, handleEditPhotoClick,
-    handleInputChange, handlePwdChange, handleSave, setIsEditing, toggleEditing, handleImageChange, handleEditPhotoClick
+    handleInputChange, handlePwdChange, handleSave, setIsEditing, toggleEditing
   };
 }

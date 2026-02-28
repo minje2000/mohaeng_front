@@ -161,7 +161,3 @@ export function UserInfoIndex() {
     </main>
   );
 }
-
-export default function UserInfoMypage() {
-  return <Outlet />;
-}

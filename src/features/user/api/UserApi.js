@@ -1,5 +1,4 @@
 // src/features/user/api/UserApi.js
-import axios from "axios";
 import { apiForm, apiJson } from '../../../app/http/request';
 import { tokenStore } from '../../../app/http/tokenStore';
 

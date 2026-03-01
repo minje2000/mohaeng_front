@@ -69,6 +69,8 @@ const HASHTAG_MAP = {
 };
 const GENDER_COLORS = { 남: "#3B82F6", 여: "#EC4899" };
 const THUMBNAIL_BASE = "http://localhost:8080/upload_files/event/";
+// ✅ Issue 2: 주최자 프로필 사진 경로
+const PHOTO_BASE = "http://localhost:8080/upload_files/photo/";
 
 // ─────────── 유틸 ───────────
 const fmt = (n) => (n == null ? "-" : Number(n).toLocaleString());
@@ -125,8 +127,8 @@ function EventListView({ onSelectEvent }) {
     keyword: "",
     categoryId: "",
     status: "",
-    city: "",       // 1차 지역 (시/도)
-    regionId: "",   // 2차 지역 (시/군/구)
+    city: "",
+    regionId: "",
     startDate: "",
     endDate: "",
     checkFree: false,
@@ -141,11 +143,9 @@ function EventListView({ onSelectEvent }) {
   const [monthlyData, setMonthlyData]     = useState([]);
   const [selectedYear, setSelectedYear]   = useState(new Date().getFullYear());
 
-  // 행사 목록 로드
   const loadEvents = useCallback(async (page = 0) => {
     setLoading(true);
     try {
-      // city 선택 시 regionId 우선, 없으면 city 전체 id 사용
       const regionId = filters.regionId || (filters.city ? CITY_IDS[filters.city] : "");
       const res = await EventStatsApi.getAllEvent({
         keyword:    filters.keyword    || undefined,
@@ -175,7 +175,6 @@ function EventListView({ onSelectEvent }) {
     }
   }, [filters]);
 
-  // 월별 차트 데이터
   useEffect(() => {
     EventStatsApi.getEventCountByMonth(selectedYear)
       .then(r => {
@@ -193,24 +192,19 @@ function EventListView({ onSelectEvent }) {
   const setFilter = (key, val) => {
     setFilters(prev => {
       const next = { ...prev, [key]: val };
-      // 도시 변경 시 2차 지역 초기화
       if (key === "city") next.regionId = "";
       return next;
     });
   };
 
   const handleSearch = () => loadEvents(0);
-
-  // 2차 지역 목록
   const districtList = filters.city ? REGION_DATA[filters.city] || [] : [];
 
   return (
     <div>
       <h2 style={{ margin:"0 0 20px", fontSize:22, fontWeight:900 }}>행사 분석</h2>
 
-      {/* ── 전체 행사 섹션 ── */}
       <section style={sectionStyle}>
-        {/* 헤더: 제목 + 행사 개수 */}
         <div style={{ display:"flex", alignItems:"baseline", gap:10, marginBottom:16 }}>
           <h3 style={{ ...sectionTitleStyle, marginBottom:0 }}>전체 행사</h3>
           <span style={{ fontSize:13, color:"#9CA3AF", fontWeight:500 }}>
@@ -218,10 +212,7 @@ function EventListView({ onSelectEvent }) {
           </span>
         </div>
 
-        {/* 필터 영역 */}
         <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:16 }}>
-
-          {/* 행 1: 검색 + 카테고리 + 상태 */}
           <div style={{ display:"flex", gap:10, flexWrap:"wrap", alignItems:"center" }}>
             <input
               type="text"
@@ -241,15 +232,12 @@ function EventListView({ onSelectEvent }) {
             </select>
           </div>
 
-          {/* 행 2: 지역 2단계 드롭다운 + 날짜 + 체크박스 */}
           <div style={{ display:"flex", gap:10, flexWrap:"wrap", alignItems:"center" }}>
-            {/* 1차 지역 */}
             <select value={filters.city} onChange={e => setFilter("city", e.target.value)} style={selectStyle}>
               <option value="">시/도 전체</option>
               {Object.keys(CITY_IDS).map(city => <option key={city} value={city}>{city}</option>)}
             </select>
 
-            {/* 2차 지역 (시 선택 후 나타남) */}
             {filters.city && districtList.length > 0 && (
               <select value={filters.regionId} onChange={e => setFilter("regionId", e.target.value)} style={selectStyle}>
                 <option value="">시/군/구 전체</option>
@@ -257,7 +245,6 @@ function EventListView({ onSelectEvent }) {
               </select>
             )}
 
-            {/* 날짜 범위 */}
             <div style={{ display:"flex", alignItems:"center", gap:6, border:"1px solid #E5E7EB",
               borderRadius:8, padding:"6px 10px", background:"#fff" }}>
               <input type="date" value={filters.startDate}
@@ -267,7 +254,6 @@ function EventListView({ onSelectEvent }) {
                 onChange={e => setFilter("endDate", e.target.value)} style={dateInputStyle} />
             </div>
 
-            {/* 체크박스 */}
             <label style={checkboxLabelStyle}>
               <input type="checkbox" checked={filters.checkFree}
                 onChange={e => setFilter("checkFree", e.target.checked)} />
@@ -287,7 +273,6 @@ function EventListView({ onSelectEvent }) {
           </div>
         </div>
 
-        {/* 행사 테이블 */}
         <div style={{ border:"1px solid #E5E7EB", borderRadius:12, overflow:"hidden" }}>
           <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
             <thead>
@@ -310,7 +295,6 @@ function EventListView({ onSelectEvent }) {
                   onMouseEnter={e => e.currentTarget.style.background = "#F8FAFC"}
                   onMouseLeave={e => e.currentTarget.style.background = ""}
                 >
-                  {/* 썸네일 */}
                   <td style={{ padding:"8px 12px" }}>
                     <img
                       src={ev.thumbnail ? `${THUMBNAIL_BASE}${ev.thumbnail}` : ""}
@@ -333,12 +317,10 @@ function EventListView({ onSelectEvent }) {
           </table>
         </div>
 
-        {/* 페이징 */}
         {pageInfo.totalPages > 0 && (
           <div style={{ display:"flex", justifyContent:"center", gap:6, marginTop:16 }}>
             <button disabled={pageInfo.first} onClick={() => loadEvents(currentPage - 1)} style={pageBtnStyle(false, pageInfo.first)}>이전</button>
             {Array.from({ length: Math.min(pageInfo.totalPages, 10) }, (_, i) => {
-              // 현재 페이지 중심으로 최대 10개 표시
               const start = Math.max(0, Math.min(currentPage - 4, pageInfo.totalPages - 10));
               const p = start + i;
               return (
@@ -352,7 +334,6 @@ function EventListView({ onSelectEvent }) {
         )}
       </section>
 
-      {/* ── 월별 행사 차트 (전체 너비) ── */}
       <section style={{ ...sectionStyle, marginTop:20 }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
           <h3 style={{ ...sectionTitleStyle, marginBottom:0 }}>월별 행사</h3>
@@ -406,13 +387,11 @@ function EventDetailView({ eventId, eventTitle, onBack }) {
     ? detail.hashtagIds.split(",").map(id => HASHTAG_MAP[Number(id.trim())]).filter(Boolean)
     : [];
 
-  // 성별 차트
   const genderChartData = [
     { name:"남", value: Number(detail.maleCount || 0) },
     { name:"여", value: Number(detail.femaleCount || 0) },
   ].filter(d => d.value > 0);
 
-  // 연령대 차트
   const ageChartData = detail.ageGroupCounts
     ? Object.entries(detail.ageGroupCounts)
         .map(([age, cnt]) => ({ age, count: Number(cnt) }))
@@ -424,7 +403,6 @@ function EventDetailView({ eventId, eventTitle, onBack }) {
       <button onClick={onBack} style={backBtnStyle}>← 전체 행사 목록으로</button>
       <h2 style={{ margin:"12px 0 20px", fontSize:22, fontWeight:900 }}>행사 분석</h2>
 
-      {/* ── 행사 기본정보 + 통계 ── */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20, marginBottom:20 }}>
 
         {/* 기본 정보 */}
@@ -437,7 +415,6 @@ function EventDetailView({ eventId, eventTitle, onBack }) {
           </button>
 
           <div style={{ display:"flex", gap:14, marginBottom:14 }}>
-            {/* 썸네일 ✅ 실제 이미지 */}
             <div style={{ width:100, height:80, borderRadius:10, flexShrink:0, overflow:"hidden",
               background:"#F3F4F6", border:"1px solid #E5E7EB" }}>
               {detail.thumbnail ? (
@@ -483,10 +460,29 @@ function EventDetailView({ eventId, eventTitle, onBack }) {
             </div>
           )}
 
+          {/* ✅ Issue 2: 주최자 정보 + 프로필 사진 */}
           <div style={{ borderTop:"1px solid #F3F4F6", paddingTop:12 }}>
             <div style={{ fontSize:12, fontWeight:700, color:"#6B7280", marginBottom:8 }}>주최자 정보</div>
+            <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:10 }}>
+              {/* 프로필 사진 */}
+              <div style={{
+                width:48, height:48, borderRadius:"50%", flexShrink:0,
+                overflow:"hidden", background:"#F3F4F6", border:"1px solid #E5E7EB",
+                display:"flex", alignItems:"center", justifyContent:"center", fontSize:20,
+              }}>
+                {detail.hostPhoto ? (
+                  <img
+                    src={`${PHOTO_BASE}${detail.hostPhoto}`}
+                    alt="주최자"
+                    style={{ width:"100%", height:"100%", objectFit:"cover" }}
+                    onError={e => { e.target.style.display = "none"; e.target.parentElement.textContent = "🏢"; }}
+                  />
+                ) : "🏢"}
+              </div>
+              {/* 이름 */}
+              <span style={{ fontSize:14, fontWeight:800, color:"#111" }}>{detail.hostName || "-"}</span>
+            </div>
             <div style={{ fontSize:13, display:"flex", flexDirection:"column", gap:4 }}>
-              <InfoRow label="이름" value={detail.hostName} />
               <InfoRow label="이메일" value={detail.hostEmail} />
               <InfoRow label="전화" value={detail.hostPhone} />
             </div>
@@ -503,7 +499,6 @@ function EventDetailView({ eventId, eventTitle, onBack }) {
             <StatCard label="관심 수"   value={detail.wishCount}        unit="개" />
           </div>
 
-          {/* 수익 현황 */}
           <div style={{ background:"#F8FAFC", borderRadius:12, padding:"14px 18px",
             border:"1px solid #E5E7EB" }}>
             <div style={{ fontWeight:700, fontSize:14, marginBottom:10 }}>수익 현황</div>
@@ -528,10 +523,8 @@ function EventDetailView({ eventId, eventTitle, onBack }) {
         </section>
       </div>
 
-      {/* ── 성별 / 연령대 차트 ── */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
 
-        {/* 연령대 막대 차트 ✅ DB 데이터 */}
         <section style={sectionStyle}>
           <h3 style={sectionTitleStyle}>행사 참여자 연령대</h3>
           {ageChartData.length === 0 ? (
@@ -553,7 +546,6 @@ function EventDetailView({ eventId, eventTitle, onBack }) {
           )}
         </section>
 
-        {/* 성별 파이 차트 ✅ DB 데이터 */}
         <section style={sectionStyle}>
           <h3 style={sectionTitleStyle}>행사 참여자 성별</h3>
           {genderChartData.length === 0 ? (

@@ -11,6 +11,9 @@ export const useSignupForm = (initialValues) => {
 
   // 중복 확인 상태 (null: 확인전, true: 사용가능, false: 중복/사용불가)
   const [isIdAvailable, setIsIdAvailable] = useState(null);
+  // 사업자 등록번호 조회 상태
+  const [isBNumAvailable, setisBNumAvailable] = useState(null);
+  const [bNumMessage, setbNumMessage] = useState('');
 
   // 실시간 비밀번호 유효성 검사
   const isPasswordValid = useMemo(() => {
@@ -23,6 +26,12 @@ export const useSignupForm = (initialValues) => {
     // 이메일이 변경되면 중복 확인 상태 초기화
     if (name === 'email') {
       setIsIdAvailable(null);
+    }
+
+    // 사업자 등록번호가 변경되면 상태 초기화
+    if (name === 'businessNum') {
+      setisBNumAvailable(null);
+      setbNumMessage('');
     }
 
     setFormData((prev) => ({
@@ -58,6 +67,30 @@ export const useSignupForm = (initialValues) => {
     }
   };
 
+  // 사업자 등록 번호 조회 핸들러
+  const handleBNumCheck = async () => {
+    if (!formData.businessNum) {
+      alert('사업자 등록번호를 입력해주세요.');
+      return;
+    }
+
+    try {
+      const res = await userApi.checkBusinessNum(formData.businessNum);
+      
+      if (res.success === true) {
+        setisBNumAvailable(true);
+        setbNumMessage(res.data);
+      } else {
+        setisBNumAvailable(false);
+        setbNumMessage(res.data);
+      }
+    } catch (error) {
+      console.error('사업자 등록번호 조회 실패:', error);
+      alert('사업자 등록번호 조회 중 오류가 발생했습니다.');
+    }
+  }
+  
+
   const handleSubmit = async (e, userType, navigate, phone, isVerified) => {
     e.preventDefault();
     setErr('');
@@ -77,6 +110,12 @@ export const useSignupForm = (initialValues) => {
     // 본인 인증 검사
     if (!isVerified){
       alert('본인 인증 확인이 필요합니다.');
+      return;
+    }
+
+    // 사업자 등록번호 검사
+    if(userType === 'COMPANY' && !isBNumAvailable) {
+      alert('사업자 등록번호 확인이 필요합니다.');
       return;
     }
 
@@ -103,7 +142,7 @@ export const useSignupForm = (initialValues) => {
 
       const res = await userApi.signup(userData);
       // console.log("res", res)
-      if(res.success == true){
+      if(res.success === true){
         alert('회원가입이 완료되었습니다!');
         navigate('/login', { replace: true });
       } 
@@ -126,11 +165,14 @@ export const useSignupForm = (initialValues) => {
     formData, 
     handleChange, 
     handleIdCheck,
+    handleBNumCheck,
     handleSubmit, 
     handleReset, 
     isIdAvailable,
     isLoading, 
     isPasswordValid,
+    isBNumAvailable,
+    bNumMessage,
     err 
   };
 };

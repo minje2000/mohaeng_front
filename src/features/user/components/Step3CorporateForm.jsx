@@ -11,10 +11,13 @@ const Step3CorporateForm = ({ onBack }) => {
     formData,
     handleChange,
     handleIdCheck,
+    handleBNumCheck,
     handleSubmit,
     isIdAvailable,
     isLoading,
     isPasswordValid,
+    isBNumAvailable,
+    bNumMessage,
     err,
   } = useSignupForm({
     email: '',
@@ -103,6 +106,32 @@ const Step3CorporateForm = ({ onBack }) => {
           />
         </div>
         <div className={styles.inputRow}>
+          <label className={styles.label}>사업자 <br/>등록 번호</label>
+          <div className={styles.inputGroup}>
+            <div className={styles.inputWithBtn}>
+              <input
+                className={styles.input}
+                type="text"
+                name="businessNum"
+                value={formData.businessNum}
+                onChange={handleChange}
+                onInput={(e) => {e.target.value = e.target.value.replace(/[^0-9]/g, '');}}
+                placeholder="-없이 숫자만 입력"
+                maxLength={10}
+                required
+              />
+              <button type="button" className={styles.actionBtn} onClick={handleBNumCheck}>
+                조회
+              </button>
+            </div>
+            {isBNumAvailable !== null && (
+              <div className={styles.helperText} style={{ color: isBNumAvailable ? 'green' : 'crimson' }}>
+                {bNumMessage}
+              </div>
+            )}
+          </div>
+        </div>
+        <div className={styles.inputRow}>
           <label className={styles.label}>전화번호</label>
           <div className={styles.inputGroup}>
             <div className={styles.inputWithBtn}>
@@ -145,22 +174,6 @@ const Step3CorporateForm = ({ onBack }) => {
                 {verificationMessage}
               </div>
             )}
-          </div>
-        </div>
-        <div className={styles.inputRow}>
-          <label className={styles.label}>사업자 번호</label>
-          <div className={styles.inputWithBtn}>
-            <input
-              className={styles.input}
-              type="text"
-              name="businessNum"
-              value={formData.businessNum}
-              onChange={handleChange}
-              required
-            />
-            <button type="button" className={styles.actionBtn}>
-              조회
-            </button>
           </div>
         </div>
 

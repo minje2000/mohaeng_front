@@ -26,6 +26,11 @@ export async function checkCode(phone, code) {
   return data;
 }
 
+// 사업자 등록 번호 조회
+export async function checkBusinessNum(businessNum) {
+  const { data } = await apiJson().post(`/api/nts/status?bno=${businessNum}`);
+  return data;
+}
 
 // 이메일 찾기
 export async function searchId(name, phone) {
@@ -114,5 +119,6 @@ export const userApi = {
   searchId,
   verifyByPhone,
   checkCode,
+  checkBusinessNum, 
   renewPwd
 };

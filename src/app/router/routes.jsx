@@ -41,6 +41,8 @@ import AdminMypage from '../layouts/AdminMypage';
 import EventStats from '../../features/admin/eventstats/pages/EventStats';
 import UserStats from '../../features/admin/userstats/pages/UserStats';
 
+import AdminReportPage from "../../features/event/report/pages/AdminReportPage";
+
 export const router = createBrowserRouter([
   {
     element: <MainLayout />,
@@ -78,9 +80,9 @@ export const router = createBrowserRouter([
                 element: <AdminMypage />,
                 children: [
                   { path: 'events',   element: <div style={{ padding: 24 }}>행사 전체 관리</div> },
-                  { path: 'reports',  element: <div style={{ padding: 24 }}>행사 신고 관리</div> },
                   { path: 'stats', element: <UserStats /> },
                   { path: 'analysis', element: <EventStats /> },
+                  { path: 'reports', element: <AdminReportPage /> },
                 ],
               },
             ],

@@ -5,6 +5,9 @@ import { apiJson } from '../../../app/http/request';
 import EventReviewTab from '../review/components/EventReviewTab';
 import InquiryEventDetail from '../inquiry/pages/InquiryEventDetail';
 import useWishlistSyncOnEventDetail from '../wishlist/hooks/useWishlistSyncOnEventDetail';
+import ReportButton from "../report/components/ReportButton";
+import ReportModal from "../report/components/ReportModal";
+
 
 // 분야/주제
 const TOPIC_MAP = {
@@ -146,7 +149,8 @@ export default function EventDetail() {
   const [alreadyApplied, setAlreadyApplied] = useState(false);
   const [alreadyBoothApplied, setAlreadyBoothApplied] = useState(false);
   useWishlistSyncOnEventDetail({ eventId: Number(eventId), liked, setLiked });
-
+  const [reportOpen, setReportOpen] = useState(false);
+  
   useEffect(() => {
     const q = new URLSearchParams(location.search);
     const qt = q.get('tab');
@@ -530,11 +534,32 @@ export default function EventDetail() {
                 onClick={() => setLiked((p) => !p)} title={liked ? '관심 취소' : '관심 행사 등록'}>
                 <HeartIcon filled={liked} />{liked ? '관심 등록됨' : '관심 행사'}
               </button>
-              <button className="ed-icon-btn" onClick={handleShare} title="링크 공유">
-                <ShareIcon />공유
+              <button
+                className="ed-icon-btn"
+                onClick={handleShare}
+                title="링크 공유"
+              >
+                <ShareIcon />
+                공유
+              </button>
+                <button
+                  className="ed-icon-btn"
+                  title="신고하기"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setReportOpen(true);
+                  }}
+                >
+                <SirenIcon />
+                신고
               </button>
               <button className="ed-icon-btn" title="신고하기"><SirenIcon />신고</button>
             </div>
+            <ReportModal
+              open={reportOpen}
+              onClose={() => setReportOpen(false)}
+              eventId={Number(eventId)}
+            />
 
             {/* ── 탭 ── */}
             <div className="ed-tabs">

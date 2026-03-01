@@ -14,6 +14,19 @@ export async function checkId(email) {
   return data;
 }
 
+// 본인 인증 문자 전송
+export async function verifyByPhone(phone) {
+  const { data } = await apiJson().post('/api/sms/send', {phone});
+  return data;
+}
+
+// 본인 인증 번호 확인
+export async function checkCode(phone, code) {
+  const { data } = await apiJson().post('/api/sms/verify', {phone, code});
+  return data;
+}
+
+
 // 이메일 찾기
 export async function searchId(name, phone) {
 
@@ -99,5 +112,7 @@ export const userApi = {
   signup,
   checkId,
   searchId,
+  verifyByPhone,
+  checkCode,
   renewPwd
 };

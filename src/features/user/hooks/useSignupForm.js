@@ -31,7 +31,7 @@ export const useSignupForm = (initialValues) => {
     }));
   };
 
-  // 중복 확인 로직 추가
+  // 중복 확인 로직
   const handleIdCheck = async () => {
     if (!formData.email) {
       alert('이메일을 입력해주세요.');
@@ -58,7 +58,7 @@ export const useSignupForm = (initialValues) => {
     }
   };
 
-  const handleSubmit = async (e, userType, navigate) => {
+  const handleSubmit = async (e, userType, navigate, phone, isVerified) => {
     e.preventDefault();
     setErr('');
 
@@ -74,6 +74,12 @@ export const useSignupForm = (initialValues) => {
       return;
     }
 
+    // 본인 인증 검사
+    if (!isVerified){
+      alert('본인 인증 확인이 필요합니다.');
+      return;
+    }
+
     if (!formData.agreement) {
       alert('개인 정보 수집 및 이용에 동의해야 합니다.');
       return;
@@ -81,14 +87,14 @@ export const useSignupForm = (initialValues) => {
 
     setIsLoading(true);
     try {
-      // API 전송 
       const userData = new FormData();
       for (const key in formData) {
-        // 불필요한 agreement 값은 제외
+        // 불필요한 값 제외
         if (key !== 'agreement') {
           userData.append(key, formData[key]);
         }
       }
+      userData.append('phone', phone);
       // 회원 유형(PERSONAL/COMPANY) 추가
       userData.append('userType', userType);
       // 가입 유형 추가

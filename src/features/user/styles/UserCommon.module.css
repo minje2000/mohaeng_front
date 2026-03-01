@@ -83,6 +83,45 @@
   gap: 8px;
 }
 
+.inputRow {
+  display: flex;
+  align-items: flex-start; /* 중앙 정렬(center)보다 flex-start가 메시지 출력 시 더 깔끔합니다 */
+  gap: 12px;
+  width: 100%; /* 전체 너비 보장 */
+}
+
+.label {
+  width: 110px;
+  height: 44px; /* 입력창 높이와 동일하게 설정 */
+  display: flex;
+  align-items: center; /* 라벨 텍스트는 세로 중앙에 오도록 */
+  font-size: 18px;
+  color: #1f2937;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.inputGroup {
+  flex: 1; /* 가로 공간을 꽉 채움 */
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 0; /* flex 환경에서 자식 요소가 부모를 뚫고 나가는 현상 방지 */
+}
+
+/* 모든 input 요소의 높이를 44px로 강제 고정 */
+.input, 
+.inputGroup .input {
+  width: 100% !important;
+  height: 44px !important;    /* !important를 사용하여 다른 스타일의 간섭 방지 */
+  min-height: 44px !important; /* flex 내부에서 줄어드는 현상 방지 */
+  box-sizing: border-box;      /* 패딩이 높이에 영향을 주지 않도록 설정 */
+  border: 1px solid rgba(17, 24, 39, 0.8);
+  border-radius: 8px;
+  padding: 0 12px;
+  font-size: 15px;
+}
+
 /* 노란색 메인 버튼 스타일 */
 .primaryBtn {
   width: 100%;

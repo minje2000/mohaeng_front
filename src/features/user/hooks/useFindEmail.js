@@ -7,7 +7,6 @@ export const useFindEmail = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: "",
-    phone: "",
   });
   const [isSubmitted, setIsSubmitted] = useState(false);
 
@@ -21,20 +20,21 @@ export const useFindEmail = () => {
     setIsSubmitted(false); // 입력 시 에러 메시지 초기화
   };
 
-  // 본인 인증 버튼 핸들러 (추후 기능 구현)
-  const handleVerify = () => {
-    alert("본인 인증 절차를 시작합니다.");
-  };
-
   // 제출 핸들러
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e, phone, isVerified) => {
     e.preventDefault();
     setIsSubmitted(true);
 
-    const { name, phone } = formData;
+    const { name } = formData;
     
     // 유효성 검사
     if (!name || !phone) return;
+
+    // 본인 인증 검사
+    if (!isVerified){
+      alert('본인 인증 확인이 필요합니다.');
+      return;
+    }
 
     try {
       const res = await userApi.searchId(name, phone);
@@ -59,9 +59,8 @@ export const useFindEmail = () => {
         }
 
         alert(message);
-        navigate("/login");
       }
-
+      navigate("/login");
     } catch (error) {
       // console.log(error)
       if (error.data) {
@@ -76,7 +75,6 @@ export const useFindEmail = () => {
     formData,
     isSubmitted,
     handleChange,
-    handleVerify,
     handleSubmit,
   };
 };

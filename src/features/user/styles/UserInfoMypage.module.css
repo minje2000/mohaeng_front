@@ -119,20 +119,22 @@
   margin-bottom: 30px;
 }
 
-.editPhotoBtn {
+.editPhotoBtn, .deletePhotoBtn {
   position: absolute;
   right: 0;
   bottom: 0;
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background-color: #1f2937;
   border: 2px solid #fff;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
 }
+
+.editPhotoBtn { background-color: #1f2937; }
+.deletePhotoBtn { background-color: #ff4d4f; } 
 
 .editInput {
   flex: 1;

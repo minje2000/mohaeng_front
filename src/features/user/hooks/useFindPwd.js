@@ -6,7 +6,6 @@ export const useFindPwd = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: "",
-    phone: "",
   });
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -21,18 +20,19 @@ export const useFindPwd = () => {
     setIsSubmitted(false);
   };
 
-  // 본인 인증 버튼
-  const handleVerify = () => {
-    alert("본인 인증 절차를 시작합니다.");
-  };
-
   // 제출 핸들러
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e, phone, isVerified) => {
     e.preventDefault();
     setIsSubmitted(true);
 
-    const { email, phone } = formData;
+    const { email } = formData;
     if (!email || !phone) return;
+
+    // 본인 인증 검사
+    if (!isVerified){
+      alert('본인 인증 확인이 필요합니다.');
+      return;
+    }
 
     setIsLoading(true);
 
@@ -58,7 +58,6 @@ export const useFindPwd = () => {
     isLoading,
     isSubmitted,
     handleChange,
-    handleVerify,
     handleSubmit,
   };
 };

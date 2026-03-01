@@ -1,6 +1,7 @@
 // src/features/user/hooks/useUserInfo.js
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { getProfile, updateProfile } from '../api/UserApi';
+import { usePhoneVerification } from '../../user/hooks/usePhoneVerification';
 
 const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d)[^\s]{8,}$/;
 
@@ -10,6 +11,9 @@ export function useUserInfo() {
     email: '', name: '', userPwd: '', phone: '', businessNum: '',
     userType: '', signupType: '', profileImg: ''
   });
+
+  const phoneAuth = usePhoneVerification();
+
   const [selectedFile, setSelectedFile] = useState(null); // 새 파일 객체 (newPhoto)
   const [deletePhoto, setDeletePhoto] = useState(false); // 사진 삭제 여부
   const [passwords, setPasswords] = useState({ newPwd: '', confirmPwd: '' });
@@ -23,6 +27,8 @@ export function useUserInfo() {
       const data = await getProfile();
       setUserInfo(data);
       setInitialInfo(data); // 로드 시 초기 상태 저장
+      phoneAuth.handlePhoneChange({ target: { value: data.phone, name: 'phone' } });
+      // phoneAuth.setPhone(data.phone);
     } catch (error) {
       console.error("데이터 로드 실패:", error);
     } finally {
@@ -58,10 +64,12 @@ export function useUserInfo() {
     fileInputRef.current?.click();
   };
 
-  // 데이터 변경 여부
-  const isDataChanged = useMemo(() => {
-    return JSON.stringify(initialInfo) !== JSON.stringify(userInfo);
-  }, [initialInfo, userInfo]);
+  // 기존 사진 삭제
+  const handleDeletePhoto = () => {
+    setUserInfo(prev => ({ ...prev, profileImg: '' })); // 미리보기 지우기
+    setSelectedFile(null); // 전송할 파일 지우기
+    setDeletePhoto(true);
+  };
 
   // 비밀번호 유효성 검사
   const isPasswordValid = useMemo(() => {
@@ -78,22 +86,25 @@ export function useUserInfo() {
 
   // 저장 버튼 비활성화
   const isSaveDisabled = useMemo(() => {
-    if (!isBASIC) {
-      // 소셜 로그인
-      return !isDataChanged;
-    } else {
-      // 일반 로그인
-      // 비번 입력이 없는 경우
-      if (!passwords.newPwd && !passwords.confirmPwd) return !isDataChanged;
-      // 비번 입력 중인 경우 비번 유효성 & 일치여부
+    // 전화번호 변경 유무 확인
+    const isPhoneChanged = initialInfo.phone !== phoneAuth.phone;
+    
+    // 전화번호 변경 후 본인 인증 여부 확인
+    if (isPhoneChanged && !phoneAuth.isVerified) return true;
+
+    // 데이터 변경 여부
+    const hasDataChanged = 
+      JSON.stringify({ ...initialInfo, phone: initialInfo.phone }) !== 
+      JSON.stringify({ ...userInfo, phone: phoneAuth.phone }) || !!selectedFile;
+
+    if (!isBASIC) return !hasDataChanged;
+
+    // 일반 로그인의 경우 비밀번호 로직 포함
+    if (passwords.newPwd || passwords.confirmPwd) {
       return !(isPasswordValid && isPasswordMatch);
     }
-  }, [isBASIC, isDataChanged, isPasswordValid, isPasswordMatch, passwords]);
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setUserInfo(prev => ({ ...prev, [name]: value }));
-  };
+    return !hasDataChanged;
+  }, [initialInfo, userInfo, phoneAuth.phone, phoneAuth.isVerified, isBASIC, passwords, selectedFile]);
 
   const handlePwdChange = (e) => {
     const { name, value } = e.target;
@@ -109,14 +120,21 @@ export function useUserInfo() {
 
     try {
       setLoading(true);
-      userInfo.userPwd = isBASIC ? passwords.confirmPwd : null;
-      await updateProfile(userInfo, deletePhoto, selectedFile);
+      const finalInfo = { 
+        ...userInfo, 
+        phone: phoneAuth.phone,
+        userPwd: isBASIC ? passwords.confirmPwd : null 
+      };
+      await updateProfile(finalInfo, deletePhoto, selectedFile);
       alert('정보가 수정되었습니다.');
-      setInitialInfo(userInfo); // 초기값 동기화
+      // setInitialInfo(finalInfo); // 초기값 동기화
+      await fetchUserInfo();
+
       setIsEditing(false);
       setSelectedFile(null);
       setDeletePhoto(false);
       setPasswords({ newPwd: '', confirmPwd: '' });
+      phoneAuth.resetAuth(phoneAuth.phone);
     } catch (error) {
       alert("수정 중 오류가 발생했습니다.");
     } finally {
@@ -130,13 +148,14 @@ export function useUserInfo() {
       setSelectedFile(null);
       setDeletePhoto(false);
       setPasswords({ newPwd: '', confirmPwd: '' });
+      phoneAuth.resetAuth(initialInfo.phone);
     }
     setIsEditing(!isEditing);
   };
 
   return { 
     userInfo, passwords, loading, isEditing, isPasswordValid, isPasswordMatch, isSaveDisabled, 
-    fileInputRef, handleImageChange, handleEditPhotoClick,
-    handleInputChange, handlePwdChange, handleSave, setIsEditing, toggleEditing
+    fileInputRef, handleImageChange, handleEditPhotoClick, handleDeletePhoto,
+    handlePwdChange, handleSave, setIsEditing, toggleEditing, phoneAuth
   };
 }

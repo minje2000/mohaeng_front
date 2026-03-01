@@ -1,22 +1,8 @@
-import { useNavigate } from "react-router-dom";
+// src/features/user/pages/SignUpTerms.jsx
+import React from 'react';
 
-export default function JoinTermsPage() {
-  const navigate = useNavigate();
-
-  return (
-    <main className="min-h-[100svh] bg-white px-6 pt-14 pb-16">
-      <div className="mx-auto w-full max-w-[420px]">
-        {/* 상단: 로고 + 타이틀 */}
-        <div className="flex items-center gap-3 mb-6">
-          <img src="/images/moheng.png" alt="모행" width={46} height={20} />
-          <h1 className="text-lg font-semibold text-gray-900">
-            개인 정보 수집 및 이용 동의
-          </h1>
-        </div>
-
-        {/* 본문 */}
-        <div className="text-[13px] leading-6 text-gray-900 whitespace-pre-line">
-          {`[수집/이용 목적]
+const SignUpTerms = ({ onClose }) => {
+  const termsContent = `[수집/이용 목적]
 • 회원가입 및 본인 확인
 • 행사 참가 신청 및 참가자 관리
 • 행사 관련 안내 및 서비스 이용 안내, 사용자 상담 진행
@@ -24,7 +10,8 @@ export default function JoinTermsPage() {
 • 서비스 이용 통계 및 개선
 
 [수집하는 개인정보 항목]
-• 이메일, 비밀번호, 이름, 전화번호
+• 개인 회원 : 이메일, 비밀번호, 이름, 전화번호
+• 업체 회원 : 이메일, 비밀번호, 이름, 전화번호, 사업자 등록번호
 
 [개인정보 보유 및 이용 기간]
 • 회원 탈퇴 시까지 보유 및 이용
@@ -34,20 +21,76 @@ export default function JoinTermsPage() {
 
 [동의 거부 권리 및 불이익 안내]
 • 이용자는 개인정보 수집 및 이용에 대한 동의를 거부할 권리가 있습니다.
-• 필수 항목에 대한 동의를 거부할 경우 회원가입 및 행사 참여가 제한될 수 있습니다.`}
-        </div>
+• 필수 항목에 대한 동의를 거부할 경우 회원가입 및 행사 참여가 제한될 수 있습니다.`;
 
-        {/* 하단 버튼 */}
-        <div className="mt-8 flex justify-center">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="h-11 px-6 rounded-md border border-gray-300 text-sm font-medium hover:bg-gray-50"
-          >
-            뒤로가기
-          </button>
+  // [] 부분을 찾아 <b> 태그로 감싸주는 함수
+  const formatContent = (text) => {
+    const parts = text.split(/(\[.*?\])/g); // []를 기준으로 텍스트 분할
+    return parts.map((part, index) => 
+      part.startsWith('[') && part.endsWith(']') ? (
+        <b key={index} style={{ color: '#000', display: 'block', marginTop: index > 0 ? '15px' : '0', marginBottom: '5px' }}>
+          {part}
+        </b>
+      ) : (
+        part
+      )
+    );
+  };
+
+  const containerStyle = {
+    display: 'flex', flexDirection: 'column', backgroundColor: '#ffffff',
+    borderRadius: '12px', width: '100%', maxHeight: '80vh',
+    overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.2)', fontFamily: 'sans-serif'
+  };
+
+  const headerStyle = {
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    padding: '16px 20px', borderBottom: '1px solid #eeeeee'
+  };
+
+  const contentStyle = {
+    padding: '20px', overflowY: 'auto', backgroundColor: '#f9f9f9',
+    fontSize: '14px', lineHeight: '1.6', color: '#444',
+    whiteSpace: 'pre-line', textAlign: 'left'
+  };
+
+  const footerStyle = {
+    padding: '16px', borderTop: '1px solid #eeeeee', display: 'flex', justifyContent: 'center'
+  };
+
+  return (
+    <div style={containerStyle}>
+      <div style={headerStyle}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <img src="/images/moheng.png" alt="모행" style={{ height: '25px' }} />
+          <span style={{ fontWeight: 'bold', fontSize: '16px', color: '#333' }}>개인정보 이용 동의</span>
         </div>
+        {onClose && (
+          <button 
+            onClick={onClose} 
+            style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#999' }}
+          >
+            &times;
+          </button>
+        )}
       </div>
-    </main>
+
+      <div style={contentStyle}>
+        {/* 함수를 호출하여 굵게 처리된 결과 렌더링 */}
+        {formatContent(termsContent)}
+      </div>
+
+      <div style={footerStyle}>
+        <button 
+          type="button" 
+          style={{ padding: '12px 40px', backgroundColor: '#000', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }} 
+          onClick={onClose || (() => window.history.back())}
+        >
+          확인
+        </button>
+      </div>
+    </div>
   );
-}
+};
+
+export default SignUpTerms;

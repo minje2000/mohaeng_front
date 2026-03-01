@@ -1,6 +1,7 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom'; // navigate 추가
+import { useNavigate } from 'react-router-dom';
 import { useSignupForm } from '../hooks/useSignupForm';
+import { usePhoneVerification } from '../hooks/usePhoneVerification';
 import styles from '../styles/SignUp.module.css';
 
 const Step2IndividualForm = ({ onBack }) => {
@@ -23,9 +24,15 @@ const Step2IndividualForm = ({ onBack }) => {
     email: '',
     userPwd: '',
     name: '',
-    phone: '',
     agreement: false,
   });
+
+  // 본인인증 전용 훅
+  const {
+    phone, verifiedCode, smsMessage, isSendSms, 
+    verificationMessage, isVerified, 
+    handlePhoneChange, handleCodeChange, sendSms, verifyCode
+  } = usePhoneVerification();
 
   return (
     <div className={styles.formContainer}>
@@ -61,7 +68,7 @@ const Step2IndividualForm = ({ onBack }) => {
       </div>
 
       <form
-        onSubmit={(e) => handleSubmit(e, 'PERSONAL', navigate)} // navigate 전달
+        onSubmit={(e) => handleSubmit(e, 'PERSONAL', navigate, phone, isVerified)} 
         className={styles.formContainer}
         style={{ gap: '12px' }}
       >
@@ -131,18 +138,47 @@ const Step2IndividualForm = ({ onBack }) => {
         </div>
         <div className={styles.inputRow}>
           <label className={styles.label}>전화번호</label>
-          <div className={styles.inputWithBtn}>
-            <input
-              className={styles.input}
-              type="tel"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              required
-            />
-            <button type="button" className={styles.actionBtn}>
-              본인 인증
-            </button>
+          <div className={styles.inputGroup}>
+            <div className={styles.inputWithBtn}>
+              <input
+                className={styles.input}
+                type="tel"
+                name="phone"
+                value={phone}
+                onChange={handlePhoneChange}
+                placeholder="-없이 숫자만 입력"
+                maxLength={11}
+                required
+              />
+              <button type="button" className={styles.actionBtn} onClick={sendSms}>본인 인증</button>
+            </div>
+            <div
+              className={styles.helperText}
+              style={{ color: isSendSms ? 'green' : 'crimson' }}
+            >
+              {isSendSms ? smsMessage : '전화번호 입력 후 본인 인증 바랍니다.'}
+            </div>
+          </div>
+        </div>
+        <div className={styles.inputRow}>
+          <label className={styles.label}>인증번호</label>
+          <div className={styles.inputGroup}>
+            <div className={styles.inputWithBtn}>
+              <input
+                className={styles.input}
+                type="text"
+                name="verifiedCode"
+                value={verifiedCode}
+                onChange={handleCodeChange}
+                required
+              />
+              <button type="button" className={styles.actionBtn} onClick={verifyCode}>확인</button>
+            </div>
+            {verificationMessage && (
+              <div className={styles.helperText} style={{ color: isVerified ? 'green' : 'crimson' }}>
+                {verificationMessage}
+              </div>
+            )}
           </div>
         </div>
 

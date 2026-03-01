@@ -80,14 +80,6 @@
   width: 100%; /* 전체 너비 보장 */
 }
 
-/* 비밀번호 입력 부분 - 중요! */
-.inputRow {
-  display: flex;
-  align-items: flex-start; /* 중앙(center) 대신 상단 정렬로 변경하여 메시지 출력 시 정렬 유지 */
-  gap: 12px;
-  width: 100%;
-}
-
 .label {
   width: 110px;
   height: 44px; /* 입력창 높이와 동일하게 설정 */

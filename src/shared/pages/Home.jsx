@@ -391,7 +391,7 @@ export default function Home() {
             {loggedIn ? (
               <>
                 <NotificationBell className={styles.authLink} BellIcon={BellIcon} />
-                <Link className={styles.authLink} to={isAdmin ? "/admin" : "/mypage"}><UserIcon /> 마이페이지</Link>
+                <Link className={styles.authLink} to={isAdmin ? "/admin/stats" : "/mypage"}><UserIcon /> 마이페이지</Link>
                 {/* 💡 button 대신 a 태그로 바꿔서 옆의 링크들과 폰트/규격을 완벽하게 통일! */}
                 <a 
                   className={styles.authLink} 

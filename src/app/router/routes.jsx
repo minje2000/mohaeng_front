@@ -38,6 +38,7 @@ import PaymentSuccess from '../../features/payment/pages/PaymentSuccess';
 import PaymentFail from '../../features/payment/pages/PaymentFail';
 
 import AdminMypage from '../layouts/AdminMypage';
+import DormantManage from '../../features/admin/dormantmanage/pages/DormantManage';
 import EventStats from '../../features/admin/eventstats/pages/EventStats';
 import UserStats from '../../features/admin/userstats/pages/UserStats';
 
@@ -77,7 +78,7 @@ export const router = createBrowserRouter([
                 path: '/admin',
                 element: <AdminMypage />,
                 children: [
-                  { path: 'events',   element: <div style={{ padding: 24 }}>행사 전체 관리</div> },
+                  { path: 'dormantmanage',   element: <DormantManage /> },
                   { path: 'reports',  element: <div style={{ padding: 24 }}>행사 신고 관리</div> },
                   { path: 'stats', element: <UserStats /> },
                   { path: 'analysis', element: <EventStats /> },

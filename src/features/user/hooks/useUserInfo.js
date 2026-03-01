@@ -27,7 +27,7 @@ export function useUserInfo() {
       const data = await getProfile();
       setUserInfo(data);
       setInitialInfo(data); // 로드 시 초기 상태 저장
-      phoneAuth.handlePhoneChange({ target: { value: data.phone, name: 'phone' } });
+      phoneAuth.handlePhoneChange({ target: { value: data.phone || '', name: 'phone' } });
       // phoneAuth.setPhone(data.phone);
     } catch (error) {
       console.error("데이터 로드 실패:", error);

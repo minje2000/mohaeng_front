@@ -42,6 +42,8 @@ import DormantManage from '../../features/admin/dormantmanage/pages/DormantManag
 import EventStats from '../../features/admin/eventstats/pages/EventStats';
 import UserStats from '../../features/admin/userstats/pages/UserStats';
 
+import AdminReportPage from "../../features/event/report/pages/AdminReportPage";
+
 export const router = createBrowserRouter([
   {
     element: <MainLayout />,
@@ -78,10 +80,10 @@ export const router = createBrowserRouter([
                 path: '/admin',
                 element: <AdminMypage />,
                 children: [
-                  { path: 'dormantmanage',   element: <DormantManage /> },
-                  { path: 'reports',  element: <div style={{ padding: 24 }}>행사 신고 관리</div> },
                   { path: 'stats', element: <UserStats /> },
                   { path: 'analysis', element: <EventStats /> },
+                  { path: 'reports', element: <AdminReportPage /> },
+                  { path: 'dormantmanage',   element: <DormantManage /> },
                 ],
               },
             ],

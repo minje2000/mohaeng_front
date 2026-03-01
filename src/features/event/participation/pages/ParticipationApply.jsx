@@ -1,10 +1,16 @@
+// src/features/participation/pages/ParticipationApply.jsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { getEventParticipationInfo, getMyProfile, submitParticipation } from '../api/ParticipationApi';
 import { preparePayment } from '../../../payment/api/PaymentAPI';
 import Header from '../../../../shared/components/common/Header';
 
-const THEME = { primary: '#FFD700', secondary: '#D97706', bg: '#F9FAFB', border: '#E5E7EB', text: '#111827', subText: '#9CA3AF' };
+const THEME = {
+  primary: '#FFD700', secondary: '#D97706', bg: '#F9FAFB',
+  border: '#E5E7EB', text: '#111827', subText: '#9CA3AF',
+};
+
+const PHOTO_BASE = 'http://localhost:8080/upload_files/photo';
 
 const getDatesInRange = (startDate, endDate) => {
   if (!startDate || !endDate) return [];
@@ -47,10 +53,11 @@ export default function ParticipationApply() {
 
   const [formData, setFormData] = useState({
     pctGender: '', pctAgeGroup: '', pctJob: '', pctRoot: '',
-    pctGroup: '', pctRank: '', pctIntroduce: '', pctDate: ''
+    pctGroup: '', pctRank: '', pctIntroduce: '', pctDate: '',
   });
 
-  const [userInfo, setUserInfo] = useState({ userId: null, name: '', phone: '', email: '' });
+  // ✅ Issue 7: profileImg 포함
+  const [userInfo, setUserInfo] = useState({ userId: null, name: '', phone: '', email: '', profileImg: '' });
   const [isAgreed, setIsAgreed] = useState(false);
 
   useEffect(() => {
@@ -77,7 +84,13 @@ export default function ParticipationApply() {
         }
 
         if (currentEvent) setEventData(currentEvent);
-        setUserInfo({ userId: loggedInUserId, name: user.name || '', phone: user.phone || '', email: user.email || '' });
+        setUserInfo({
+          userId: loggedInUserId,
+          name: user.name || '',
+          phone: user.phone || '',
+          email: user.email || '',
+          profileImg: user.profileImg || '',   // ✅ Issue 7
+        });
       } catch (e) {
         console.error(e);
         if (e.response?.status === 401 || e.response?.status === 403) {
@@ -98,51 +111,45 @@ export default function ParticipationApply() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async () => {
     if (location.state?.hostId && userInfo.userId && String(location.state.hostId) === String(userInfo.userId)) {
       return alert('본인이 주최한 행사는 참여할 수 없습니다.');
     }
-    if (!formData.pctDate)    return alert('참여 날짜를 선택해주세요.');
-    if (!formData.pctGender)  return alert('성별을 선택해주세요.');
+    if (!formData.pctDate) return alert('참여 날짜를 선택해주세요.');
+    if (!formData.pctGender) return alert('성별을 선택해주세요.');
     if (!formData.pctAgeGroup) return alert('나이대를 선택해주세요.');
-    if (!isAgreed)            return alert('개인정보 제공 동의가 필요합니다.');
+    if (!isAgreed) return alert('개인정보 제공 동의가 필요합니다.');
 
     setIsSubmitting(true);
     try {
-      // ── 1. 참가 신청서 제출 → pctId 반환 ──
       const pctId = await submitParticipation(eventId, formData);
 
-      // ── 2. 무료 행사: 바로 완료 ──
       if (!isPaid) {
         alert('참가 신청이 완료되었습니다!');
         navigate(`/events/${eventId}`);
         return;
       }
 
-      // ── 3. 유료 행사: 결제 준비 → 토스 결제창 ──
       const paymentInfo = await preparePayment({
-        pctId: pctId,           // 일반 참여 pctId
+        pctId,
         eventId: Number(eventId),
         amount: eventData.price,
         orderName: `${eventData.title} 행사 참가비`,
       });
 
-      // 결제 완료/실패 후 돌아올 행사 경로 저장
       sessionStorage.setItem('paymentEventId', `/events/${eventId}`);
 
-      // 토스 결제창 오픈
       await openTossPayment({
-        clientKey:     paymentInfo.clientKey,
-        orderId:       paymentInfo.orderId,
-        orderName:     paymentInfo.orderName,
-        amount:        paymentInfo.amount,
-        customerName:  userInfo.name || '고객',
+        clientKey: paymentInfo.clientKey,
+        orderId: paymentInfo.orderId,
+        orderName: paymentInfo.orderName,
+        amount: paymentInfo.amount,
+        customerName: userInfo.name || '고객',
         customerEmail: userInfo.email || '',
       });
-
     } catch (e) {
       console.error(e);
       alert('신청 처리 중 오류가 발생했습니다.');
@@ -178,6 +185,21 @@ export default function ParticipationApply() {
         </SectionBox>
 
         <SectionBox title="신청자 정보">
+          {/* ✅ Issue 7: 프로필 사진 */}
+          {userInfo.profileImg && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 0', borderBottom: `1px solid ${THEME.border}`, marginBottom: 16 }}>
+              <img
+                src={`${PHOTO_BASE}/${userInfo.profileImg}`}
+                alt="프로필"
+                style={{ width: 60, height: 60, borderRadius: '50%', objectFit: 'cover', border: '2px solid #E5E7EB' }}
+                onError={(e) => { e.target.style.display = 'none'; }}
+              />
+              <span style={{ fontSize: 13, color: THEME.subText, fontWeight: 600 }}>
+                마이페이지에서 사진을 변경할 수 있어요.
+              </span>
+            </div>
+          )}
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
             <div><Label>이름</Label><Input value={userInfo.name} readOnly style={{ background: '#F3F4F6' }} /></div>
             <div><Label>연락처</Label><Input value={userInfo.phone} readOnly style={{ background: '#F3F4F6' }} /></div>
@@ -211,7 +233,7 @@ export default function ParticipationApply() {
               <Label required>참여 날짜</Label>
               <Select name="pctDate" value={formData.pctDate} onChange={handleInputChange}>
                 <option value="">행사 날짜 선택</option>
-                {availableDates.map(date => <option key={date} value={date}>{date}</option>)}
+                {availableDates.map((date) => <option key={date} value={date}>{date}</option>)}
               </Select>
             </div>
             <div><Label>직업</Label><Input name="pctJob" value={formData.pctJob} onChange={handleInputChange} placeholder="예: 백엔드 개발자" /></div>
@@ -239,25 +261,20 @@ export default function ParticipationApply() {
               <span style={{ fontWeight: '700' }}>참가비</span>
               <span style={{ fontSize: '20px', fontWeight: '900', color: THEME.secondary }}>{eventData.price?.toLocaleString()} 원</span>
             </div>
-            <p style={{ fontSize: '12px', color: THEME.subText, marginTop: '8px' }}>
-              신청 후 토스페이먼츠 결제 페이지로 이동합니다.
-            </p>
+            <p style={{ fontSize: '12px', color: THEME.subText, marginTop: '8px' }}>신청 후 토스페이먼츠 결제 페이지로 이동합니다.</p>
           </SectionBox>
         )}
 
         <div style={{ textAlign: 'center', marginBottom: '30px' }}>
           <label style={{ cursor: 'pointer', fontSize: '13px', fontWeight: '700' }}>
-            <input type="checkbox" checked={isAgreed} onChange={e => setIsAgreed(e.target.checked)} style={{ marginRight: 8 }} />
+            <input type="checkbox" checked={isAgreed} onChange={(e) => setIsAgreed(e.target.checked)} style={{ marginRight: 8 }} />
             (필수) 개인정보 제3자 제공 동의
           </label>
         </div>
 
         <div style={{ textAlign: 'center' }}>
-          <button
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            style={{ padding: '16px 80px', borderRadius: '12px', border: 'none', background: THEME.primary, color: '#111', fontWeight: '900', fontSize: '16px', cursor: isSubmitting ? 'not-allowed' : 'pointer' }}
-          >
+          <button onClick={handleSubmit} disabled={isSubmitting}
+            style={{ padding: '16px 80px', borderRadius: '12px', border: 'none', background: THEME.primary, color: '#111', fontWeight: '900', fontSize: '16px', cursor: isSubmitting ? 'not-allowed' : 'pointer' }}>
             {isSubmitting ? '처리 중...' : (isPaid ? `${eventData.price?.toLocaleString()}원 결제하기` : '참가 신청하기')}
           </button>
         </div>
@@ -266,13 +283,12 @@ export default function ParticipationApply() {
   );
 }
 
-// ── 토스 결제창 오픈 ──
 async function openTossPayment({ clientKey, orderId, orderName, amount, customerName, customerEmail }) {
   const { loadTossPayments } = await import('@tosspayments/payment-sdk');
   const tossPayments = await loadTossPayments(clientKey);
   await tossPayments.requestPayment('카드', {
     amount, orderId, orderName, customerName, customerEmail,
     successUrl: `${window.location.origin}/payment/success`,
-    failUrl:    `${window.location.origin}/payment/fail`,
+    failUrl: `${window.location.origin}/payment/fail`,
   });
 }

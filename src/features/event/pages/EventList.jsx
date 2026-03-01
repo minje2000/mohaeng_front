@@ -47,9 +47,6 @@ const TOPICS = [
     {id: 21, name: '육아/교육'}, {id: 22, name: '심리/명상'}, {id: 23, name: '연애/결혼'}, {id: 24, name: '종교'}, {id: 25, name: '기타'}
 ];
 
-// ✅ 드롭다운 옵션 정의
-// - "hideClosed"  → 백엔드 hideClosed=true 파라미터로 처리 → 페이징 정확
-// - "부스모집중" / "행사참여모집중" → 응답받은 events를 프론트에서 eventStatus 기준으로 필터링
 const RECRUIT_OPTIONS = [
     { value: "",              label: "전체" },
     { value: "hideClosed",   label: "종료된 행사 제외" },
@@ -57,7 +54,6 @@ const RECRUIT_OPTIONS = [
     { value: "행사참여모집중", label: "행사 참여 모집중" },
 ];
 
-// eventStatus 배지 색상 매핑
 const STATUS_COLOR = {
     "부스모집중":     "#3B82F6",
     "행사참여모집중": "#10B981",
@@ -66,6 +62,12 @@ const STATUS_COLOR = {
     "행사종료":      "#9CA3AF",
     "행사참여마감":  "#9CA3AF",
     "부스모집마감":  "#9CA3AF",
+};
+
+// ✅ Issue 11: 날짜 포맷 헬퍼 (YYYY-MM-DD → YYYY.MM.DD)
+const fmtDate = (d) => {
+    if (!d) return '-';
+    return String(d).replaceAll('-', '.');
 };
 
 const EventList = () => {
@@ -115,6 +117,9 @@ const EventList = () => {
                 if (!regionId && city && CITY_IDS[city]) {
                     regionId = CITY_IDS[city];
                 }
+                const recruitFilter = searchParams.get("recruitFilter") || "";
+                const isStatusFilter = recruitFilter && recruitFilter !== "hideClosed";
+
                 const params = {
                     page: parseInt(searchParams.get("page") || "0"),
                     keyword: searchParams.get("keyword") || "",
@@ -123,8 +128,9 @@ const EventList = () => {
                     filterStart: searchParams.get("filterStart") || "",
                     filterEnd: searchParams.get("filterEnd") || "",
                     checkFree: searchParams.get("checkFree") === "true",
-                    // ✅ "종료된 행사 제외"만 백엔드로 hideClosed=true 전달, 나머지는 false
-                    hideClosed: currentRecruitFilter === "hideClosed",
+                    hideClosed: recruitFilter === "hideClosed",
+                    // ✅ Issue 5: 상태 필터 — 값이 있을 때만 포함 (undefined면 axios가 생략함)
+                    ...(isStatusFilter && { eventStatus: recruitFilter }),
                     topicIds: searchParams.getAll("topicIds").join(',') || null
                 };
                 const data = await fetchEventList(params);
@@ -139,11 +145,8 @@ const EventList = () => {
         loadData();
     }, [searchParams]);
 
-    // ✅ "부스모집중" / "행사참여모집중" 선택 시 → 받아온 events를 eventStatus로 클라이언트 필터링
-    const filteredEvents =
-        currentRecruitFilter === "부스모집중" || currentRecruitFilter === "행사참여모집중"
-            ? events.filter(e => e.eventStatus === currentRecruitFilter)
-            : events;
+    // ✅ Issue 5: 상태 필터링은 백엔드에서 처리하므로 클라이언트 필터 불필요
+    const filteredEvents = events;
 
     const setFilter = (key, value) => {
         const next = new URLSearchParams(searchParams);
@@ -201,7 +204,6 @@ const EventList = () => {
                 {/* ── 검색 + 기간 + 모집 상태 드롭다운 ── */}
                 <div style={{ backgroundColor: '#FFF', padding: '20px 25px', borderRadius: '20px', boxShadow: '0 4px 15px rgba(0,0,0,0.03)', marginBottom: '20px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                        {/* 검색창 */}
                         <input
                             type="text"
                             placeholder="행사 제목, 한줄설명 검색... (입력 후 Enter)"
@@ -210,25 +212,16 @@ const EventList = () => {
                             style={{ width: '420px', flexShrink: 0, padding: '13px 18px', borderRadius: '12px', border: '1px solid #E5E7EB', outline: 'none', fontSize: '15px', boxSizing: 'border-box' }}
                         />
                         <div style={{ width: '1px', height: '36px', backgroundColor: '#E5E7EB', flexShrink: 0 }} />
-
-                        {/* 날짜 필터 */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                             <span style={{ fontSize: '13px', fontWeight: '700', color: '#6B7280', whiteSpace: 'nowrap' }}>📅 기간</span>
                             <input
-                                type="date"
-                                value={currentStart}
-                                onChange={(e) => {
-                                    const newStart = e.target.value;
-                                    setFilter("filterStart", newStart);
-                                    if (currentEnd && newStart > currentEnd) setFilter("filterEnd", "");
-                                }}
+                                type="date" value={currentStart}
+                                onChange={(e) => { const newStart = e.target.value; setFilter("filterStart", newStart); if (currentEnd && newStart > currentEnd) setFilter("filterEnd", ""); }}
                                 style={{ ...dateInputStyle, padding: '8px 10px', border: '1px solid #E5E7EB', borderRadius: '10px', backgroundColor: '#F9FAFB' }}
                             />
                             <span style={{ color: '#9CA3AF', fontWeight: 'bold' }}>~</span>
                             <input
-                                type="date"
-                                value={currentEnd}
-                                min={currentStart || undefined}
+                                type="date" value={currentEnd} min={currentStart || undefined}
                                 onChange={(e) => setFilter("filterEnd", e.target.value)}
                                 style={{ ...dateInputStyle, padding: '8px 10px', border: '1px solid #E5E7EB', borderRadius: '10px', backgroundColor: '#F9FAFB' }}
                             />
@@ -237,22 +230,15 @@ const EventList = () => {
                             )}
                         </div>
                         <div style={{ width: '1px', height: '36px', backgroundColor: '#E5E7EB', flexShrink: 0 }} />
-
-                        {/* ✅ 모집 상태 드롭다운 (종료된 행사 제외 흡수) */}
                         <select
                             value={currentRecruitFilter}
                             onChange={(e) => setFilter("recruitFilter", e.target.value)}
                             style={{
-                                flexShrink: 0,
-                                padding: '9px 14px',
-                                borderRadius: '10px',
+                                flexShrink: 0, padding: '9px 14px', borderRadius: '10px',
                                 border: `1.5px solid ${currentRecruitFilter ? '#FFD700' : '#E5E7EB'}`,
                                 backgroundColor: currentRecruitFilter ? '#FFFAEB' : '#F9FAFB',
-                                outline: 'none',
-                                fontSize: '13px',
-                                fontWeight: '700',
-                                color: currentRecruitFilter ? '#111' : '#6B7280',
-                                cursor: 'pointer',
+                                outline: 'none', fontSize: '13px', fontWeight: '700',
+                                color: currentRecruitFilter ? '#111' : '#6B7280', cursor: 'pointer',
                             }}
                         >
                             {RECRUIT_OPTIONS.map(opt => (
@@ -266,11 +252,8 @@ const EventList = () => {
                 <div style={{ backgroundColor: '#FFF', padding: '25px', borderRadius: '20px', boxShadow: '0 4px 15px rgba(0,0,0,0.03)', marginBottom: '40px' }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '25px' }}>
                         <div style={{ minWidth: '160px' }}>
-                            <select
-                                value={currentCity}
-                                onChange={(e) => handleCityChange(e.target.value)}
-                                style={{ ...selectStyle, width: '100%', border: '2px solid #FFD700', backgroundColor: '#FFFAEB' }}
-                            >
+                            <select value={currentCity} onChange={(e) => handleCityChange(e.target.value)}
+                                style={{ ...selectStyle, width: '100%', border: '2px solid #FFD700', backgroundColor: '#FFFAEB' }}>
                                 <option value="">- 전체 -</option>
                                 {Object.keys(REGION_DATA).map(city => <option key={city} value={city}>{city}</option>)}
                             </select>
@@ -282,16 +265,13 @@ const EventList = () => {
                                 </div>
                             ) : (
                                 <>
-                                    <button
-                                        onClick={() => setFilter("regionId", CITY_IDS[currentCity])}
-                                        style={{ ...regionTagStyle, backgroundColor: (!currentRegionId || String(currentRegionId) === String(CITY_IDS[currentCity])) ? '#FFD700' : '#F3F4F6', color: (!currentRegionId || String(currentRegionId) === String(CITY_IDS[currentCity])) ? '#111' : '#6B7280' }}
-                                    >전체</button>
+                                    <button onClick={() => setFilter("regionId", CITY_IDS[currentCity])}
+                                        style={{ ...regionTagStyle, backgroundColor: (!currentRegionId || String(currentRegionId) === String(CITY_IDS[currentCity])) ? '#FFD700' : '#F3F4F6', color: (!currentRegionId || String(currentRegionId) === String(CITY_IDS[currentCity])) ? '#111' : '#6B7280' }}>전체</button>
                                     {REGION_DATA[currentCity].map(town => (
-                                        <button
-                                            key={town.id}
-                                            onClick={() => setFilter("regionId", town.id)}
-                                            style={{ ...regionTagStyle, backgroundColor: String(currentRegionId) === String(town.id) ? '#FFD700' : '#F3F4F6', color: String(currentRegionId) === String(town.id) ? '#111' : '#6B7280' }}
-                                        >{town.name}</button>
+                                        <button key={town.id} onClick={() => setFilter("regionId", town.id)}
+                                            style={{ ...regionTagStyle, backgroundColor: String(currentRegionId) === String(town.id) ? '#FFD700' : '#F3F4F6', color: String(currentRegionId) === String(town.id) ? '#111' : '#6B7280' }}>
+                                            {town.name}
+                                        </button>
                                     ))}
                                 </>
                             )}
@@ -308,23 +288,21 @@ const EventList = () => {
                                 <ul style={sidebarListStyle}>
                                     <li onClick={() => setFilter("categoryId", "")} style={{ color: !currentCategoryId ? '#FFD700' : '#4B5563', fontWeight: !currentCategoryId ? '900' : '600' }}>전체 보기</li>
                                     {CATEGORIES.map(cat => (
-                                        <li key={cat.id} onClick={() => setFilter("categoryId", cat.id)} style={{ color: String(currentCategoryId) === String(cat.id) ? '#FFD700' : '#4B5563', fontWeight: String(currentCategoryId) === String(cat.id) ? '900' : '600' }}>
+                                        <li key={cat.id} onClick={() => setFilter("categoryId", cat.id)}
+                                            style={{ color: String(currentCategoryId) === String(cat.id) ? '#FFD700' : '#4B5563', fontWeight: String(currentCategoryId) === String(cat.id) ? '900' : '600' }}>
                                             • {cat.name}
                                         </li>
                                     ))}
                                 </ul>
                             </div>
                             <div style={{ backgroundColor: '#FFF', padding: '25px', borderRadius: '20px', boxShadow: '0 4px 15px rgba(0,0,0,0.03)', maxHeight: '500px', overflowY: 'auto' }} className="custom-scrollbar">
-                                <h3 style={sidebarTitleStyle}>TOPICS <span style={{fontSize: '11px', color: '#9CA3AF', fontWeight: 'normal'}}>(중복가능)</span></h3>
+                                <h3 style={sidebarTitleStyle}>TOPICS <span style={{ fontSize: '11px', color: '#9CA3AF', fontWeight: 'normal' }}>(중복가능)</span></h3>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                                     {TOPICS.map(topic => (
                                         <label key={topic.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '14px', color: '#4B5563', cursor: 'pointer', fontWeight: '600' }}>
-                                            <input
-                                                type="checkbox"
-                                                checked={currentTopics.includes(String(topic.id))}
-                                                onChange={() => handleTopicToggle(topic.id)}
-                                                style={{ accentColor: '#FFD700', width: '18px', height: '18px', cursor: 'pointer' }}
-                                            /> {topic.name}
+                                            <input type="checkbox" checked={currentTopics.includes(String(topic.id))} onChange={() => handleTopicToggle(topic.id)}
+                                                style={{ accentColor: '#FFD700', width: '18px', height: '18px', cursor: 'pointer' }} />
+                                            {topic.name}
                                         </label>
                                     ))}
                                 </div>
@@ -335,32 +313,32 @@ const EventList = () => {
                     {/* ── 이벤트 목록 ── */}
                     <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', paddingBottom: '15px', borderBottom: '2px solid #F3F4F6' }}>
-                            {/* ✅ 무료 행사 체크박스만 남음. 종료된 행사 제외는 상단 드롭다운으로 이동 */}
                             <div style={{ display: 'flex', gap: '25px', fontSize: '14px', fontWeight: '800', color: '#4B5563' }}>
                                 <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <input type="checkbox" checked={isCheckFree} onChange={(e) => setFilter("checkFree", e.target.checked)} style={{ accentColor: '#FFD700', width: '16px', height: '16px' }} />
                                     무료 행사만 보기
                                 </label>
                             </div>
-                            <button
-                                onClick={() => navigate('/events/new')}
-                                style={{ backgroundColor: '#FFD700', color: '#111', border: 'none', padding: '12px 28px', borderRadius: '12px', fontWeight: '900', fontSize: '15px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(255,215,0,0.4)', transition: 'transform 0.1s' }}
-                            >✨ 행사 만들기</button>
+                            <button onClick={() => navigate('/events/new')}
+                                style={{ backgroundColor: '#FFD700', color: '#111', border: 'none', padding: '12px 28px', borderRadius: '12px', fontWeight: '900', fontSize: '15px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(255,215,0,0.4)', transition: 'transform 0.1s' }}>
+                                ✨ 행사 만들기
+                            </button>
                         </div>
 
                         {loading ? (
-                            <div style={{textAlign:'center', padding:'100px 0', fontSize: '18px', fontWeight: 'bold', color: '#FFD700'}}>
+                            <div style={{ textAlign: 'center', padding: '100px 0', fontSize: '18px', fontWeight: 'bold', color: '#FFD700' }}>
                                 🌼 멋진 행사들을 불러오고 있어요...
                             </div>
                         ) : filteredEvents.length === 0 ? (
-                            <div style={{textAlign:'center', padding:'100px 0', backgroundColor: '#FFF', borderRadius: '20px', border: '2px dashed #E5E7EB'}}>
-                                <p style={{fontSize: '18px', fontWeight: 'bold', color: '#9CA3AF'}}>선택하신 조건에 맞는 행사가 없네요 😢</p>
-                                <p style={{fontSize: '14px', color: '#D1D5DB', marginTop: '10px'}}>필터 조건을 조금만 바꿔보시는 건 어떨까요?</p>
+                            <div style={{ textAlign: 'center', padding: '100px 0', backgroundColor: '#FFF', borderRadius: '20px', border: '2px dashed #E5E7EB' }}>
+                                <p style={{ fontSize: '18px', fontWeight: 'bold', color: '#9CA3AF' }}>선택하신 조건에 맞는 행사가 없네요 😢</p>
+                                <p style={{ fontSize: '14px', color: '#D1D5DB', marginTop: '10px' }}>필터 조건을 조금만 바꿔보시는 건 어떨까요?</p>
                             </div>
                         ) : (
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '30px' }}>
                                 {filteredEvents.map(event => (
-                                    <div key={event.eventId} className="mohaeng-card" onClick={() => navigate(`/events/${event.eventId}`)} style={cardStyle}>
+                                    <div key={event.eventId} className="mohaeng-card"
+                                        onClick={() => navigate(`/events/${event.eventId}`)} style={cardStyle}>
                                         <div style={{ height: '190px', backgroundColor: '#F3F4F6', overflow: 'hidden', position: 'relative' }}>
                                             <img
                                                 src={`http://localhost:8080/upload_files/event/${event.thumbnail}`}
@@ -368,20 +346,11 @@ const EventList = () => {
                                                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                                 onError={(e) => { e.target.src = "https://dummyimage.com/400x300/f3f4f6/666666.png&text=Mohaeng"; }}
                                             />
-                                            {/* 카테고리 배지 */}
                                             <div style={{ position: 'absolute', top: '15px', left: '15px', backgroundColor: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(4px)', padding: '5px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: '900', color: '#FFD700', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}>
                                                 {event.category?.categoryName || event.category?.name || '이벤트'}
                                             </div>
-                                            {/* ✅ 모집 상태 배지 */}
                                             {event.eventStatus && (
-                                                <div style={{
-                                                    position: 'absolute', top: '15px', right: '15px',
-                                                    backgroundColor: STATUS_COLOR[event.eventStatus] || '#6B7280',
-                                                    color: '#FFF',
-                                                    padding: '4px 10px', borderRadius: '20px',
-                                                    fontSize: '11px', fontWeight: '900',
-                                                    boxShadow: '0 2px 5px rgba(0,0,0,0.15)'
-                                                }}>
+                                                <div style={{ position: 'absolute', top: '15px', right: '15px', backgroundColor: STATUS_COLOR[event.eventStatus] || '#6B7280', color: '#FFF', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '900', boxShadow: '0 2px 5px rgba(0,0,0,0.15)' }}>
                                                     {event.eventStatus}
                                                 </div>
                                             )}
@@ -390,8 +359,13 @@ const EventList = () => {
                                             <h4 style={{ margin: '0 0 10px 0', fontSize: '18px', fontWeight: '900', color: '#111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{event.title}</h4>
                                             <p style={{ margin: '0 0 18px 0', fontSize: '13px', color: '#6B7280', height: '38px', overflow: 'hidden', lineHeight: '1.4' }}>{event.simpleExplain}</p>
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px', color: '#9CA3AF', fontWeight: '800', borderTop: '1px solid #F3F4F6', paddingTop: '15px' }}>
-                                                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}> · 지역 : {event.region?.regionName || event.region?.name || '지역미상'}</span>
-                                                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}> · 기간 : {event.startDate}</span>
+                                                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                    · 지역 : {event.region?.regionName || event.region?.name || '지역미상'}
+                                                </span>
+                                                {/* ✅ Issue 11: 시작일 ~ 종료일 표시 */}
+                                                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                    · 기간 : {fmtDate(event.startDate)} ~ {fmtDate(event.endDate)}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
@@ -399,27 +373,15 @@ const EventList = () => {
                             </div>
                         )}
 
-                        {!loading && (() => {
-                            const isClientFiltered = currentRecruitFilter === "부스모집중" || currentRecruitFilter === "행사참여모집중";
-                            if (isClientFiltered) {
-                                return filteredEvents.length > 0 ? (
-                                    <div style={{ marginTop: '70px', display: 'flex', justifyContent: 'center', gap: '8px' }}>
-                                        <button disabled style={pageBtnStyle(false, true)}>이전</button>
-                                        <button style={pageBtnStyle(true, false)}>1</button>
-                                        <button disabled style={pageBtnStyle(false, true)}>다음</button>
-                                    </div>
-                                ) : null;
-                            }
-                            return pageInfo.totalPages > 0 ? (
-                                <div style={{ marginTop: '70px', display: 'flex', justifyContent: 'center', gap: '8px' }}>
-                                    <button disabled={pageInfo.first} onClick={() => setFilter("page", currentPage - 1)} style={pageBtnStyle(false, pageInfo.first)}>이전</button>
-                                    {[...Array(pageInfo.totalPages)].map((_, i) => (
-                                        <button key={i} onClick={() => setFilter("page", i)} style={pageBtnStyle(currentPage === i, false)}>{i + 1}</button>
-                                    ))}
-                                    <button disabled={pageInfo.last} onClick={() => setFilter("page", currentPage + 1)} style={pageBtnStyle(false, pageInfo.last)}>다음</button>
-                                </div>
-                            ) : null;
-                        })()}
+                        {!loading && pageInfo.totalPages > 0 && (
+                            <div style={{ marginTop: '70px', display: 'flex', justifyContent: 'center', gap: '8px' }}>
+                                <button disabled={pageInfo.first} onClick={() => setFilter("page", currentPage - 1)} style={pageBtnStyle(false, pageInfo.first)}>이전</button>
+                                {[...Array(pageInfo.totalPages)].map((_, i) => (
+                                    <button key={i} onClick={() => setFilter("page", i)} style={pageBtnStyle(currentPage === i, false)}>{i + 1}</button>
+                                ))}
+                                <button disabled={pageInfo.last} onClick={() => setFilter("page", currentPage + 1)} style={pageBtnStyle(false, pageInfo.last)}>다음</button>
+                            </div>
+                        )}
                     </div>
                 </div>
             </main>

@@ -1,5 +1,4 @@
 // src/features/user/api/UserApi.js
-import axios from "axios";
 import { apiForm, apiJson } from '../../../app/http/request';
 import { tokenStore } from '../../../app/http/tokenStore';
 
@@ -14,6 +13,19 @@ export async function checkId(email) {
   const { data } = await apiJson().post('/api/user/checkId', {userId: email});
   return data;
 }
+
+// 본인 인증 문자 전송
+export async function verifyByPhone(phone) {
+  const { data } = await apiJson().post('/api/sms/send', {phone});
+  return data;
+}
+
+// 본인 인증 번호 확인
+export async function checkCode(phone, code) {
+  const { data } = await apiJson().post('/api/sms/verify', {phone, code});
+  return data;
+}
+
 
 // 이메일 찾기
 export async function searchId(name, phone) {
@@ -100,5 +112,7 @@ export const userApi = {
   signup,
   checkId,
   searchId,
+  verifyByPhone,
+  checkCode,
   renewPwd
 };

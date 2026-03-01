@@ -2,11 +2,11 @@
 import React from 'react';
 import styles from '../styles/UserInfoMypage.module.css';
 import { useUserInfo } from '../hooks/useUserInfo';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Outlet } from 'react-router-dom';
 
 export function UserInfoIndex() {
   const { userInfo, passwords, loading, isEditing, isPasswordValid, isPasswordMatch, isSaveDisabled, fileInputRef,
-    handleInputChange, handlePwdChange, handleSave, toggleEditing, handleImageChange, handleEditPhotoClick  } = useUserInfo();
+    handlePwdChange, handleSave, toggleEditing, handleImageChange, handleEditPhotoClick, handleDeletePhoto, phoneAuth  } = useUserInfo();
     
   const navigate = useNavigate();
   
@@ -16,7 +16,7 @@ export function UserInfoIndex() {
   const isCompany = userInfo.userType === 'COMPANY';
   const isBASIC = userInfo.signupType === 'BASIC';
 
-  const IMG_URL = process.env.REACT_APP_API_BASE_URL + 'upload_files/photo';
+  const IMG_URL = process.env.REACT_APP_API_BASE_URL + '/upload_files/photo';
 
   return (
     <main className={styles.content}>
@@ -36,24 +36,22 @@ export function UserInfoIndex() {
             )}
           </div>
           {isEditing && (
-            <>
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                onChange={handleImageChange} 
-                accept="image/*" 
-                style={{ display: 'none' }} 
-              />
-              <button 
-                className={styles.editPhotoBtn} 
-                onClick={handleEditPhotoClick}
-                type="button"
-              >
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="white">
-                  <path d="M3 4V1h2v3h3v2H5v3H3V6H0V4h3zm3 6V7h3V4h7l1.83 2H21c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V10h3zm7 9c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-3.2-5c0 1.77 1.43 3.2 3.2 3.2s3.2-1.43 3.2-3.2-1.43-3.2-3.2-3.2-3.2 1.43-3.2 3.2z"/>
-                </svg>
+            <div className={styles.editButtons}>
+              {/* 사진 수정(카메라) 버튼 */}
+              <input type="file" ref={fileInputRef} onChange={handleImageChange} accept="image/*" style={{ display: 'none' }} />
+              <button className={styles.editPhotoBtn} onClick={handleEditPhotoClick} type="button">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="white"><path d="M3 4V1h2v3h3v2H5v3H3V6H0V4h3zm3 6V7h3V4h7l1.83 2H21c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V10h3z"/></svg>
               </button>
-            </>
+
+              {/* 사진 삭제(X) 버튼 - 사진이 있을 때만 노출 */}
+              {userInfo.profileImg && (
+                <button className={styles.deletePhotoBtn} onClick={handleDeletePhoto} type="button">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="white">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                  </svg>
+                </button>
+              )}
+            </div>
           )}
         </div>
 
@@ -73,6 +71,14 @@ export function UserInfoIndex() {
             <span className={styles.label}>{isCompany ? '회사명' : '이름'}</span>
             <span className={styles.value}>{userInfo.name}</span>
           </div>
+
+          {/* 사업자 번호 */}
+          {isCompany && (
+            <div className={styles.infoRow}>
+              <span className={styles.label}>사업자 번호</span>
+              <span className={styles.value}>{userInfo.businessNum}</span>
+            </div>
+          )}
 
           {/* 수정 모드일 때만 나타나는 비밀번호 필드 */}
           {isEditing && isBASIC && (
@@ -117,29 +123,71 @@ export function UserInfoIndex() {
             </>
           )}
           
-          {/* 전화번호 */}
+          {/* 전화번호 필드 */}
           <div className={styles.infoRow}>
             <span className={styles.label}>전화번호</span>
-            <div className={styles.inputWithBtn}>
-              {isEditing ? (
-                <>
-                  <input className={styles.editInput} name="phone" value={userInfo.phone} onChange={handleInputChange} />
-                  <button className={styles.certBtn}>본인 인증</button>
-                </>
-              ) : (
-                <span className={styles.value}>{userInfo.phone}</span>
+            <div className={styles.inputGroup}>
+              <div className={styles.inputWithBtn}>
+                {isEditing ? (
+                  <>
+                    <input 
+                      className={styles.editInput} 
+                      name="phone" 
+                      value={phoneAuth.phone} 
+                      onChange={phoneAuth.handlePhoneChange} 
+                      maxLength={11}
+                    />
+                    <button 
+                      type="button" 
+                      className={styles.certBtn} 
+                      onClick={phoneAuth.sendSms}
+                      disabled={phoneAuth.isVerified}
+                    >
+                      {phoneAuth.isVerified ? '인증 완료' : '본인 인증'}
+                    </button>
+                  </>
+                ) : (
+                  <span className={styles.value}>{userInfo.phone}</span>
+                )}
+              </div>
+              {/* 문자 발송 안내 메시지 */}
+              {isEditing && phoneAuth.isSendSms && (
+                <div className={styles.helperText} style={{ color: 'green' }}>
+                  {phoneAuth.smsMessage}
+                </div>
               )}
             </div>
           </div>
 
-          {isCompany && (
+          {/* 본인 인증 버튼 클릭 후 인증번호 입력란 노출 */}
+          {isEditing && phoneAuth.isSendSms && (
             <div className={styles.infoRow}>
-              <span className={styles.label}>사업자 번호</span>
-              {isEditing ? (
-                <input className={styles.editInput} name="businessNum" value={userInfo.businessNum} onChange={handleInputChange} />
-              ) : (
-                <span className={styles.value}>{userInfo.businessNum}</span>
-              )}
+              <span className={styles.label}>인증번호</span>
+              <div className={styles.inputGroup}>
+                <div className={styles.inputWithBtn}>
+                  <input 
+                    className={styles.editInput} 
+                    placeholder="인증번호 입력" 
+                    value={phoneAuth.verifiedCode}
+                    onChange={phoneAuth.handleCodeChange}
+                    disabled={phoneAuth.isVerified}
+                  />
+                  <button 
+                    type="button" 
+                    className={styles.certBtn} 
+                    onClick={phoneAuth.verifyCode}
+                    disabled={phoneAuth.isVerified}
+                  >
+                    확인
+                  </button>
+                </div>
+                {/* 인증 결과 메시지 */}
+                {phoneAuth.verificationMessage && (
+                  <div className={styles.helperText} style={{ color: phoneAuth.isVerified ? 'green' : 'crimson' }}>
+                    {phoneAuth.verificationMessage}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -160,8 +208,4 @@ export function UserInfoIndex() {
       </div>
     </main>
   );
-}
-
-export default function UserInfoMypage() {
-  return <Outlet />;
 }

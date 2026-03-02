@@ -1,12 +1,56 @@
 // src/features/user/api/UserApi.js
 import { apiForm, apiJson } from '../../../app/http/request';
 import { tokenStore } from '../../../app/http/tokenStore';
+import { normalizeApiError } from '../../../app/http/errorMapper';
+
+// 백엔드 응답이 ApiResponse로 감싸져도 토큰을 찾게 처리
+function unwrap(body) {
+  return body?.data ?? body;
+}
+
+// access/refresh 토큰 키
+function normalizeTokenPayload(payload) {
+  const p = payload ?? {};
+  const accessToken = p.accessToken || null;
+  const refreshToken = p.refreshToken || null;
+  const role = p.role || null;
+  const userId = p.userId || null;
+  return { accessToken, refreshToken, userId, role, raw: p };
+}
 
 // 회원가입
 export async function signup(formData) {
   const { data } = await apiForm().post('/api/user/createUser', formData);
   return data;
 }
+
+// 소셜 회원가입
+export const completeSocialSignup = async (formData) => {
+  try {
+      const resp = await apiForm().post('/api/user/socialSignupComplete', formData);
+  
+      const payload = unwrap(resp?.data);
+      const token = normalizeTokenPayload(payload);
+  
+      if (!token.accessToken) {
+        throw new Error(
+          resp?.data?.message || '로그인 응답에 access 토큰이 없습니다.'
+        );
+      }
+  
+      tokenStore.setAccess(token.accessToken);
+      if (token.refreshToken) tokenStore.setRefresh(token.refreshToken);
+      tokenStore.setUserId(token.userId || formData.email);
+      if (token.role) tokenStore.setRole(token.role);
+  
+      return token;
+    } catch (err) {
+      const apiErr = normalizeApiError(err);
+  
+      // 그 외에는 백엔드 메시지 노출(없으면 기본)
+      throw new Error(apiErr?.message || '로그인 실패');
+    }
+};
 
 // 이메일 중복 확인
 export async function checkId(email) {
@@ -115,6 +159,7 @@ export async function withdrawal(reasonIndex, extraReason) {
 // 훅에서 접근할 수 있도록 객체로 묶어서 export
 export const userApi = {
   signup,
+  completeSocialSignup,
   checkId,
   searchId,
   verifyByPhone,

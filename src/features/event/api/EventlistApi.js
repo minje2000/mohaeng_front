@@ -1,8 +1,12 @@
 import { apiJson } from '../../../app/http/request';
+import qs from 'qs';
 
 export const fetchEventList = async (params) => {
   try {
-    const response = await apiJson().get('/api/events/search', { params });
+    const response = await apiJson().get('/api/events/search', {
+      params,
+      paramsSerializer: (params) => qs.stringify(params, { arrayFormat: 'repeat' })
+    });
     
     return response.data;
   } catch (error) {

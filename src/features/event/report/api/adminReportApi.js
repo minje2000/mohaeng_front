@@ -19,7 +19,7 @@ function pickList(pageData) {
   return pageData.items || pageData.content || pageData.list || pageData.records || [];
 }
 
-// ✅ 목록(최신순)
+//  목록(최신순)
 export async function fetchAdminReports({ page = 0, size = 10 } = {}) {
   try {
     const res = await apiJson().get("/api/admin/reports", {
@@ -33,7 +33,7 @@ export async function fetchAdminReports({ page = 0, size = 10 } = {}) {
   }
 }
 
-// ✅ 상세(모달)
+//  상세(모달)
 export async function fetchAdminReportDetail(reportId) {
   try {
     const res = await apiJson().get(`/api/admin/reports/${reportId}`);
@@ -43,7 +43,7 @@ export async function fetchAdminReportDetail(reportId) {
   }
 }
 
-// ✅ 승인
+//  승인
 export async function approveAdminReport(reportId) {
   try {
     const res = await apiJson().put(`/api/admin/reports/${reportId}/approve`);
@@ -53,7 +53,7 @@ export async function approveAdminReport(reportId) {
   }
 }
 
-// ✅ 반려
+//  반려
 export async function rejectAdminReport(reportId) {
   try {
     const res = await apiJson().put(`/api/admin/reports/${reportId}/reject`);

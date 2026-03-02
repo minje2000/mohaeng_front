@@ -47,7 +47,7 @@ const diffDays = (target) => {
 };
 
 const UPLOAD_BASE = 'http://localhost:8080/upload_files/event';
-// ✅ Issue 2: 프로필 사진 경로
+//  Issue 2: 프로필 사진 경로
 const PHOTO_BASE = 'http://localhost:8080/upload_files/photo';
 const PLACEHOLDER = 'https://dummyimage.com/400x300/f3f4f6/666666.png&text=Mohaeng';
 const imgUrl = (path) => (path ? `${UPLOAD_BASE}/${path}` : PLACEHOLDER);
@@ -138,14 +138,14 @@ const SirenIcon = () => (
 export default function EventDetail() {
   const { eventId } = useParams();
   const location = useLocation();
-  const navigate = useNavigate(); // ✅ Issue 6
+  const navigate = useNavigate(); //  Issue 6
 
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [tab, setTab] = useState('상세정보');
   const [liked, setLiked] = useState(false);
-  // ✅ Issue 6: 마운트 시 참여 여부 확인 (API 체크)
+  //  Issue 6: 마운트 시 참여 여부 확인 (API 체크)
   const [alreadyApplied, setAlreadyApplied] = useState(false);
   const [alreadyBoothApplied, setAlreadyBoothApplied] = useState(false);
   useWishlistSyncOnEventDetail({ eventId: Number(eventId), liked, setLiked });
@@ -168,7 +168,7 @@ export default function EventDetail() {
       .finally(() => setLoading(false));
   }, [eventId]);
 
-  // ✅ Issue 6: 로그인 유저의 이 행사 참여 여부 확인
+  //  Issue 6: 로그인 유저의 이 행사 참여 여부 확인
   useEffect(() => {
     apiJson().get(`/api/eventParticipation/check/${eventId}`)
       .then(res => {
@@ -198,13 +198,13 @@ export default function EventDetail() {
   const showBooth = ev.hasBooth && booths?.length > 0 && shouldShowBooth(statusKey);
   const showFaci  = ev.hasFacility && facilities?.length > 0 && shouldShowBooth(statusKey);
 
-  // ✅ Issue 10: 부스 신청 버튼 — 모든 부스 매진이면 비활성
+  //  Issue 10: 부스 신청 버튼 — 모든 부스 매진이면 비활성
   const allBoothsFull =
     statusKey === '부스모집중' &&
     booths?.length > 0 &&
     booths.every((b) => b.remainCount != null && b.remainCount <= 0);
 
-  // ✅ Issue 9: 참여 정원 초과 (백엔드에서 currentParticipantCount 제공 시 동작)
+  //  Issue 9: 참여 정원 초과 (백엔드에서 currentParticipantCount 제공 시 동작)
   const participationFull =
     statusKey === '참여모집중' &&
     ev.capacity != null &&
@@ -354,7 +354,7 @@ export default function EventDetail() {
                         <th>모집 인원</th>
                         <td>
                           {ev.capacity.toLocaleString()}명
-                          {/* ✅ Issue 9: 현재 참여자 수 표시 (백엔드 제공 시) */}
+                          {/*  Issue 9: 현재 참여자 수 표시 (백엔드 제공 시) */}
                           {ev.currentParticipantCount != null && (
                             <span style={{ marginLeft: 8, fontSize: 12, color: participationFull ? '#EF4444' : '#9CA3AF' }}>
                               ({ev.currentParticipantCount}/{ev.capacity}명 신청){participationFull ? ' — 마감' : ''}
@@ -396,7 +396,7 @@ export default function EventDetail() {
             <div className="ed-host-section">
               <div className="ed-host-action">
                 <div className="ed-host">
-                  {/* ✅ Issue 2: 주최자 프로필 사진 */}
+                  {/*  Issue 2: 주최자 프로필 사진 */}
                   <div className="ed-avatar">
                     {hostPhoto ? (
                       <img
@@ -419,7 +419,7 @@ export default function EventDetail() {
                   </div>
                 </div>
 
-                {/* ✅ Issues 6, 9, 10: 중복 신청/정원 초과/부스 매진 처리 */}
+                {/*  Issues 6, 9, 10: 중복 신청/정원 초과/부스 매진 처리 */}
                 {statusUI && (() => {
                   const isParticipation = statusUI.key === '참여모집중';
                   const isBooth = statusUI.key === '부스모집중';
@@ -553,7 +553,7 @@ export default function EventDetail() {
                 <SirenIcon />
                 신고
               </button>
-              <button className="ed-icon-btn" title="신고하기"><SirenIcon />신고</button>
+              
             </div>
             <ReportModal
               open={reportOpen}

@@ -20,7 +20,7 @@ export default function ReportForm({ eventId, onSuccess, onCancel }) {
       return;
     }
 
-    // ✅ 백엔드 AdminReportCreateRequestDto 필드명 기준
+    //  백엔드 AdminReportCreateRequestDto 필드명 기준
     const payload = {
       eventId: Number(eventId),
       reasonCategory,

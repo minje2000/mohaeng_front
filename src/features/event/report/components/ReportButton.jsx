@@ -6,7 +6,7 @@ export default function ReportButton({ onClick }) {
     <button
       type="button"
       onClick={(e) => {
-        e.stopPropagation(); // ✅ 상세페이지 다른 클릭 이벤트 방지
+        e.stopPropagation(); //  상세페이지 다른 클릭 이벤트 방지
         onClick?.();
       }}
       style={{

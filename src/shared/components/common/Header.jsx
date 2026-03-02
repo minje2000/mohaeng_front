@@ -61,7 +61,7 @@ export default function Header() {
                 className={styles.iconBtn}
                 BellIcon={BellIcon}
               />
-              <Link className={styles.textLink} to={isAdmin ? "/admin" : "/mypage"}>
+              <Link className={styles.textLink} to={isAdmin ? "/admin/stats" : "/mypage"}>
                 <UserIcon />
                 <span>마이페이지</span>
               </Link>

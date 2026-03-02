@@ -77,7 +77,7 @@ export default function AdminReportPage() {
       const detail = await fetchAdminReportDetail(reportId);
       setSelected((prev) => ({ ...prev, ...detail }));
     } catch {
-      // 실패해도 일단 모달 유지
+      // 실패해도 모달은 유지
     }
   };
 
@@ -95,7 +95,10 @@ export default function AdminReportPage() {
 
     try {
       await approveAdminReport(reportId);
-      setItems((prev) => prev.filter((x) => (x.reportId ?? x.id) !== reportId));
+
+      //  서버에서 삭제됐으므로, 서버 기준으로 재조회해서 확실히 동기화
+      await load();
+
       closeDetail();
     } catch (e) {
       alert(e?.message || e?.data || "승인 처리 실패");
@@ -111,7 +114,10 @@ export default function AdminReportPage() {
 
     try {
       await rejectAdminReport(reportId);
-      setItems((prev) => prev.filter((x) => (x.reportId ?? x.id) !== reportId));
+
+      //  서버에서 삭제됐으므로, 서버 기준으로 재조회해서 확실히 동기화
+      await load();
+
       closeDetail();
     } catch (e) {
       alert(e?.message || e?.data || "반려 처리 실패");
@@ -121,6 +127,12 @@ export default function AdminReportPage() {
   return (
     <div style={{ padding: 16 }}>
       <h2 style={{ margin: 0, marginBottom: 12 }}>행사 신고 관리</h2>
+
+      <div style={{ marginBottom: 10 }}>
+        <button onClick={load} style={{ padding: "6px 10px", cursor: "pointer" }}>
+          새로고침
+        </button>
+      </div>
 
       {loading && <div>불러오는 중...</div>}
       {!loading && error && <div style={{ color: "crimson" }}>{error}</div>}
@@ -210,7 +222,7 @@ export default function AdminReportPage() {
         </div>
       )}
 
-      {/* ✅ 모달에 핸들러를 꼭 넘겨야 아이콘이 클릭됨 */}
+      {/*  모달에서만 승인/반려, 성공하면 load()로 목록 갱신 */}
       <AdminReportDetailModal
         open={open}
         report={selected}

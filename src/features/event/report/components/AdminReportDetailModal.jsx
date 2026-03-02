@@ -35,7 +35,7 @@ export default function AdminReportDetailModal({
   const title =
     report?.eventTitle ?? report?.eventName ?? `eventId=${report?.eventId ?? "-"}`;
 
-  // ✅ 이름이 없으면 숫자(reportId/reporterId)로 fallback
+  //  이름이 없으면 숫자(reportId/reporterId)로 fallback
   const writer =
     report?.reporterName ??
     report?.reporterNickname ??

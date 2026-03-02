@@ -131,7 +131,9 @@ const EventList = () => {
                     hideClosed: recruitFilter === "hideClosed",
                     // ✅ Issue 5: 상태 필터 — 값이 있을 때만 포함 (undefined면 axios가 생략함)
                     ...(isStatusFilter && { eventStatus: recruitFilter }),
-                    topicIds: searchParams.getAll("topicIds").join(',') || null
+                    topicIds: searchParams.getAll("topicIds").length > 0 
+    ? searchParams.getAll("topicIds") 
+    : null,
                 };
                 const data = await fetchEventList(params);
                 setEvents(data.content || []);

@@ -87,19 +87,20 @@ export default function KakaoMap({ address, fallbackAddress, detailAddress, zipC
       return;
     }
 
+    // "로/길/대로 + 숫자" 이후 건물명 제거
+    const cleanAddress = (addr) => {
+      const match = addr.match(/^(.*?(?:로|길|대로)\s*\d+)/);
+      return match ? match[1] : addr;
+    };
+
     window.kakao.maps.load(() => {
       const geocoder = new window.kakao.maps.services.Geocoder();
 
       const drawMap = (result, stat) => {
         if (stat !== window.kakao.maps.services.Status.OK) {
-          if (targetAddress === address && fallbackAddress) {
-            geocoder.addressSearch(fallbackAddress, drawMap);
-            return;
-          }
           setStatus('error');
           return;
         }
-
         const coords = new window.kakao.maps.LatLng(result[0].y, result[0].x);
         const map = new window.kakao.maps.Map(mapRef.current, { center: coords, level: 4 });
         mapInstanceRef.current = map;
@@ -115,7 +116,28 @@ export default function KakaoMap({ address, fallbackAddress, detailAddress, zipC
         setStatus('ok');
       };
 
-      geocoder.addressSearch(targetAddress, drawMap);
+      const cleaned = cleanAddress(targetAddress);
+
+      // 1단계: 정제된 주소로 검색
+      geocoder.addressSearch(cleaned, (result, stat) => {
+        if (stat === window.kakao.maps.services.Status.OK) {
+          drawMap(result, stat);
+          return;
+        }
+        // 2단계: 원본 주소로 재시도
+        geocoder.addressSearch(targetAddress, (result2, stat2) => {
+          if (stat2 === window.kakao.maps.services.Status.OK) {
+            drawMap(result2, stat2);
+            return;
+          }
+          // 3단계: fallback 주소로 재시도
+          if (fallbackAddress && fallbackAddress !== targetAddress) {
+            geocoder.addressSearch(cleanAddress(fallbackAddress), drawMap);
+          } else {
+            setStatus('error');
+          }
+        });
+      });
     });
   }, [address, fallbackAddress, zipCode, title]);
 
@@ -144,7 +166,7 @@ export default function KakaoMap({ address, fallbackAddress, detailAddress, zipC
         </div>
       </div>
 
-      {/* 버튼 라인 — 주차장(왼쪽) + 카카오맵 바로가기(오른쪽) */}
+      {/* 버튼 라인 */}
       {status === 'ok' && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -161,14 +183,8 @@ export default function KakaoMap({ address, fallbackAddress, detailAddress, zipC
             >
               🅿️ 주변 주차장
             </button>
-            {activeFilter && (
-              <span style={{ fontSize: 12, color: '#9CA3AF' }}>
-            
-              </span>
-            )}
           </div>
 
-          {/* 카카오맵 바로가기 — 오른쪽 */}
           {displayAddress && (
             <a
               href={`https://map.kakao.com/link/search/${encodeURIComponent(displayAddress)}`}
@@ -204,9 +220,18 @@ export default function KakaoMap({ address, fallbackAddress, detailAddress, zipC
         {status === 'error' && (
           <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
             alignItems: 'center', justifyContent: 'center', background: '#F9FAFB', gap: 8 }}>
-            <div style={{ fontSize: 28 }}>😢</div>
-            <div style={{ fontSize: 13, color: '#6B7280', fontWeight: 600 }}>지도를 불러올 수 없습니다.</div>
-            <div style={{ fontSize: 12, color: '#9CA3AF' }}>{displayAddress}</div>
+            <div style={{ fontSize: 28 }}>📍</div>
+            <div style={{ fontSize: 13, color: '#6B7280', fontWeight: 600 }}>지도에서 찾을 수 없는 주소예요.</div>
+            {displayAddress && (
+              <a
+                href={`https://map.kakao.com/link/search/${encodeURIComponent(displayAddress)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ fontSize: 13, color: '#F97316', fontWeight: 700, marginTop: 4 }}
+              >
+                카카오맵에서 직접 검색하기
+              </a>
+            )}
           </div>
         )}
       </div>

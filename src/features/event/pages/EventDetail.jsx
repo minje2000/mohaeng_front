@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import { fetchEventDetail } from '../api/EventDetailAPI';
 import { apiJson } from '../../../app/http/request';
@@ -7,6 +7,8 @@ import InquiryEventDetail from '../inquiry/pages/InquiryEventDetail';
 import useWishlistSyncOnEventDetail from '../wishlist/hooks/useWishlistSyncOnEventDetail';
 import ReportButton from "../report/components/ReportButton";
 import ReportModal from "../report/components/ReportModal";
+import KakaoMap from '../../../shared/components/common/KakaoMap';
+
 
 
 // 분야/주제
@@ -47,7 +49,6 @@ const diffDays = (target) => {
 };
 
 const UPLOAD_BASE = 'http://localhost:8080/upload_files/event';
-//  Issue 2: 프로필 사진 경로
 const PHOTO_BASE = 'http://localhost:8080/upload_files/photo';
 const PLACEHOLDER = 'https://dummyimage.com/400x300/f3f4f6/666666.png&text=Mohaeng';
 const imgUrl = (path) => (path ? `${UPLOAD_BASE}/${path}` : PLACEHOLDER);
@@ -63,12 +64,9 @@ const getStatusUI = (ev) => {
     dt.setHours(0, 0, 0, 0);
     return dt;
   };
-  const startDate = d(ev.startDate),
-    endDate = d(ev.endDate);
-  const startR = d(ev.startRecruit),
-    endR = d(ev.endRecruit);
-  const boothStart = d(ev.boothStartRecruit),
-    boothEnd = d(ev.boothEndRecruit);
+  const startDate = d(ev.startDate), endDate = d(ev.endDate);
+  const startR = d(ev.startRecruit), endR = d(ev.endRecruit);
+  const boothStart = d(ev.boothStartRecruit), boothEnd = d(ev.boothEndRecruit);
 
   if (endDate && today > endDate)
     return { key: '종료', label: '행사 종료', color: '#6B7280', bg: '#F3F4F6',
@@ -138,19 +136,18 @@ const SirenIcon = () => (
 export default function EventDetail() {
   const { eventId } = useParams();
   const location = useLocation();
-  const navigate = useNavigate(); //  Issue 6
+  const navigate = useNavigate();
 
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [tab, setTab] = useState('상세정보');
   const [liked, setLiked] = useState(false);
-  //  Issue 6: 마운트 시 참여 여부 확인 (API 체크)
   const [alreadyApplied, setAlreadyApplied] = useState(false);
   const [alreadyBoothApplied, setAlreadyBoothApplied] = useState(false);
   useWishlistSyncOnEventDetail({ eventId: Number(eventId), liked, setLiked });
   const [reportOpen, setReportOpen] = useState(false);
-  
+
   useEffect(() => {
     const q = new URLSearchParams(location.search);
     const qt = q.get('tab');
@@ -168,7 +165,6 @@ export default function EventDetail() {
       .finally(() => setLoading(false));
   }, [eventId]);
 
-  //  Issue 6: 로그인 유저의 이 행사 참여 여부 확인
   useEffect(() => {
     apiJson().get(`/api/eventParticipation/check/${eventId}`)
       .then(res => {
@@ -198,13 +194,11 @@ export default function EventDetail() {
   const showBooth = ev.hasBooth && booths?.length > 0 && shouldShowBooth(statusKey);
   const showFaci  = ev.hasFacility && facilities?.length > 0 && shouldShowBooth(statusKey);
 
-  //  Issue 10: 부스 신청 버튼 — 모든 부스 매진이면 비활성
   const allBoothsFull =
     statusKey === '부스모집중' &&
     booths?.length > 0 &&
     booths.every((b) => b.remainCount != null && b.remainCount <= 0);
 
-  //  Issue 9: 참여 정원 초과 (백엔드에서 currentParticipantCount 제공 시 동작)
   const participationFull =
     statusKey === '참여모집중' &&
     ev.capacity != null &&
@@ -345,7 +339,17 @@ export default function EventDetail() {
                   <tbody>
                     {ev.simpleExplain && <tr><th>설명</th><td>{ev.simpleExplain}</td></tr>}
                     <tr><th>행사 기간</th><td>{fmt(ev.startDate)} ~ {fmt(ev.endDate)}</td></tr>
-                    <tr><th>행사 장소</th><td>{[ev.detailAdr, ev.lotNumberAdr].filter(Boolean).join(' ') || '-'}</td></tr>
+                    <tr>
+  <th>행사 장소</th>
+  <td>
+    {ev.lotNumberAdr || '-'}
+    {ev.detailAdr && (
+      <span style={{ color: '#9CA3AF', marginLeft: 6, fontWeight: 500 }}>
+        {ev.detailAdr}
+      </span>
+    )}
+  </td>
+</tr>
                     {ev.price != null && (
                       <tr><th>참가비</th><td>{ev.price === 0 ? '무료' : `${ev.price.toLocaleString()}원`}</td></tr>
                     )}
@@ -354,7 +358,6 @@ export default function EventDetail() {
                         <th>모집 인원</th>
                         <td>
                           {ev.capacity.toLocaleString()}명
-                          {/*  Issue 9: 현재 참여자 수 표시 (백엔드 제공 시) */}
                           {ev.currentParticipantCount != null && (
                             <span style={{ marginLeft: 8, fontSize: 12, color: participationFull ? '#EF4444' : '#9CA3AF' }}>
                               ({ev.currentParticipantCount}/{ev.capacity}명 신청){participationFull ? ' — 마감' : ''}
@@ -396,7 +399,6 @@ export default function EventDetail() {
             <div className="ed-host-section">
               <div className="ed-host-action">
                 <div className="ed-host">
-                  {/*  Issue 2: 주최자 프로필 사진 */}
                   <div className="ed-avatar">
                     {hostPhoto ? (
                       <img
@@ -419,7 +421,6 @@ export default function EventDetail() {
                   </div>
                 </div>
 
-                {/*  Issues 6, 9, 10: 중복 신청/정원 초과/부스 매진 처리 */}
                 {statusUI && (() => {
                   const isParticipation = statusUI.key === '참여모집중';
                   const isBooth = statusUI.key === '부스모집중';
@@ -534,26 +535,16 @@ export default function EventDetail() {
                 onClick={() => setLiked((p) => !p)} title={liked ? '관심 취소' : '관심 행사 등록'}>
                 <HeartIcon filled={liked} />{liked ? '관심 등록됨' : '관심 행사'}
               </button>
+              <button className="ed-icon-btn" onClick={handleShare} title="링크 공유">
+                <ShareIcon />공유
+              </button>
               <button
                 className="ed-icon-btn"
-                onClick={handleShare}
-                title="링크 공유"
+                title="신고하기"
+                onClick={(e) => { e.stopPropagation(); setReportOpen(true); }}
               >
-                <ShareIcon />
-                공유
+                <SirenIcon />신고
               </button>
-                <button
-                  className="ed-icon-btn"
-                  title="신고하기"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setReportOpen(true);
-                  }}
-                >
-                <SirenIcon />
-                신고
-              </button>
-              
             </div>
             <ReportModal
               open={reportOpen}
@@ -585,17 +576,18 @@ export default function EventDetail() {
               </div>
             )}
 
+            {/* ── 지도 탭 (카카오맵) ── */}
             {tab === '지도' && (
-              <div className="ed-tab-content">
-                <div className="ed-empty">
-                  <div style={{ fontSize: 32, marginBottom: 10 }}>📍</div>
-                  <div style={{ fontWeight: 700, color: '#374151', fontSize: 14, marginBottom: 4 }}>
-                    {ev.detailAdr || ev.lotNumberAdr || '주소 정보가 없습니다.'}
-                  </div>
-                  {ev.zipCode && <div style={{ fontSize: 12, color: '#9CA3AF' }}>우편번호 {ev.zipCode}</div>}
-                </div>
-              </div>
-            )}
+  <div className="ed-tab-content">
+    <KakaoMap
+      address={ev.lotNumberAdr}
+      fallbackAddress={null}
+      detailAddress={ev.detailAdr}  
+      zipCode={ev.zipCode}
+      title={ev.title}
+    />
+  </div>
+)}
 
             {tab === '리뷰' && <EventReviewTab eventId={Number(eventId)} />}
 

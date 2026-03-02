@@ -11,9 +11,12 @@ import { ROLES } from '../../shared/constants/roles';
 
 import Login from '../../features/auth/pages/Login';
 import Signup from '../../features/user/pages/SignUp';
+import SocialSignup from  '../../features/user/pages/SocialUserSignUp';
 import OAuthSuccess from '../../features/auth/pages/OAuthSuccess';
+import OAuthFailure from '../../features/auth/pages/OAuthFailure';
 import FindEmail from '../../features/user/pages/FindEmail';
 import FindPwd from '../../features/user/pages/FindPwd';
+import SignUpTerms from '../../features/user/pages/SignUpTerms';
 import Home from '../../shared/pages/Home';
 import EventList from '../../features/event/pages/EventList';
 import Calendar from '../../features/event/pages/Calendar';
@@ -113,7 +116,10 @@ export const router = createBrowserRouter([
 
   { path: '/login',              element: <Login /> },
   { path: '/api/user/signup',    element: <Signup /> },
+  { path: '/signup-terms',    element: <SignUpTerms /> },
   { path: '/api/user/findEmail', element: <FindEmail /> },
   { path: '/api/user/findPwd',   element: <FindPwd /> },
   { path: '/oauthSuccess',       element: <OAuthSuccess /> },
+  { path: '/oauthFailure',       element: <OAuthFailure /> },
+  { path: '/socialSignup',       element: <SocialSignup /> },
 ]);

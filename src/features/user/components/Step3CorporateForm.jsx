@@ -2,19 +2,25 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSignupForm } from '../hooks/useSignupForm';
 import { usePhoneVerification } from '../hooks/usePhoneVerification';
+import { useModal } from '../hooks/usePerInfoTermsModal';
+import SignUpTerms from '../pages/SignUpTerms';
 import styles from '../styles/SignUp.module.css';
 
 const Step3CorporateForm = ({ onBack }) => {
   const navigate = useNavigate();
+  const { isOpen, openModal, closeModal } = useModal();
 
   const {
     formData,
     handleChange,
     handleIdCheck,
+    handleBNumCheck,
     handleSubmit,
     isIdAvailable,
     isLoading,
     isPasswordValid,
+    isBNumAvailable,
+    bNumMessage,
     err,
   } = useSignupForm({
     email: '',
@@ -103,6 +109,32 @@ const Step3CorporateForm = ({ onBack }) => {
           />
         </div>
         <div className={styles.inputRow}>
+          <label className={styles.label}>사업자 <br/>등록 번호</label>
+          <div className={styles.inputGroup}>
+            <div className={styles.inputWithBtn}>
+              <input
+                className={styles.input}
+                type="text"
+                name="businessNum"
+                value={formData.businessNum}
+                onChange={handleChange}
+                onInput={(e) => {e.target.value = e.target.value.replace(/[^0-9]/g, '');}}
+                placeholder="-없이 숫자만 입력"
+                maxLength={10}
+                required
+              />
+              <button type="button" className={styles.actionBtn} onClick={handleBNumCheck}>
+                조회
+              </button>
+            </div>
+            {isBNumAvailable !== null && (
+              <div className={styles.helperText} style={{ color: isBNumAvailable ? 'green' : 'crimson' }}>
+                {bNumMessage}
+              </div>
+            )}
+          </div>
+        </div>
+        <div className={styles.inputRow}>
           <label className={styles.label}>전화번호</label>
           <div className={styles.inputGroup}>
             <div className={styles.inputWithBtn}>
@@ -147,36 +179,48 @@ const Step3CorporateForm = ({ onBack }) => {
             )}
           </div>
         </div>
-        <div className={styles.inputRow}>
-          <label className={styles.label}>사업자 번호</label>
-          <div className={styles.inputWithBtn}>
-            <input
-              className={styles.input}
-              type="text"
-              name="businessNum"
-              value={formData.businessNum}
-              onChange={handleChange}
-              required
-            />
-            <button type="button" className={styles.actionBtn}>
-              조회
-            </button>
-          </div>
-        </div>
 
         <div className={styles.agreementWrapper}>
-          <label>
-            <input
-              type="checkbox"
-              name="agreement"
-              checked={formData.agreement}
-              onChange={handleChange}
-            />
-            <span style={{ marginLeft: '5px' }}>
-              [필수] 개인 정보 수집 및 이용 동의
-            </span>
+          <input
+            type="checkbox"
+            id="agree"
+            name="agreement"
+            checked={formData.agreement}
+            onChange={handleChange}
+          />
+          <label htmlFor="agree" style={{ marginLeft: '5px' }}> 
+            [필수] 개인 정보 수집 및 이용 동의
           </label>
+          <button 
+            type="button" 
+            onClick={openModal}
+            style={{ 
+              marginLeft: 'auto', background: 'none', border: 'none', 
+              color: '#888', textDecoration: 'underline', cursor: 'pointer', fontSize: '12px' 
+            }}
+          >
+            보기
+          </button>
         </div>
+
+        {/* 모달 렌더링 */}
+        {isOpen && (
+          <div 
+            style={{
+              position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+              backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center',
+              alignItems: 'center', zIndex: 9999, padding: '20px'
+            }}
+            onClick={closeModal} // 배경 클릭 시 닫기
+          >
+            <div 
+              style={{ width: '100%', maxWidth: '480px' }} 
+              onClick={(e) => e.stopPropagation()} // 내부 클릭 시 닫힘 방지
+            >
+              <SignUpTerms onClose={closeModal} />
+            </div>
+          </div>
+        )}
 
         {/* 에러 메시지 표시 영역 추가 */}
         {err && <div style={{ color: 'crimson', fontSize: 13 }}>{err}</div>}

@@ -8,6 +8,19 @@ import {
   toggleWishlistNotification,
 } from "../api/wishlistApi";
 
+//  EventDetail.jsx와 동일한 경로로 맞춤
+const UPLOAD_BASE = "http://localhost:8080/upload_files/event";
+const PLACEHOLDER =
+  "https://dummyimage.com/80x80/f3f4f6/666666.png&text=Mohaeng";
+
+function toImgUrl(v) {
+  if (!v) return null;
+  if (typeof v !== "string") return null;
+  if (v.startsWith("http")) return v;
+  // 파일명만 내려오는 경우 → 서버 경로 붙이기
+  return `${UPLOAD_BASE}/${v}`;
+}
+
 function getTitle(item) {
   return (
     item?.eventTitle ||
@@ -18,13 +31,15 @@ function getTitle(item) {
 }
 
 function getThumb(item) {
-  return (
-    item?.thumbnailUrl ||
-    item?.thumbUrl ||
-    item?.imageUrl ||
-    item?.posterUrl ||
-    item?.eventImageUrl ||
-    null
+  //  백엔드가 내려주는 eventThumbnail(파일명) 우선
+  return toImgUrl(
+    item?.eventThumbnail ||
+      item?.thumbnailUrl ||
+      item?.thumbUrl ||
+      item?.imageUrl ||
+      item?.posterUrl ||
+      item?.eventImageUrl ||
+      null
   );
 }
 
@@ -146,14 +161,7 @@ export default function WishMyPage() {
     <div className={styles.wrap}>
       <div className={styles.titleRow}>
         <h2 className={styles.title}>관심 행사 목록</h2>
-        <button
-          type="button"
-          className={styles.refreshBtn}
-          onClick={() => load(page)}
-          disabled={loading}
-        >
-          새로고침
-        </button>
+        
       </div>
 
       <div className={styles.table}>
@@ -188,7 +196,7 @@ export default function WishMyPage() {
               >
                 <div className={styles.colNo}>{no}</div>
 
-                {/* ✅ 이 영역(관심 행사)만 클릭 시 행사 상세로 이동 */}
+                {/*  이 영역(관심 행사)만 클릭 시 행사 상세로 이동 */}
                 <div
                   className={styles.colInfo}
                   role="button"
@@ -202,11 +210,18 @@ export default function WishMyPage() {
                 >
                   <div className={styles.thumb}>
                     {thumb ? (
-                      <img src={thumb} alt="" />
+                      <img
+                        src={thumb}
+                        alt=""
+                        onError={(e) => {
+                          e.currentTarget.src = PLACEHOLDER;
+                        }}
+                      />
                     ) : (
                       <div className={styles.thumbFallback} />
                     )}
                   </div>
+
                   <div className={styles.infoText}>
                     <div className={styles.eventTitle}>{title}</div>
                   </div>

@@ -33,6 +33,7 @@ import InquiryListMypage from '../../features/event/inquiry/pages/InquiryListMyp
 import ParticipationMypage from '../../features/event/participation/pages/ParticipationMypage';
 import EventHostMypage from '../../features/event/host/pages/EventHostMypage';
 import BoothMypage from '../../features/event/participation/pages/BoothMypage';
+import BoothApplicationDetailMypage from '../../features/event/participation/pages/BoothApplicationDetailMypage';
 
 import PaymentSuccess from '../../features/payment/pages/PaymentSuccess';
 import PaymentFail from '../../features/payment/pages/PaymentFail';
@@ -63,6 +64,7 @@ export const router = createBrowserRouter([
                   { path: 'events/created',      element: <EventHostMypage /> },
                   { path: 'events/participated',  element: <ParticipationMypage /> },
                   { path: 'booths',              element: <BoothMypage /> },
+                  { path: 'booths/:pctBoothId',   element: <BoothApplicationDetailMypage /> },
                   { path: 'inquiries',           element: <InquiryListMypage /> },
                   { path: 'reviews',             element: <ReviewMyPage /> },
                   { path: 'wishlist',            element: <WishMyPage /> },

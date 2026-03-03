@@ -1,11 +1,12 @@
 // src/features/user/pages/FindPwd.jsx
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import styles from "../styles/UserCommon.module.css";
 import { useFindPwd } from "../hooks/useFindPwd";
 import { usePhoneVerification } from '../hooks/usePhoneVerification';
 
 export default function FindPwd() {
+  const navigate = useNavigate();
   const { formData, isLoading, isSubmitted, handleChange, handleSubmit } = useFindPwd();
 
   // 본인인증 전용 훅
@@ -92,6 +93,9 @@ export default function FindPwd() {
 
           <button type="submit" className={styles.primaryBtn} disabled={isLoading}>
             {isLoading ? '처리 중...' : '비밀번호 찾기'}
+          </button>
+          <button className={styles.backBtn} onClick={() => navigate('/login')}>
+            뒤로가기
           </button>
         </form>
       </div>

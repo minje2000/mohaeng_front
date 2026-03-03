@@ -3,6 +3,7 @@ const ACCESS_KEY = 'accessToken';
 const REFRESH_KEY = 'refreshToken';
 const USERID_KEY = 'userId';
 const ROLE_KEY = 'role';
+const USERNAME_KEY = 'userName';
 
 export const tokenStore = {
   getAccess() {
@@ -33,10 +34,18 @@ export const tokenStore = {
     if (!role) return;
     localStorage.setItem(ROLE_KEY, role);
   },
+  getUserName() {
+    return localStorage.getItem(USERNAME_KEY);
+  },
+  setUserName(userName) {
+    if (!userName) return;
+    localStorage.setItem(USERNAME_KEY, userName);
+  },
   clear() {
     localStorage.removeItem(ACCESS_KEY);
     localStorage.removeItem(REFRESH_KEY);
     localStorage.removeItem(USERID_KEY);
     localStorage.removeItem(ROLE_KEY);
+    localStorage.removeItem(USERNAME_KEY);
   },
 };

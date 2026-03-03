@@ -57,6 +57,7 @@ export default function Header() {
         <nav className={styles.rightNav} aria-label="유저 메뉴">
           {isAuthed ? (
             <>
+              {tokenStore.getUserName()} 님
               <NotificationBell
                 className={styles.iconBtn}
                 BellIcon={BellIcon}

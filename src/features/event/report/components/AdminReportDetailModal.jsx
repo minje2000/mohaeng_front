@@ -1,4 +1,3 @@
-// src/features/event/report/components/AdminReportDetailModal.jsx
 import React, { useEffect } from "react";
 
 function formatDate(value) {
@@ -12,6 +11,31 @@ function formatDate(value) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function statusLabel(v) {
+  if (v === "PENDING") return "미처리";
+  if (v === "APPROVED") return "승인";
+  if (v === "REJECTED") return "반려";
+  return v || "-";
+}
+
+function statusChipStyle(v) {
+  const base = {
+    display: "inline-flex",
+    alignItems: "center",
+    padding: "4px 8px",
+    borderRadius: 999,
+    fontSize: 12,
+    fontWeight: 700,
+    border: "1px solid #ddd",
+    background: "#fff",
+  };
+
+  if (v === "PENDING") return { ...base, borderColor: "#999" };
+  if (v === "APPROVED") return { ...base, borderColor: "#16a34a" };
+  if (v === "REJECTED") return { ...base, borderColor: "#dc2626" };
+  return base;
 }
 
 export default function AdminReportDetailModal({
@@ -35,7 +59,7 @@ export default function AdminReportDetailModal({
   const title =
     report?.eventTitle ?? report?.eventName ?? `eventId=${report?.eventId ?? "-"}`;
 
-  //  이름이 없으면 숫자(reportId/reporterId)로 fallback
+  // 이름이 없으면 숫자(reportId/reporterId)로 fallback
   const writer =
     report?.reporterName ??
     report?.reporterNickname ??
@@ -53,6 +77,9 @@ export default function AdminReportDetailModal({
     report?.eventPosterUrl ||
     report?.imageUrl ||
     null;
+
+  const result = report?.reportResult; // "PENDING" | "APPROVED" | "REJECTED"
+  const isPending = result === "PENDING" || !result; // 혹시 상세 응답에 없으면 미처리로 취급
 
   const handleApproveClick = () => onApprove?.(report);
   const handleRejectClick = () => onReject?.(report);
@@ -136,7 +163,9 @@ export default function AdminReportDetailModal({
             ) : null}
           </div>
 
-          <div style={{ flex: 1, fontWeight: 700, textAlign: "center" }}>{title}</div>
+          <div style={{ flex: 1, fontWeight: 700, textAlign: "center" }}>
+            {title}
+          </div>
         </div>
 
         {/* 작성자 */}
@@ -200,7 +229,7 @@ export default function AdminReportDetailModal({
           {detail}
         </div>
 
-        {/* 하단: 신고일 + 처리 아이콘(모달에서만) */}
+        {/* 하단: 신고일 + 상태 + 처리 버튼(미처리일 때만) */}
         <div
           style={{
             display: "flex",
@@ -209,43 +238,53 @@ export default function AdminReportDetailModal({
             marginTop: 12,
           }}
         >
-          <div style={{ fontSize: 12, opacity: 0.7 }}>
-            신고일: {formatDate(report?.createdAt)}
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ fontSize: 12, opacity: 0.7 }}>
+              신고일: {formatDate(report?.createdAt)}
+            </div>
+            <span style={statusChipStyle(result)}>{statusLabel(result)}</span>
           </div>
 
-          <div style={{ display: "flex", gap: 10 }}>
-            <button
-              type="button"
-              onClick={handleRejectClick}
-              title="반려"
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: 10,
-                border: "2px solid #222",
-                background: "#fff",
-                cursor: "pointer",
-                fontSize: 18,
-              }}
-            >
-              🗑️
-            </button>
+          {/*  처리 버튼은 미처리일 때만 노출 */}
+          {isPending ? (
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                type="button"
+                onClick={handleRejectClick}
+                title="반려"
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 10,
+                  border: "2px solid #222",
+                  background: "#fff",
+                  cursor: "pointer",
+                  fontSize: 18,
+                }}
+              >
+                🗑️
+              </button>
 
-            <button
-              type="button"
-              onClick={handleApproveClick}
-              title="승인"
-              aria-label="승인"
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: 999,
-                border: "2px solid #222",
-                background: "#d11",
-                cursor: "pointer",
-              }}
-            />
-          </div>
+              <button
+                type="button"
+                onClick={handleApproveClick}
+                title="승인"
+                aria-label="승인"
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 999,
+                  border: "2px solid #222",
+                  background: "#d11",
+                  cursor: "pointer",
+                }}
+              />
+            </div>
+          ) : (
+            <div style={{ fontSize: 12, opacity: 0.7 }}>
+              처리된 신고입니다.
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -5,9 +5,11 @@ import { ParticipationBoothApi } from '../api/ParticipationBoothAPI';
 import { preparePayment } from '../../../payment/api/PaymentAPI';
 import Header from '../../../../shared/components/common/Header';
 
-const UPLOAD_BASE_EVENT = 'http://localhost:8080/upload_files/event';
-const PHOTO_BASE = 'http://localhost:8080/upload_files/photo';
-const PLACEHOLDER = 'https://dummyimage.com/400x400/f3f4f6/666666.png&text=Mohaeng';
+const UPLOAD_BASE_EVENT  = 'http://localhost:8080/upload_files/event';
+// ✅ 주최자가 부스 등록 시 첨부한 파일 경로 (fileType = "HBOOTH")
+const UPLOAD_BASE_HBOOTH = 'http://localhost:8080/upload_files/hbooth';
+const PHOTO_BASE         = 'http://localhost:8080/upload_files/photo';
+const PLACEHOLDER        = 'https://dummyimage.com/400x400/f3f4f6/666666.png&text=Mohaeng';
 
 const imgUrl = (path) => (path ? `${UPLOAD_BASE_EVENT}/${path}` : PLACEHOLDER);
 
@@ -16,6 +18,9 @@ const fmtDate = (dateStr) => {
   const d = new Date(dateStr);
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
 };
+
+const isImageFile = (filename) =>
+  /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(filename || '');
 
 const THEME = {
   primary: '#FFD700', secondary: '#D97706', bg: '#F9FAFB',
@@ -39,16 +44,8 @@ const Label = ({ children, required }) => (
 );
 
 const inputStyle = { width: '100%', padding: '12px 16px', borderRadius: '10px', border: `1px solid ${THEME.border}`, fontSize: '14px', outline: 'none', transition: 'all 0.2s', boxSizing: 'border-box' };
-const Input = (props) => (
-  <input {...props} style={{ ...inputStyle, ...props.style }}
-    onFocus={(e) => (e.target.style.borderColor = THEME.primary)}
-    onBlur={(e) => (e.target.style.borderColor = THEME.border)} />
-);
-const Textarea = (props) => (
-  <textarea {...props} style={{ ...inputStyle, minHeight: '120px', resize: 'vertical', ...props.style }}
-    onFocus={(e) => (e.target.style.borderColor = THEME.primary)}
-    onBlur={(e) => (e.target.style.borderColor = THEME.border)} />
-);
+const Input    = (props) => <input    {...props} style={{ ...inputStyle, ...props.style }} onFocus={(e) => (e.target.style.borderColor = THEME.primary)} onBlur={(e) => (e.target.style.borderColor = THEME.border)} />;
+const Textarea = (props) => <textarea {...props} style={{ ...inputStyle, minHeight: '120px', resize: 'vertical', ...props.style }} onFocus={(e) => (e.target.style.borderColor = THEME.primary)} onBlur={(e) => (e.target.style.borderColor = THEME.border)} />;
 
 const StockBadge = ({ remain, total, color = THEME.secondary }) => {
   const isOut = remain != null && remain <= 0;
@@ -61,7 +58,6 @@ const StockBadge = ({ remain, total, color = THEME.secondary }) => {
   );
 };
 
-// ✅ 개인정보 제3자 제공 동의 모달
 const TermsModal = ({ onClose }) => {
   const termsContent = `[제공받는 자]
 • 행사 주최자 (이벤트 개설자)
@@ -86,45 +82,28 @@ const TermsModal = ({ onClose }) => {
 • 이용자는 개인정보 제3자 제공에 대한 동의를 거부할 권리가 있습니다.
 • 동의를 거부할 경우 부스 참가 신청이 제한될 수 있습니다.`;
 
-  const formatContent = (text) => {
-    const parts = text.split(/(\[.*?\])/g);
-    return parts.map((part, index) =>
-      part.startsWith('[') && part.endsWith(']') ? (
-        <b key={index} style={{ color: '#000', display: 'block', marginTop: index > 0 ? '15px' : '0', marginBottom: '5px' }}>
-          {part}
-        </b>
-      ) : (
-        part
-      )
+  const formatContent = (text) =>
+    text.split(/(\[.*?\])/g).map((part, i) =>
+      part.startsWith('[') && part.endsWith(']')
+        ? <b key={i} style={{ color: '#000', display: 'block', marginTop: i > 0 ? '15px' : '0', marginBottom: '5px' }}>{part}</b>
+        : part
     );
-  };
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '20px' }}>
-      <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', width: '100%', maxWidth: '520px', maxHeight: '80vh', overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column', fontFamily: 'sans-serif' }}>
-        {/* 헤더 */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid #eeeeee' }}>
+      <div style={{ backgroundColor: '#fff', borderRadius: '12px', width: '100%', maxWidth: '520px', maxHeight: '80vh', overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid #eee' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <img src="/images/moheng.png" alt="모행" style={{ height: '25px' }} />
             <span style={{ fontWeight: 'bold', fontSize: '16px', color: '#333' }}>개인정보 제3자 제공 동의</span>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#999' }}>&times;</button>
         </div>
-
-        {/* 내용 */}
-        <div style={{ padding: '20px', overflowY: 'auto', backgroundColor: '#f9f9f9', fontSize: '14px', lineHeight: '1.6', color: '#444', whiteSpace: 'pre-line', textAlign: 'left', flex: 1 }}>
+        <div style={{ padding: '20px', overflowY: 'auto', backgroundColor: '#f9f9f9', fontSize: '14px', lineHeight: '1.6', color: '#444', whiteSpace: 'pre-line', flex: 1 }}>
           {formatContent(termsContent)}
         </div>
-
-        {/* 푸터 */}
-        <div style={{ padding: '16px', borderTop: '1px solid #eeeeee', display: 'flex', justifyContent: 'center' }}>
-          <button
-            type="button"
-            onClick={onClose}
-            style={{ padding: '12px 40px', backgroundColor: '#000', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
-          >
-            확인
-          </button>
+        <div style={{ padding: '16px', borderTop: '1px solid #eee', display: 'flex', justifyContent: 'center' }}>
+          <button type="button" onClick={onClose} style={{ padding: '12px 40px', backgroundColor: '#000', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>확인</button>
         </div>
       </div>
     </div>
@@ -132,25 +111,22 @@ const TermsModal = ({ onClose }) => {
 };
 
 export default function ParticipationBoothApply() {
-  const { eventId } = useParams();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const { eventId }  = useParams();
+  const navigate     = useNavigate();
+  const location     = useLocation();
   const fileInputRef = useRef();
 
-  const [loading, setLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [eventData, setEventData] = useState(null);
-  const [showTermsModal, setShowTermsModal] = useState(false); // ✅ 모달 상태
+  const [loading, setLoading]               = useState(true);
+  const [isSubmitting, setIsSubmitting]     = useState(false);
+  const [eventData, setEventData]           = useState(null);
+  const [showTermsModal, setShowTermsModal] = useState(false);
 
-  const [selectedBoothId, setSelectedBoothId] = useState('');
+  const [selectedBoothId, setSelectedBoothId]       = useState('');
   const [selectedFacilities, setSelectedFacilities] = useState([]);
 
-  const [profile, setProfile] = useState({
-    userId: null, name: null, phone: null, email: null, url: '', profileImg: null,
-  });
-
-  const [plan, setPlan] = useState({ title: '', topic: '', items: '', description: '' });
-  const [files, setFiles] = useState([]);
+  const [profile, setProfile] = useState({ userId: null, name: null, phone: null, email: null, url: '', profileImg: null });
+  const [plan, setPlan]       = useState({ title: '', topic: '', items: '', description: '' });
+  const [files, setFiles]     = useState([]);
   const [isAgreed, setIsAgreed] = useState(false);
 
   useEffect(() => {
@@ -158,55 +134,38 @@ export default function ParticipationBoothApply() {
       try {
         setLoading(true);
         const userRes = await ParticipationBoothApi.getMyProfile().catch(() => null);
-        if (!userRes) {
-          alert('로그인이 필요한 서비스입니다.');
-          navigate('/login');
-          return;
-        }
+        if (!userRes) { alert('로그인이 필요한 서비스입니다.'); navigate('/login'); return; }
 
-        const eventRes = await ParticipationBoothApi.getBoothApplicationInfo(eventId);
-
-        const eventHostId = location.state?.hostId;
+        const eventRes       = await ParticipationBoothApi.getBoothApplicationInfo(eventId);
+        const eventHostId    = location.state?.hostId;
         const loggedInUserId = userRes?.userId || userRes?.userNo || userRes?.id;
 
         if (eventHostId && loggedInUserId && String(eventHostId) === String(loggedInUserId)) {
           alert('본인이 주최한 행사는 부스에 참여할 수 없습니다.');
-          navigate(`/events/${eventId}`);
-          return;
+          navigate(`/events/${eventId}`); return;
         }
 
         setEventData(eventRes);
-        setProfile({
-          userId: loggedInUserId,
-          name: userRes.name || null,
-          phone: userRes.phone || null,
-          email: userRes.email || null,
-          url: '',
-          profileImg: userRes.profileImg || null,
-        });
+        setProfile({ userId: loggedInUserId, name: userRes.name || null, phone: userRes.phone || null, email: userRes.email || null, url: '', profileImg: userRes.profileImg || null });
       } catch (e) {
         console.error(e);
         if (e.response?.status === 401 || e.response?.status === 403) {
-          alert('로그인이 필요한 서비스입니다.');
-          navigate('/login');
+          alert('로그인이 필요한 서비스입니다.'); navigate('/login');
         } else {
-          alert('정보를 불러올 수 없습니다.');
-          navigate(-1);
+          alert('정보를 불러올 수 없습니다.'); navigate(-1);
         }
-      } finally {
-        setLoading(false);
-      }
+      } finally { setLoading(false); }
     };
     fetchData();
   }, [eventId, navigate, location.state]);
 
   const { boothPrice, facilityPrice, totalPrice } = useMemo(() => {
     if (!eventData) return { boothPrice: 0, facilityPrice: 0, totalPrice: 0 };
-    const booth = eventData.booths.find((x) => x.boothId === Number(selectedBoothId));
+    const booth  = eventData.booths.find((x) => x.boothId === Number(selectedBoothId));
     const bPrice = booth ? booth.boothPrice : 0;
     const fPrice = selectedFacilities.reduce((sum, sel) => {
-      const facility = eventData.facilities.find((f) => f.hostBoothfaciId === sel.hostBoothFaciId);
-      return sum + (facility ? facility.faciPrice * sel.count : 0);
+      const fac = eventData.facilities.find((f) => f.hostBoothfaciId === sel.hostBoothFaciId);
+      return sum + (fac ? fac.faciPrice * sel.count : 0);
     }, 0);
     return { boothPrice: bPrice, facilityPrice: fPrice, totalPrice: bPrice + fPrice };
   }, [selectedBoothId, selectedFacilities, eventData]);
@@ -215,10 +174,12 @@ export default function ParticipationBoothApply() {
 
   const { eventInfo, booths, facilities } = eventData;
 
+  // ✅ 주최자가 행사 등록 시 첨부한 부스 파일 (EventDto.boothFilePaths)
+  const boothFilePaths = eventInfo?.boothFilePaths || [];
+
   const handleSubmit = async () => {
-    if (location.state?.hostId && profile.userId && String(location.state.hostId) === String(profile.userId)) {
+    if (location.state?.hostId && profile.userId && String(location.state.hostId) === String(profile.userId))
       return alert('본인이 주최한 행사는 부스에 참여할 수 없습니다.');
-    }
     if (!selectedBoothId) return alert('참여하실 부스를 선택해주세요.');
     if (!plan.title.trim() || !plan.topic.trim() || !plan.items.trim()) return alert('운영 계획의 필수 항목을 작성해주세요.');
     if (!isAgreed) return alert('개인정보 제3자 제공 동의에 체크해주세요.');
@@ -226,25 +187,25 @@ export default function ParticipationBoothApply() {
     setIsSubmitting(true);
     try {
       const dto = {
-        hostBoothId: Number(selectedBoothId),
-        homepageUrl: profile.url,
-        boothTitle: plan.title,
-        boothTopic: plan.topic,
-        mainItems: plan.items,
-        description: plan.description,
-        boothCount: 1,
+        hostBoothId:   Number(selectedBoothId),
+        homepageUrl:   profile.url,
+        boothTitle:    plan.title,
+        boothTopic:    plan.topic,
+        mainItems:     plan.items,
+        description:   plan.description,
+        boothCount:    1,
         boothPrice,
         facilityPrice,
         totalPrice,
         facilities: selectedFacilities.map((f) => ({
           hostBoothFaciId: f.hostBoothFaciId,
-          faciCount: f.count,
-          faciPrice: (facilities.find((o) => o.hostBoothfaciId === f.hostBoothFaciId)?.faciPrice || 0) * f.count,
+          faciCount:       f.count,
+          faciPrice:       (facilities.find((o) => o.hostBoothfaciId === f.hostBoothFaciId)?.faciPrice || 0) * f.count,
         })),
       };
 
       const submitResult = await ParticipationBoothApi.submitBoothApplication(eventId, dto, files);
-      const pctBoothId = submitResult?.data?.pctBoothId || submitResult?.pctBoothId;
+      const pctBoothId = submitResult?.data?.pctBoothId || submitResult?.pctBoothId || submitResult;
 
       if (totalPrice === 0) {
         alert('부스 참가 신청이 완료되었습니다.');
@@ -254,43 +215,42 @@ export default function ParticipationBoothApply() {
 
       const paymentInfo = await preparePayment({
         pctBoothId,
-        eventId: Number(eventId),
-        amount: totalPrice,
+        eventId:   Number(eventId),
+        amount:    totalPrice,
         orderName: `${eventInfo.title} 부스 참가비`,
       });
 
       sessionStorage.setItem('paymentEventId', `/events/${eventId}`);
+      sessionStorage.setItem('pendingCancel', JSON.stringify({ type: 'booth', id: pctBoothId }));
 
       await openTossPayment({
-        clientKey: paymentInfo.clientKey,
-        orderId: paymentInfo.orderId,
-        orderName: paymentInfo.orderName,
-        amount: paymentInfo.amount,
-        customerName: profile.name || '고객',
+        clientKey:     paymentInfo.clientKey,
+        orderId:       paymentInfo.orderId,
+        orderName:     paymentInfo.orderName,
+        amount:        paymentInfo.amount,
+        customerName:  profile.name  || '고객',
         customerEmail: profile.email || '',
       });
+
+      sessionStorage.removeItem('pendingCancel');
     } catch (e) {
       console.error(e);
       alert('신청 또는 결제 준비 중 오류가 발생했습니다.');
-    } finally {
-      setIsSubmitting(false);
-    }
+    } finally { setIsSubmitting(false); }
   };
 
   return (
     <div style={{ minHeight: '100vh', background: THEME.bg, fontFamily: "'Pretendard', sans-serif", color: THEME.text }}>
       <Header />
-
-      {/* ✅ 약관 모달 */}
       {showTermsModal && <TermsModal onClose={() => setShowTermsModal(false)} />}
 
       <div style={{ maxWidth: '900px', margin: '0 auto', padding: '50px 20px 100px' }}>
         <h2 style={{ fontSize: '26px', fontWeight: '900', marginBottom: '30px' }}>부스 참가 신청서</h2>
 
+        {/* 행사 정보 */}
         <SectionBox title="행사 정보">
           <div style={{ display: 'flex', gap: '30px', alignItems: 'flex-start' }}>
-            <img src={imgUrl(eventInfo.thumbnail)} alt="Thumbnail"
-              style={{ width: '150px', height: '150px', borderRadius: '15px', objectFit: 'cover', border: `1px solid ${THEME.border}` }} />
+            <img src={imgUrl(eventInfo.thumbnail)} alt="Thumbnail" style={{ width: '150px', height: '150px', borderRadius: '15px', objectFit: 'cover', border: `1px solid ${THEME.border}` }} />
             <div style={{ flex: 1 }}>
               <h3 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '10px' }}>{eventInfo.title}</h3>
               <p style={{ fontSize: '14px', color: '#6B7280', marginBottom: '15px' }}>{eventInfo.simpleExplain}</p>
@@ -302,6 +262,70 @@ export default function ParticipationBoothApply() {
           </div>
         </SectionBox>
 
+        {/* ✅ 주최자 부스 첨부파일 섹션 (boothFilePaths가 있을 때만 표시) */}
+        {boothFilePaths.length > 0 && (
+          <SectionBox title="📎 부스 안내 자료 (주최자 첨부)">
+            <p style={{ fontSize: '13px', color: THEME.subText, marginBottom: '16px', marginTop: '-8px' }}>
+              주최자가 등록한 부스 관련 참고 자료입니다. 신청 전 확인해주세요.
+            </p>
+
+            {/* 이미지 파일: 미리보기 */}
+            {boothFilePaths.filter(isImageFile).length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+                {boothFilePaths.filter(isImageFile).map((filename, i) => (
+                  <a
+                    key={i}
+                    href={`${UPLOAD_BASE_HBOOTH}/${filename}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <img
+                      src={`${UPLOAD_BASE_HBOOTH}/${filename}`}
+                      alt={`부스자료 ${i + 1}`}
+                      style={{
+                        width: '120px', height: '90px',
+                        objectFit: 'cover', borderRadius: '10px',
+                        border: `1px solid ${THEME.border}`,
+                        cursor: 'pointer',
+                        transition: 'transform 0.2s',
+                      }}
+                      onMouseOver={(e) => (e.target.style.transform = 'scale(1.04)')}
+                      onMouseOut={(e) => (e.target.style.transform = 'scale(1)')}
+                      onError={(e) => { e.target.style.display = 'none'; }}
+                    />
+                  </a>
+                ))}
+              </div>
+            )}
+
+            {/* 비이미지 파일: 다운로드 링크 */}
+            {boothFilePaths.filter((f) => !isImageFile(f)).length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {boothFilePaths.filter((f) => !isImageFile(f)).map((filename, i) => (
+                  <a
+                    key={i}
+                    href={`${UPLOAD_BASE_HBOOTH}/${filename}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: '8px',
+                      padding: '10px 14px', borderRadius: '10px',
+                      border: `1px solid ${THEME.border}`, background: '#FAFAFA',
+                      color: THEME.text, fontWeight: '700', fontSize: '13px',
+                      textDecoration: 'none',
+                    }}
+                  >
+                    <span>📄</span>
+                    <span>{filename}</span>
+                    <span style={{ marginLeft: 'auto', fontSize: '11px', color: THEME.subText }}>다운로드</span>
+                  </a>
+                ))}
+              </div>
+            )}
+          </SectionBox>
+        )}
+
+        {/* 부스 선택 + 시설 */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '30px' }}>
           <SectionBox title="부스 규격 및 비용">
             {booths.map((b) => (
@@ -320,7 +344,7 @@ export default function ParticipationBoothApply() {
 
           <SectionBox title="부대시설 비용" disabled={!selectedBoothId}>
             {facilities.map((f) => {
-              const sel = selectedFacilities.find((x) => x.hostBoothFaciId === f.hostBoothfaciId);
+              const sel   = selectedFacilities.find((x) => x.hostBoothFaciId === f.hostBoothfaciId);
               const isOut = f.hasCount && f.remainCount != null && f.remainCount <= 0;
               return (
                 <div key={f.hostBoothfaciId} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: `1px solid ${THEME.border}`, opacity: isOut ? 0.5 : 1 }}>
@@ -351,52 +375,31 @@ export default function ParticipationBoothApply() {
           </SectionBox>
         </div>
 
-        {/* 결제 금액 */}
+        {/* 결제 금액 배너 */}
         <div style={{ padding: '24px 30px', background: THEME.primary, borderRadius: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', boxShadow: `0 10px 20px ${THEME.primary}44` }}>
           <div>
             <span style={{ fontSize: '14px', fontWeight: '700', color: '#000', opacity: 0.7 }}>총 결제 예정 금액</span>
-            <div style={{ fontSize: '12px', color: '#000', opacity: 0.5, marginTop: '2px' }}>부스 {boothPrice.toLocaleString()}원 + 시설 {facilityPrice.toLocaleString()}원</div>
+            <div style={{ fontSize: '12px', color: '#000', opacity: 0.5, marginTop: '2px' }}>
+              부스 {boothPrice.toLocaleString()}원 + 시설 {facilityPrice.toLocaleString()}원
+            </div>
           </div>
           <span style={{ fontSize: '28px', fontWeight: '900', color: '#000' }}>{totalPrice.toLocaleString()} <small style={{ fontSize: '16px' }}>원</small></span>
         </div>
 
         {/* 신청자(기업) 프로필 */}
         <SectionBox title="신청자(기업) 프로필">
-          <p style={{ fontSize: '12px', color: THEME.subText, marginBottom: '20px', marginTop: '-4px' }}>
-            로그인한 계정 정보로 자동 설정됩니다. 수정이 필요하면 마이페이지에서 변경해주세요.
-          </p>
-
+          <p style={{ fontSize: '12px', color: THEME.subText, marginBottom: '20px', marginTop: '-4px' }}>로그인한 계정 정보로 자동 설정됩니다. 수정이 필요하면 마이페이지에서 변경해주세요.</p>
           {profile.profileImg && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 16px', background: '#F9FAFB', borderRadius: 12, marginBottom: 20, border: `1px solid ${THEME.border}` }}>
-              <img
-                src={`${PHOTO_BASE}/${profile.profileImg}`}
-                alt="프로필"
-                style={{ width: 64, height: 64, borderRadius: '50%', objectFit: 'cover', border: '2px solid #E5E7EB', flexShrink: 0 }}
-                onError={(e) => { e.target.style.display = 'none'; }}
-              />
-              <span style={{ fontSize: 12, color: THEME.subText, fontWeight: 600 }}>
-                프로필 사진은 마이페이지에서만 변경할 수 있어요.
-              </span>
+              <img src={`${PHOTO_BASE}/${profile.profileImg}`} alt="프로필" style={{ width: 64, height: 64, borderRadius: '50%', objectFit: 'cover', border: '2px solid #E5E7EB', flexShrink: 0 }} onError={(e) => { e.target.style.display = 'none'; }} />
+              <span style={{ fontSize: 12, color: THEME.subText, fontWeight: 600 }}>프로필 사진은 마이페이지에서만 변경할 수 있어요.</span>
             </div>
           )}
-
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '30px' }}>
-            <div>
-              <Label>이름</Label>
-              <Input value={profile.name || '정보 없음'} readOnly disabled style={{ background: '#F3F4F6', color: profile.name ? THEME.text : THEME.subText }} />
-            </div>
-            <div>
-              <Label>연락처</Label>
-              <Input value={profile.phone || '정보 없음'} readOnly disabled style={{ background: '#F3F4F6', color: profile.phone ? THEME.text : THEME.subText }} />
-            </div>
-            <div style={{ gridColumn: '1/-1' }}>
-              <Label>이메일</Label>
-              <Input value={profile.email || '정보 없음'} readOnly disabled style={{ background: '#F3F4F6', color: profile.email ? THEME.text : THEME.subText }} />
-            </div>
-            <div style={{ gridColumn: '1/-1' }}>
-              <Label>홈페이지 / SNS</Label>
-              <Input value={profile.url} onChange={(e) => setProfile({ ...profile, url: e.target.value })} placeholder="https://" />
-            </div>
+            <div><Label>이름</Label><Input value={profile.name || '정보 없음'} readOnly disabled style={{ background: '#F3F4F6', color: profile.name ? THEME.text : THEME.subText }} /></div>
+            <div><Label>연락처</Label><Input value={profile.phone || '정보 없음'} readOnly disabled style={{ background: '#F3F4F6', color: profile.phone ? THEME.text : THEME.subText }} /></div>
+            <div style={{ gridColumn: '1/-1' }}><Label>이메일</Label><Input value={profile.email || '정보 없음'} readOnly disabled style={{ background: '#F3F4F6', color: profile.email ? THEME.text : THEME.subText }} /></div>
+            <div style={{ gridColumn: '1/-1' }}><Label>홈페이지 / SNS</Label><Input value={profile.url} onChange={(e) => setProfile({ ...profile, url: e.target.value })} placeholder="https://" /></div>
           </div>
         </SectionBox>
 
@@ -431,26 +434,17 @@ export default function ParticipationBoothApply() {
           )}
         </SectionBox>
 
-        {/* ✅ 동의 체크박스 + 보기 버튼 */}
+        {/* 동의 */}
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
           <label style={{ fontSize: '13px', fontWeight: '700', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
             <input type="checkbox" checked={isAgreed} onChange={(e) => setIsAgreed(e.target.checked)} style={{ accentColor: THEME.primary, width: '16px', height: '16px' }} />
             (필수) 개인정보 제3자 제공 동의
           </label>
-          <button
-            type="button"
-            onClick={() => setShowTermsModal(true)}
-            style={{ marginLeft: '8px', background: 'none', border: 'none', fontSize: '13px', color: THEME.secondary, fontWeight: '700', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
-          >
-            보기
-          </button>
+          <button type="button" onClick={() => setShowTermsModal(true)} style={{ marginLeft: '8px', background: 'none', border: 'none', fontSize: '13px', color: THEME.secondary, fontWeight: '700', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>보기</button>
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'center', gap: '15px' }}>
-          <button onClick={() => navigate(-1)}
-            style={{ padding: '14px 40px', borderRadius: '12px', border: `1px solid ${THEME.border}`, background: '#fff', fontWeight: '800', cursor: 'pointer' }}>
-            취소
-          </button>
+          <button onClick={() => navigate(-1)} style={{ padding: '14px 40px', borderRadius: '12px', border: `1px solid ${THEME.border}`, background: '#fff', fontWeight: '800', cursor: 'pointer' }}>취소</button>
           <button onClick={handleSubmit} disabled={isSubmitting}
             style={{ padding: '14px 60px', borderRadius: '12px', border: 'none', background: isSubmitting ? THEME.border : THEME.primary, color: '#000', fontWeight: '900', fontSize: '16px', cursor: 'pointer' }}>
             {isSubmitting ? '처리 중...' : totalPrice > 0 ? `${totalPrice.toLocaleString()}원 결제하기` : '신청서 제출'}
@@ -467,6 +461,6 @@ async function openTossPayment({ clientKey, orderId, orderName, amount, customer
   await tossPayments.requestPayment('카드', {
     amount, orderId, orderName, customerName, customerEmail,
     successUrl: `${window.location.origin}/payment/success`,
-    failUrl: `${window.location.origin}/payment/fail`,
+    failUrl:    `${window.location.origin}/payment/fail`,
   });
 }

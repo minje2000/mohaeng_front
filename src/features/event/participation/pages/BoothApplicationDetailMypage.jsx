@@ -183,6 +183,35 @@ export default function BoothApplicationDetailMypage() {
               marginBottom: 14,
             }}
           >
+            신청자 정보
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <Field label="이름">{data.applicantName || '-'}</Field>
+            <Field label="이메일">{data.applicantEmail || '-'}</Field>
+            <Field label="전화번호">{data.applicantPhone || '-'}</Field>
+            <Field label="사업자번호">{data.applicantBusinessNum || '-'}</Field>
+          </div>
+        </div>
+
+        <div
+          style={{
+            marginTop: 14,
+            border: '1px solid #E5E7EB',
+            borderRadius: 16,
+            background: '#fff',
+            padding: 18,
+          }}
+        >
+          <div
+            style={{
+              fontSize: 16,
+              fontWeight: 900,
+              color: '#111827',
+              letterSpacing: '-0.02em',
+              marginBottom: 14,
+            }}
+          >
             신청 정보
           </div>
 

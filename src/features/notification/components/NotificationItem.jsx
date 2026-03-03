@@ -11,7 +11,7 @@ const TYPE_LABEL = {
   REPORT_ACCEPT: "신고 승인 알림",
   REPORT_REJECT: "신고 반려 알림",
 
-  BOOTH_RECEIVER: "부스 신청 알림(주최자)",
+  BOOTH_RECEIVER: "부스 신청 알림",
   BOOTH_ACCEPT: "부스 승인 알림",
   BOOTH_REJECT: "부스 반려 알림",
 };

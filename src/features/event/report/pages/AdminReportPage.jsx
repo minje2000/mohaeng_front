@@ -1,5 +1,6 @@
 // src/features/event/report/pages/AdminReportPage.jsx
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   approveAdminReport,
   fetchAdminReportDetail,
@@ -7,6 +8,26 @@ import {
   rejectAdminReport,
 } from "../api/adminReportApi";
 import AdminReportDetailModal from "../components/AdminReportDetailModal";
+
+//  업로드 경로(프로젝트에 맞게 수정 가능)
+const UPLOAD_BASE = "http://localhost:8080/upload_files/event";
+const PLACEHOLDER = "https://dummyimage.com/80x80/f3f4f6/666666.png&text=Mohaeng";
+
+//  너희가 정한 신고 사유 라벨(6개)
+const REASON_LABEL = {
+  SPAM: "광고/스팸/도배",
+  FRAUD: "허위 정보/내용 불일치",
+  COPYRIGHT: "도용/사칭/저작권 침해",
+
+  INAPPROPRIATE: "부적절한 내용",
+  ABUSE: "부적절한 내용",
+  ADULT: "부적절한 내용",
+  ILLEGAL: "부적절한 내용",
+
+  DUPLICATE: "중복/반복 등록",
+  OTHER: "기타",
+};
+const reasonLabel = (v) => REASON_LABEL[v] || v || "-";
 
 function formatDate(value) {
   if (!value) return "-";
@@ -29,12 +50,19 @@ function statusLabel(v) {
 }
 
 function statusWeight(v) {
-  // 미처리 먼저
-  if (v === "PENDING") return 0;
-  return 1;
+  return v === "PENDING" ? 0 : 1;
+}
+
+function toImgUrl(v) {
+  if (!v) return null;
+  if (typeof v !== "string") return null;
+  if (v.startsWith("http")) return v;
+  return `${UPLOAD_BASE}/${v}`; // 파일명만 오면 서버 경로 붙이기
 }
 
 export default function AdminReportPage() {
+  const navigate = useNavigate();
+
   const [items, setItems] = useState([]);
   const [raw, setRaw] = useState(null);
   const [error, setError] = useState("");
@@ -79,9 +107,6 @@ export default function AdminReportPage() {
     });
   }, [items]);
 
-  const posterSrc = (it) =>
-    it.posterUrl || it.thumbnailUrl || it.eventPosterUrl || it.imageUrl || null;
-
   const openDetail = async (it) => {
     setSelected(it);
     setOpen(true);
@@ -111,7 +136,7 @@ export default function AdminReportPage() {
 
     try {
       await approveAdminReport(reportId);
-      await load(); //  상태 업데이트 반영
+      await load();
       closeDetail();
     } catch (e) {
       alert(e?.message || e?.data || "승인 처리 실패");
@@ -127,22 +152,23 @@ export default function AdminReportPage() {
 
     try {
       await rejectAdminReport(reportId);
-      await load(); //  상태 업데이트 반영
+      await load();
       closeDetail();
     } catch (e) {
       alert(e?.message || e?.data || "반려 처리 실패");
     }
   };
 
+  const goEventDetail = (eventId) => {
+    if (!eventId) return;
+    navigate(`/events/${eventId}`); //  행사 상세 페이지로 이동
+  };
+
   return (
     <div style={{ padding: 16 }}>
       <h2 style={{ margin: 0, marginBottom: 12 }}>행사 신고 관리</h2>
 
-      <div style={{ marginBottom: 10 }}>
-        <button onClick={load} style={{ padding: "6px 10px", cursor: "pointer" }}>
-          새로고침
-        </button>
-      </div>
+      
 
       {loading && <div>불러오는 중...</div>}
       {!loading && error && <div style={{ color: "crimson" }}>{error}</div>}
@@ -154,7 +180,7 @@ export default function AdminReportPage() {
             <thead>
               <tr style={{ background: "#fafafa" }}>
                 <th style={{ textAlign: "left", padding: 12, width: 80 }}>번호</th>
-                <th style={{ textAlign: "left", padding: 12, width: 260 }}>행사</th>
+                <th style={{ textAlign: "left", padding: 12, width: 320 }}>행사</th>
                 <th style={{ textAlign: "left", padding: 12 }}>신고 사유</th>
                 <th style={{ textAlign: "left", padding: 12, width: 180 }}>신고일</th>
                 <th style={{ textAlign: "left", padding: 12, width: 110 }}>상태</th>
@@ -164,18 +190,29 @@ export default function AdminReportPage() {
             <tbody>
               {sorted.map((it, idx) => {
                 const reportId = it.reportId ?? it.id;
-                const img = posterSrc(it);
+                const thumb = toImgUrl(it.eventThumbnail);
 
                 return (
-                  <tr
-                    key={reportId}
-                    onClick={() => openDetail(it)}
-                    style={{ borderTop: "1px solid #eee", cursor: "pointer" }}
-                  >
+                  <tr key={reportId} style={{ borderTop: "1px solid #eee" }}>
                     <td style={{ padding: 12 }}>{page * size + (idx + 1)}</td>
 
+                    {/*  행사 클릭 → 행사 상세 */}
                     <td style={{ padding: 12 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => goEventDetail(it.eventId)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") goEventDetail(it.eventId);
+                        }}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 10,
+                          cursor: "pointer",
+                        }}
+                        title="행사 상세로 이동"
+                      >
                         <div
                           style={{
                             width: 56,
@@ -187,16 +224,14 @@ export default function AdminReportPage() {
                             flex: "0 0 auto",
                           }}
                         >
-                          {img ? (
-                            <img
-                              src={img}
-                              alt="행사 포스터"
-                              style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                              onError={(e) => {
-                                e.currentTarget.style.display = "none";
-                              }}
-                            />
-                          ) : null}
+                          <img
+                            src={thumb || PLACEHOLDER}
+                            alt="행사 포스터"
+                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                            onError={(e) => {
+                              e.currentTarget.src = PLACEHOLDER;
+                            }}
+                          />
                         </div>
 
                         <div style={{ minWidth: 0 }}>
@@ -208,14 +243,24 @@ export default function AdminReportPage() {
                               textOverflow: "ellipsis",
                             }}
                           >
-                            {it.eventTitle ?? it.eventName ?? `eventId=${it.eventId}`}
+                            {it.eventTitle ?? it.eventName ?? "행사"}
                           </div>
-                          <div style={{ fontSize: 12, opacity: 0.7 }}>eventId: {it.eventId}</div>
+
+                          {/*  eventId 숨김 */}
+                          {/* <div style={{ fontSize: 12, opacity: 0.7 }}>eventId: {it.eventId}</div> */}
                         </div>
                       </div>
                     </td>
 
-                    <td style={{ padding: 12 }}>{it.reasonCategory}</td>
+                    {/*  신고 사유 클릭 → 신고 상세 팝업 */}
+                    <td
+                      style={{ padding: 12, cursor: "pointer", textDecoration: "underline" }}
+                      onClick={() => openDetail(it)}
+                      title="신고 상세 보기"
+                    >
+                      {reasonLabel(it.reasonCategory)}
+                    </td>
+
                     <td style={{ padding: 12 }}>{formatDate(it.createdAt)}</td>
                     <td style={{ padding: 12 }}>{statusLabel(it.reportResult)}</td>
                   </tr>

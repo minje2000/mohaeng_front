@@ -42,6 +42,76 @@ const Input = (props) => <input {...props} style={{ ...inputStyle, ...props.styl
 const Select = (props) => <select {...props} style={{ ...inputStyle, ...props.style }} />;
 const Textarea = (props) => <textarea {...props} style={{ ...inputStyle, minHeight: '100px', ...props.style }} />;
 
+// ✅ 개인정보 제3자 제공 동의 모달
+const TermsModal = ({ onClose }) => {
+  const termsContent = `[제공받는 자]
+• 행사 주최자 (이벤트 개설자)
+
+[제공 목적]
+• 행사 참가자 확인 및 관리
+• 행사 관련 안내 및 연락
+• 참가 신청 처리 및 운영
+
+[제공하는 개인정보 항목]
+• 이름, 전화번호, 이메일
+• 성별, 나이대
+• 참여 날짜, 직업, 소속, 직급 등 신청서 작성 항목
+
+[보유 및 이용 기간]
+• 행사 종료 후 1년까지
+• 단, 관련 법령에 따라 필요 시 일정 기간 보관
+  - 계약 또는 청약철회 기록: 5년
+  - 소비자 불만 또는 분쟁 처리 기록: 3년
+
+[동의 거부 권리 및 불이익 안내]
+• 이용자는 개인정보 제3자 제공에 대한 동의를 거부할 권리가 있습니다.
+• 동의를 거부할 경우 행사 참가 신청이 제한될 수 있습니다.`;
+
+  const formatContent = (text) => {
+    const parts = text.split(/(\[.*?\])/g);
+    return parts.map((part, index) =>
+      part.startsWith('[') && part.endsWith(']') ? (
+        <b key={index} style={{ color: '#000', display: 'block', marginTop: index > 0 ? '15px' : '0', marginBottom: '5px' }}>
+          {part}
+        </b>
+      ) : (
+        part
+      )
+    );
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '20px' }}>
+      <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', width: '100%', maxWidth: '520px', maxHeight: '80vh', overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column', fontFamily: 'sans-serif' }}>
+        {/* 헤더 */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid #eeeeee' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <img src="/images/moheng.png" alt="모행" style={{ height: '25px' }} />
+            <span style={{ fontWeight: 'bold', fontSize: '16px', color: '#333' }}>개인정보 제3자 제공 동의</span>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#999' }}>&times;</button>
+        </div>
+
+        {/* 내용 */}
+        <div style={{ padding: '20px', overflowY: 'auto', backgroundColor: '#f9f9f9', fontSize: '14px', lineHeight: '1.6', color: '#444', whiteSpace: 'pre-line', textAlign: 'left', flex: 1 }}>
+          {formatContent(termsContent)}
+        </div>
+
+        {/* 푸터 */}
+        <div style={{ padding: '16px', borderTop: '1px solid #eeeeee', display: 'flex', justifyContent: 'center' }}>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{ padding: '12px 40px', backgroundColor: '#000', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
+          >
+            확인
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function ParticipationApply() {
   const { eventId } = useParams();
   const navigate = useNavigate();
@@ -50,13 +120,13 @@ export default function ParticipationApply() {
   const [loading, setLoading] = useState(true);
   const [eventData, setEventData] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false); // ✅ 모달 상태
 
   const [formData, setFormData] = useState({
     pctGender: '', pctAgeGroup: '', pctJob: '', pctRoot: '',
     pctGroup: '', pctRank: '', pctIntroduce: '', pctDate: '',
   });
 
-  // ✅ Issue 7: profileImg 포함
   const [userInfo, setUserInfo] = useState({ userId: null, name: '', phone: '', email: '', profileImg: '' });
   const [isAgreed, setIsAgreed] = useState(false);
 
@@ -89,7 +159,7 @@ export default function ParticipationApply() {
           name: user.name || '',
           phone: user.phone || '',
           email: user.email || '',
-          profileImg: user.profileImg || '',   // ✅ Issue 7
+          profileImg: user.profileImg || '',
         });
       } catch (e) {
         console.error(e);
@@ -169,6 +239,10 @@ export default function ParticipationApply() {
   return (
     <div style={{ minHeight: '100vh', background: THEME.bg, paddingBottom: '100px' }}>
       <Header />
+
+      {/* ✅ 약관 모달 */}
+      {showTermsModal && <TermsModal onClose={() => setShowTermsModal(false)} />}
+
       <div style={{ maxWidth: '800px', margin: '0 auto', padding: '40px 20px' }}>
         <h2 style={{ fontSize: '24px', fontWeight: '900', marginBottom: '30px' }}>참가 신청 양식</h2>
 
@@ -185,7 +259,6 @@ export default function ParticipationApply() {
         </SectionBox>
 
         <SectionBox title="신청자 정보">
-          {/* ✅ Issue 7: 프로필 사진 */}
           {userInfo.profileImg && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 0', borderBottom: `1px solid ${THEME.border}`, marginBottom: 16 }}>
               <img
@@ -265,11 +338,19 @@ export default function ParticipationApply() {
           </SectionBox>
         )}
 
+        {/* ✅ 동의 체크박스 + 보기 버튼 */}
         <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-          <label style={{ cursor: 'pointer', fontSize: '13px', fontWeight: '700' }}>
-            <input type="checkbox" checked={isAgreed} onChange={(e) => setIsAgreed(e.target.checked)} style={{ marginRight: 8 }} />
+          <label style={{ cursor: 'pointer', fontSize: '13px', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+            <input type="checkbox" checked={isAgreed} onChange={(e) => setIsAgreed(e.target.checked)} style={{ marginRight: 0 }} />
             (필수) 개인정보 제3자 제공 동의
           </label>
+          <button
+            type="button"
+            onClick={() => setShowTermsModal(true)}
+            style={{ marginLeft: '8px', background: 'none', border: 'none', fontSize: '13px', color: THEME.secondary, fontWeight: '700', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
+          >
+            보기
+          </button>
         </div>
 
         <div style={{ textAlign: 'center' }}>

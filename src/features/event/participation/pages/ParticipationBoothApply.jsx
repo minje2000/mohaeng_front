@@ -6,7 +6,7 @@ import { preparePayment } from '../../../payment/api/PaymentAPI';
 import Header from '../../../../shared/components/common/Header';
 
 const UPLOAD_BASE_EVENT = 'http://localhost:8080/upload_files/event';
-const PHOTO_BASE = 'http://localhost:8080/upload_files/photo';   // ✅ Issue 8
+const PHOTO_BASE = 'http://localhost:8080/upload_files/photo';
 const PLACEHOLDER = 'https://dummyimage.com/400x400/f3f4f6/666666.png&text=Mohaeng';
 
 const imgUrl = (path) => (path ? `${UPLOAD_BASE_EVENT}/${path}` : PLACEHOLDER);
@@ -61,6 +61,76 @@ const StockBadge = ({ remain, total, color = THEME.secondary }) => {
   );
 };
 
+// ✅ 개인정보 제3자 제공 동의 모달
+const TermsModal = ({ onClose }) => {
+  const termsContent = `[제공받는 자]
+• 행사 주최자 (이벤트 개설자)
+
+[제공 목적]
+• 부스 참가자 확인 및 관리
+• 행사 관련 안내 및 연락
+• 부스 신청 처리 및 운영
+
+[제공하는 개인정보 항목]
+• 이름, 전화번호, 이메일
+• 홈페이지 / SNS URL
+• 부스 명칭, 부스 주제, 주요 전시 품목 등 신청서 작성 항목
+
+[보유 및 이용 기간]
+• 행사 종료 후 1년까지
+• 단, 관련 법령에 따라 필요 시 일정 기간 보관
+  - 계약 또는 청약철회 기록: 5년
+  - 소비자 불만 또는 분쟁 처리 기록: 3년
+
+[동의 거부 권리 및 불이익 안내]
+• 이용자는 개인정보 제3자 제공에 대한 동의를 거부할 권리가 있습니다.
+• 동의를 거부할 경우 부스 참가 신청이 제한될 수 있습니다.`;
+
+  const formatContent = (text) => {
+    const parts = text.split(/(\[.*?\])/g);
+    return parts.map((part, index) =>
+      part.startsWith('[') && part.endsWith(']') ? (
+        <b key={index} style={{ color: '#000', display: 'block', marginTop: index > 0 ? '15px' : '0', marginBottom: '5px' }}>
+          {part}
+        </b>
+      ) : (
+        part
+      )
+    );
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '20px' }}>
+      <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', width: '100%', maxWidth: '520px', maxHeight: '80vh', overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column', fontFamily: 'sans-serif' }}>
+        {/* 헤더 */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid #eeeeee' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <img src="/images/moheng.png" alt="모행" style={{ height: '25px' }} />
+            <span style={{ fontWeight: 'bold', fontSize: '16px', color: '#333' }}>개인정보 제3자 제공 동의</span>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#999' }}>&times;</button>
+        </div>
+
+        {/* 내용 */}
+        <div style={{ padding: '20px', overflowY: 'auto', backgroundColor: '#f9f9f9', fontSize: '14px', lineHeight: '1.6', color: '#444', whiteSpace: 'pre-line', textAlign: 'left', flex: 1 }}>
+          {formatContent(termsContent)}
+        </div>
+
+        {/* 푸터 */}
+        <div style={{ padding: '16px', borderTop: '1px solid #eeeeee', display: 'flex', justifyContent: 'center' }}>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{ padding: '12px 40px', backgroundColor: '#000', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
+          >
+            확인
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function ParticipationBoothApply() {
   const { eventId } = useParams();
   const navigate = useNavigate();
@@ -70,11 +140,11 @@ export default function ParticipationBoothApply() {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [eventData, setEventData] = useState(null);
+  const [showTermsModal, setShowTermsModal] = useState(false); // ✅ 모달 상태
 
   const [selectedBoothId, setSelectedBoothId] = useState('');
   const [selectedFacilities, setSelectedFacilities] = useState([]);
 
-  // ✅ Issue 8: profileImg 포함
   const [profile, setProfile] = useState({
     userId: null, name: null, phone: null, email: null, url: '', profileImg: null,
   });
@@ -112,7 +182,7 @@ export default function ParticipationBoothApply() {
           phone: userRes.phone || null,
           email: userRes.email || null,
           url: '',
-          profileImg: userRes.profileImg || null,   // ✅ Issue 8
+          profileImg: userRes.profileImg || null,
         });
       } catch (e) {
         console.error(e);
@@ -210,6 +280,10 @@ export default function ParticipationBoothApply() {
   return (
     <div style={{ minHeight: '100vh', background: THEME.bg, fontFamily: "'Pretendard', sans-serif", color: THEME.text }}>
       <Header />
+
+      {/* ✅ 약관 모달 */}
+      {showTermsModal && <TermsModal onClose={() => setShowTermsModal(false)} />}
+
       <div style={{ maxWidth: '900px', margin: '0 auto', padding: '50px 20px 100px' }}>
         <h2 style={{ fontSize: '26px', fontWeight: '900', marginBottom: '30px' }}>부스 참가 신청서</h2>
 
@@ -292,7 +366,6 @@ export default function ParticipationBoothApply() {
             로그인한 계정 정보로 자동 설정됩니다. 수정이 필요하면 마이페이지에서 변경해주세요.
           </p>
 
-          {/* ✅ Issue 8: 프로필 사진 */}
           {profile.profileImg && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 16px', background: '#F9FAFB', borderRadius: 12, marginBottom: 20, border: `1px solid ${THEME.border}` }}>
               <img
@@ -358,11 +431,19 @@ export default function ParticipationBoothApply() {
           )}
         </SectionBox>
 
+        {/* ✅ 동의 체크박스 + 보기 버튼 */}
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
           <label style={{ fontSize: '13px', fontWeight: '700', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
             <input type="checkbox" checked={isAgreed} onChange={(e) => setIsAgreed(e.target.checked)} style={{ accentColor: THEME.primary, width: '16px', height: '16px' }} />
             (필수) 개인정보 제3자 제공 동의
           </label>
+          <button
+            type="button"
+            onClick={() => setShowTermsModal(true)}
+            style={{ marginLeft: '8px', background: 'none', border: 'none', fontSize: '13px', color: THEME.secondary, fontWeight: '700', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
+          >
+            보기
+          </button>
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'center', gap: '15px' }}>

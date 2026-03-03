@@ -9,7 +9,6 @@ const THEME = {
   primary: '#FFD700', secondary: '#D97706', bg: '#F9FAFB',
   border: '#E5E7EB', text: '#111827', subText: '#9CA3AF',
 };
-
 const PHOTO_BASE = 'http://localhost:8080/upload_files/photo';
 
 const getDatesInRange = (startDate, endDate) => {
@@ -38,11 +37,11 @@ const Label = ({ children, required }) => (
 );
 
 const inputStyle = { width: '100%', padding: '12px 16px', borderRadius: '10px', border: `1px solid ${THEME.border}`, fontSize: '14px', boxSizing: 'border-box', outline: 'none' };
-const Input = (props) => <input {...props} style={{ ...inputStyle, ...props.style }} />;
-const Select = (props) => <select {...props} style={{ ...inputStyle, ...props.style }} />;
+const Input    = (props) => <input    {...props} style={{ ...inputStyle, ...props.style }} />;
+const Select   = (props) => <select   {...props} style={{ ...inputStyle, ...props.style }} />;
 const Textarea = (props) => <textarea {...props} style={{ ...inputStyle, minHeight: '100px', ...props.style }} />;
 
-// ✅ 개인정보 제3자 제공 동의 모달
+// 개인정보 제3자 제공 동의 모달
 const TermsModal = ({ onClose }) => {
   const termsContent = `[제공받는 자]
 • 행사 주최자 (이벤트 개설자)
@@ -67,45 +66,28 @@ const TermsModal = ({ onClose }) => {
 • 이용자는 개인정보 제3자 제공에 대한 동의를 거부할 권리가 있습니다.
 • 동의를 거부할 경우 행사 참가 신청이 제한될 수 있습니다.`;
 
-  const formatContent = (text) => {
-    const parts = text.split(/(\[.*?\])/g);
-    return parts.map((part, index) =>
-      part.startsWith('[') && part.endsWith(']') ? (
-        <b key={index} style={{ color: '#000', display: 'block', marginTop: index > 0 ? '15px' : '0', marginBottom: '5px' }}>
-          {part}
-        </b>
-      ) : (
-        part
-      )
+  const formatContent = (text) =>
+    text.split(/(\[.*?\])/g).map((part, i) =>
+      part.startsWith('[') && part.endsWith(']')
+        ? <b key={i} style={{ color: '#000', display: 'block', marginTop: i > 0 ? '15px' : '0', marginBottom: '5px' }}>{part}</b>
+        : part
     );
-  };
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '20px' }}>
-      <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', width: '100%', maxWidth: '520px', maxHeight: '80vh', overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column', fontFamily: 'sans-serif' }}>
-        {/* 헤더 */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid #eeeeee' }}>
+      <div style={{ backgroundColor: '#fff', borderRadius: '12px', width: '100%', maxWidth: '520px', maxHeight: '80vh', overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column', fontFamily: 'sans-serif' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid #eee' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <img src="/images/moheng.png" alt="모행" style={{ height: '25px' }} />
             <span style={{ fontWeight: 'bold', fontSize: '16px', color: '#333' }}>개인정보 제3자 제공 동의</span>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#999' }}>&times;</button>
         </div>
-
-        {/* 내용 */}
         <div style={{ padding: '20px', overflowY: 'auto', backgroundColor: '#f9f9f9', fontSize: '14px', lineHeight: '1.6', color: '#444', whiteSpace: 'pre-line', textAlign: 'left', flex: 1 }}>
           {formatContent(termsContent)}
         </div>
-
-        {/* 푸터 */}
-        <div style={{ padding: '16px', borderTop: '1px solid #eeeeee', display: 'flex', justifyContent: 'center' }}>
-          <button
-            type="button"
-            onClick={onClose}
-            style={{ padding: '12px 40px', backgroundColor: '#000', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
-          >
-            확인
-          </button>
+        <div style={{ padding: '16px', borderTop: '1px solid #eee', display: 'flex', justifyContent: 'center' }}>
+          <button type="button" onClick={onClose} style={{ padding: '12px 40px', backgroundColor: '#000', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>확인</button>
         </div>
       </div>
     </div>
@@ -114,19 +96,18 @@ const TermsModal = ({ onClose }) => {
 
 export default function ParticipationApply() {
   const { eventId } = useParams();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const navigate    = useNavigate();
+  const location    = useLocation();
 
-  const [loading, setLoading] = useState(true);
-  const [eventData, setEventData] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showTermsModal, setShowTermsModal] = useState(false); // ✅ 모달 상태
+  const [loading, setLoading]               = useState(true);
+  const [eventData, setEventData]           = useState(null);
+  const [isSubmitting, setIsSubmitting]     = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
 
   const [formData, setFormData] = useState({
     pctGender: '', pctAgeGroup: '', pctJob: '', pctRoot: '',
     pctGroup: '', pctRank: '', pctIntroduce: '', pctDate: '',
   });
-
   const [userInfo, setUserInfo] = useState({ userId: null, name: '', phone: '', email: '', profileImg: '' });
   const [isAgreed, setIsAgreed] = useState(false);
 
@@ -135,49 +116,33 @@ export default function ParticipationApply() {
       try {
         setLoading(true);
         const user = await getMyProfile().catch(() => null);
-        if (!user) {
-          alert('로그인이 필요한 서비스입니다.');
-          navigate('/login');
-          return;
-        }
+        if (!user) { alert('로그인이 필요한 서비스입니다.'); navigate('/login'); return; }
 
-        const res = await getEventParticipationInfo(eventId);
+        const res          = await getEventParticipationInfo(eventId);
         const currentEvent = res?.eventInfo || res;
-
-        const eventHostId = location.state?.hostId;
+        const eventHostId  = location.state?.hostId;
         const loggedInUserId = user?.userId || user?.userNo || user?.id;
 
         if (eventHostId && loggedInUserId && String(eventHostId) === String(loggedInUserId)) {
-          alert('본인이 주최한 행사는 참여할 수 없습니다.');
-          navigate(`/events/${eventId}`);
-          return;
+          alert('본인이 주최한 행사는 참여할 수 없습니다.'); navigate(`/events/${eventId}`); return;
         }
 
         if (currentEvent) setEventData(currentEvent);
-        setUserInfo({
-          userId: loggedInUserId,
-          name: user.name || '',
-          phone: user.phone || '',
-          email: user.email || '',
-          profileImg: user.profileImg || '',
-        });
+        setUserInfo({ userId: loggedInUserId, name: user.name || '', phone: user.phone || '', email: user.email || '', profileImg: user.profileImg || '' });
       } catch (e) {
         console.error(e);
         if (e.response?.status === 401 || e.response?.status === 403) {
-          alert('로그인이 필요한 서비스입니다.');
-          navigate('/login');
+          alert('로그인이 필요한 서비스입니다.'); navigate('/login');
         } else {
           alert('데이터를 불러오는 중 문제가 발생했습니다.');
         }
-      } finally {
-        setLoading(false);
-      }
+      } finally { setLoading(false); }
     };
     init();
   }, [eventId, navigate, location.state]);
 
   const availableDates = useMemo(() => getDatesInRange(eventData?.startDate, eventData?.endDate), [eventData]);
-  const isPaid = useMemo(() => (eventData?.price || 0) > 0, [eventData]);
+  const isPaid         = useMemo(() => (eventData?.price || 0) > 0, [eventData]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -185,16 +150,16 @@ export default function ParticipationApply() {
   };
 
   const handleSubmit = async () => {
-    if (location.state?.hostId && userInfo.userId && String(location.state.hostId) === String(userInfo.userId)) {
+    if (location.state?.hostId && userInfo.userId && String(location.state.hostId) === String(userInfo.userId))
       return alert('본인이 주최한 행사는 참여할 수 없습니다.');
-    }
-    if (!formData.pctDate) return alert('참여 날짜를 선택해주세요.');
-    if (!formData.pctGender) return alert('성별을 선택해주세요.');
+    if (!formData.pctDate)     return alert('참여 날짜를 선택해주세요.');
+    if (!formData.pctGender)   return alert('성별을 선택해주세요.');
     if (!formData.pctAgeGroup) return alert('나이대를 선택해주세요.');
-    if (!isAgreed) return alert('개인정보 제공 동의가 필요합니다.');
+    if (!isAgreed)             return alert('개인정보 제공 동의가 필요합니다.');
 
     setIsSubmitting(true);
     try {
+      // EventParticipationController.submitParticipation → pctId 반환
       const pctId = await submitParticipation(eventId, formData);
 
       if (!isPaid) {
@@ -206,26 +171,30 @@ export default function ParticipationApply() {
       const paymentInfo = await preparePayment({
         pctId,
         eventId: Number(eventId),
-        amount: eventData.price,
+        amount:    eventData.price,
         orderName: `${eventData.title} 행사 참가비`,
       });
 
+      // ✅ 결제 실패/취소 시 PaymentFail에서 자동 취소하기 위해 저장
+      // type: 'participation' → EventParticipationController.cancelParticipation(pctId)
       sessionStorage.setItem('paymentEventId', `/events/${eventId}`);
+      sessionStorage.setItem('pendingCancel', JSON.stringify({ type: 'participation', id: pctId }));
 
       await openTossPayment({
-        clientKey: paymentInfo.clientKey,
-        orderId: paymentInfo.orderId,
-        orderName: paymentInfo.orderName,
-        amount: paymentInfo.amount,
-        customerName: userInfo.name || '고객',
+        clientKey:     paymentInfo.clientKey,
+        orderId:       paymentInfo.orderId,
+        orderName:     paymentInfo.orderName,
+        amount:        paymentInfo.amount,
+        customerName:  userInfo.name  || '고객',
         customerEmail: userInfo.email || '',
       });
+
+      // 토스 성공 → successUrl로 리다이렉트 → pendingCancel 제거
+      sessionStorage.removeItem('pendingCancel');
     } catch (e) {
       console.error(e);
       alert('신청 처리 중 오류가 발생했습니다.');
-    } finally {
-      setIsSubmitting(false);
-    }
+    } finally { setIsSubmitting(false); }
   };
 
   if (loading || !eventData) return <div style={{ textAlign: 'center', padding: '100px' }}>⏳ 로딩 중...</div>;
@@ -239,8 +208,6 @@ export default function ParticipationApply() {
   return (
     <div style={{ minHeight: '100vh', background: THEME.bg, paddingBottom: '100px' }}>
       <Header />
-
-      {/* ✅ 약관 모달 */}
       {showTermsModal && <TermsModal onClose={() => setShowTermsModal(false)} />}
 
       <div style={{ maxWidth: '800px', margin: '0 auto', padding: '40px 20px' }}>
@@ -261,20 +228,12 @@ export default function ParticipationApply() {
         <SectionBox title="신청자 정보">
           {userInfo.profileImg && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 0', borderBottom: `1px solid ${THEME.border}`, marginBottom: 16 }}>
-              <img
-                src={`${PHOTO_BASE}/${userInfo.profileImg}`}
-                alt="프로필"
-                style={{ width: 60, height: 60, borderRadius: '50%', objectFit: 'cover', border: '2px solid #E5E7EB' }}
-                onError={(e) => { e.target.style.display = 'none'; }}
-              />
-              <span style={{ fontSize: 13, color: THEME.subText, fontWeight: 600 }}>
-                마이페이지에서 사진을 변경할 수 있어요.
-              </span>
+              <img src={`${PHOTO_BASE}/${userInfo.profileImg}`} alt="프로필" style={{ width: 60, height: 60, borderRadius: '50%', objectFit: 'cover', border: '2px solid #E5E7EB' }} onError={(e) => { e.target.style.display = 'none'; }} />
+              <span style={{ fontSize: 13, color: THEME.subText, fontWeight: 600 }}>마이페이지에서 사진을 변경할 수 있어요.</span>
             </div>
           )}
-
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-            <div><Label>이름</Label><Input value={userInfo.name} readOnly style={{ background: '#F3F4F6' }} /></div>
+            <div><Label>이름</Label><Input value={userInfo.name}  readOnly style={{ background: '#F3F4F6' }} /></div>
             <div><Label>연락처</Label><Input value={userInfo.phone} readOnly style={{ background: '#F3F4F6' }} /></div>
             <div style={{ gridColumn: '1/-1' }}><Label>이메일</Label><Input value={userInfo.email} readOnly style={{ background: '#F3F4F6' }} /></div>
             <div>
@@ -289,12 +248,9 @@ export default function ParticipationApply() {
               <Label required>나이대</Label>
               <Select name="pctAgeGroup" value={formData.pctAgeGroup} onChange={handleInputChange}>
                 <option value="">선택</option>
-                <option value="1">10대</option>
-                <option value="2">20대</option>
-                <option value="3">30대</option>
-                <option value="4">40대</option>
-                <option value="5">50대</option>
-                <option value="6">60대 이상</option>
+                <option value="1">10대</option><option value="2">20대</option>
+                <option value="3">30대</option><option value="4">40대</option>
+                <option value="5">50대</option><option value="6">60대 이상</option>
               </Select>
             </div>
           </div>
@@ -309,9 +265,9 @@ export default function ParticipationApply() {
                 {availableDates.map((date) => <option key={date} value={date}>{date}</option>)}
               </Select>
             </div>
-            <div><Label>직업</Label><Input name="pctJob" value={formData.pctJob} onChange={handleInputChange} placeholder="예: 백엔드 개발자" /></div>
+            <div><Label>직업</Label><Input name="pctJob"   value={formData.pctJob}   onChange={handleInputChange} placeholder="예: 백엔드 개발자" /></div>
             <div><Label>소속</Label><Input name="pctGroup" value={formData.pctGroup} onChange={handleInputChange} placeholder="회사 또는 학교" /></div>
-            <div><Label>직급</Label><Input name="pctRank" value={formData.pctRank} onChange={handleInputChange} placeholder="예: 대리, 학생" /></div>
+            <div><Label>직급</Label><Input name="pctRank"  value={formData.pctRank}  onChange={handleInputChange} placeholder="예: 대리, 학생" /></div>
             <div style={{ gridColumn: '1/-1' }}>
               <Label>참여 경로</Label>
               <Select name="pctRoot" value={formData.pctRoot} onChange={handleInputChange}>
@@ -338,19 +294,12 @@ export default function ParticipationApply() {
           </SectionBox>
         )}
 
-        {/* ✅ 동의 체크박스 + 보기 버튼 */}
         <div style={{ textAlign: 'center', marginBottom: '30px' }}>
           <label style={{ cursor: 'pointer', fontSize: '13px', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-            <input type="checkbox" checked={isAgreed} onChange={(e) => setIsAgreed(e.target.checked)} style={{ marginRight: 0 }} />
+            <input type="checkbox" checked={isAgreed} onChange={(e) => setIsAgreed(e.target.checked)} />
             (필수) 개인정보 제3자 제공 동의
           </label>
-          <button
-            type="button"
-            onClick={() => setShowTermsModal(true)}
-            style={{ marginLeft: '8px', background: 'none', border: 'none', fontSize: '13px', color: THEME.secondary, fontWeight: '700', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
-          >
-            보기
-          </button>
+          <button type="button" onClick={() => setShowTermsModal(true)} style={{ marginLeft: '8px', background: 'none', border: 'none', fontSize: '13px', color: THEME.secondary, fontWeight: '700', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>보기</button>
         </div>
 
         <div style={{ textAlign: 'center' }}>
@@ -370,6 +319,6 @@ async function openTossPayment({ clientKey, orderId, orderName, amount, customer
   await tossPayments.requestPayment('카드', {
     amount, orderId, orderName, customerName, customerEmail,
     successUrl: `${window.location.origin}/payment/success`,
-    failUrl: `${window.location.origin}/payment/fail`,
+    failUrl:    `${window.location.origin}/payment/fail`,
   });
 }

@@ -2,9 +2,9 @@
 import { apiJson } from '../../../app/http/request';
 
 // 1. 결제 준비 - orderId 발급
-export const preparePayment = async ({ pctBoothId, eventId, amount, orderName }) => {
+// ✅ 새 플로우: pctBoothId/pctId 불필요 (참여 레코드가 아직 없음)
+export const preparePayment = async ({ eventId, amount, orderName }) => {
     const response = await apiJson().post('/api/payment/prepare', {
-        pctBoothId,
         eventId,
         amount,
         orderName,

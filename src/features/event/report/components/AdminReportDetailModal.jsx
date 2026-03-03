@@ -1,3 +1,4 @@
+// src/features/event/report/components/AdminReportDetailModal.jsx
 import React, { useEffect } from "react";
 
 function formatDate(value) {
@@ -20,31 +21,7 @@ function statusLabel(v) {
   return v || "-";
 }
 
-function statusChipStyle(v) {
-  const base = {
-    display: "inline-flex",
-    alignItems: "center",
-    padding: "4px 8px",
-    borderRadius: 999,
-    fontSize: 12,
-    fontWeight: 700,
-    border: "1px solid #ddd",
-    background: "#fff",
-  };
-
-  if (v === "PENDING") return { ...base, borderColor: "#999" };
-  if (v === "APPROVED") return { ...base, borderColor: "#16a34a" };
-  if (v === "REJECTED") return { ...base, borderColor: "#dc2626" };
-  return base;
-}
-
-export default function AdminReportDetailModal({
-  open,
-  report,
-  onClose,
-  onApprove,
-  onReject,
-}) {
+export default function AdminReportDetailModal({ open, report, onClose, onApprove, onReject }) {
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (e) => {
@@ -56,33 +33,12 @@ export default function AdminReportDetailModal({
 
   if (!open) return null;
 
-  const title =
-    report?.eventTitle ?? report?.eventName ?? `eventId=${report?.eventId ?? "-"}`;
-
-  // 이름이 없으면 숫자(reportId/reporterId)로 fallback
-  const writer =
-    report?.reporterName ??
-    report?.reporterNickname ??
-    report?.nickname ??
-    report?.userName ??
-    report?.name ??
-    report?.reporterId ??
-    "-";
-
+  const title = report?.eventTitle ?? report?.eventName ?? `eventId=${report?.eventId ?? "-"}`;
+  const writer = report?.reporterName ?? report?.reporterId ?? "-";
   const reason = report?.reasonCategory ?? "-";
-  const detail = report?.reasonDetailText ?? report?.reasonDetail ?? "-";
-  const poster =
-    report?.posterUrl ||
-    report?.thumbnailUrl ||
-    report?.eventPosterUrl ||
-    report?.imageUrl ||
-    null;
-
-  const result = report?.reportResult; // "PENDING" | "APPROVED" | "REJECTED"
-  const isPending = result === "PENDING" || !result; // 혹시 상세 응답에 없으면 미처리로 취급
-
-  const handleApproveClick = () => onApprove?.(report);
-  const handleRejectClick = () => onReject?.(report);
+  const detail = report?.reasonDetailText ?? "-";
+  const result = report?.reportResult;
+  const isPending = result === "PENDING" || !result;
 
   return (
     <div
@@ -110,180 +66,64 @@ export default function AdminReportDetailModal({
           padding: 16,
         }}
       >
-        {/* 상단 닫기 */}
         <div style={{ display: "flex", justifyContent: "flex-end" }}>
           <button
             type="button"
             onClick={onClose}
             aria-label="닫기"
-            style={{
-              border: "1px solid #ccc",
-              background: "#fff",
-              borderRadius: 8,
-              padding: "6px 10px",
-              cursor: "pointer",
-            }}
+            style={{ border: "1px solid #ccc", background: "#fff", borderRadius: 8, padding: "6px 10px", cursor: "pointer" }}
           >
             ✕
           </button>
         </div>
 
-        {/* 행사 제목(포스터가 있으면 같이) */}
-        <div
-          style={{
-            display: "flex",
-            gap: 10,
-            alignItems: "center",
-            border: "2px solid #222",
-            borderRadius: 6,
-            padding: 10,
-            marginBottom: 10,
-          }}
-        >
-          <div
-            style={{
-              width: 56,
-              height: 56,
-              borderRadius: 8,
-              overflow: "hidden",
-              border: "1px solid #ddd",
-              background: "#f5f5f5",
-              flex: "0 0 auto",
-            }}
-          >
-            {poster ? (
-              <img
-                src={poster}
-                alt="행사 포스터"
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                onError={(e) => {
-                  e.currentTarget.style.display = "none";
-                }}
-              />
-            ) : null}
-          </div>
-
-          <div style={{ flex: 1, fontWeight: 700, textAlign: "center" }}>
-            {title}
-          </div>
+        <div style={{ border: "2px solid #222", borderRadius: 6, padding: 10, marginBottom: 10, fontWeight: 700, textAlign: "center" }}>
+          {title}
         </div>
 
-        {/* 작성자 */}
-        <div
-          style={{
-            border: "2px solid #222",
-            borderRadius: 6,
-            overflow: "hidden",
-            marginBottom: 10,
-          }}
-        >
+        <div style={{ border: "2px solid #222", borderRadius: 6, overflow: "hidden", marginBottom: 10 }}>
           <div style={{ display: "flex" }}>
-            <div
-              style={{
-                width: 90,
-                borderRight: "2px solid #222",
-                padding: 10,
-                fontWeight: 700,
-              }}
-            >
-              작성자
-            </div>
+            <div style={{ width: 90, borderRight: "2px solid #222", padding: 10, fontWeight: 700 }}>작성자</div>
             <div style={{ padding: 10, flex: 1 }}>{writer}</div>
           </div>
         </div>
 
-        {/* 신고 사유 */}
-        <div
-          style={{
-            border: "2px solid #222",
-            borderRadius: 6,
-            overflow: "hidden",
-            marginBottom: 10,
-          }}
-        >
+        <div style={{ border: "2px solid #222", borderRadius: 6, overflow: "hidden", marginBottom: 10 }}>
           <div style={{ display: "flex" }}>
-            <div
-              style={{
-                width: 90,
-                borderRight: "2px solid #222",
-                padding: 10,
-                fontWeight: 700,
-              }}
-            >
-              신고 사유
-            </div>
+            <div style={{ width: 90, borderRight: "2px solid #222", padding: 10, fontWeight: 700 }}>신고 사유</div>
             <div style={{ padding: 10, flex: 1 }}>{reason}</div>
           </div>
         </div>
 
-        {/* 신고 내용 */}
-        <div
-          style={{
-            border: "2px solid #222",
-            borderRadius: 6,
-            padding: 12,
-            minHeight: 140,
-            whiteSpace: "pre-wrap",
-          }}
-        >
+        <div style={{ border: "2px solid #222", borderRadius: 6, padding: 12, minHeight: 140, whiteSpace: "pre-wrap" }}>
           {detail}
         </div>
 
-        {/* 하단: 신고일 + 상태 + 처리 버튼(미처리일 때만) */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginTop: 12,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ fontSize: 12, opacity: 0.7 }}>
-              신고일: {formatDate(report?.createdAt)}
-            </div>
-            <span style={statusChipStyle(result)}>{statusLabel(result)}</span>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12 }}>
+          <div style={{ fontSize: 12, opacity: 0.7 }}>
+            신고일: {formatDate(report?.createdAt)} / 상태: {statusLabel(result)}
           </div>
 
-          {/*  처리 버튼은 미처리일 때만 노출 */}
           {isPending ? (
             <div style={{ display: "flex", gap: 10 }}>
               <button
                 type="button"
-                onClick={handleRejectClick}
+                onClick={() => onReject?.(report)}
                 title="반려"
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 10,
-                  border: "2px solid #222",
-                  background: "#fff",
-                  cursor: "pointer",
-                  fontSize: 18,
-                }}
+                style={{ width: 44, height: 44, borderRadius: 10, border: "2px solid #222", background: "#fff", cursor: "pointer", fontSize: 18 }}
               >
                 🗑️
               </button>
-
               <button
                 type="button"
-                onClick={handleApproveClick}
+                onClick={() => onApprove?.(report)}
                 title="승인"
                 aria-label="승인"
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 999,
-                  border: "2px solid #222",
-                  background: "#d11",
-                  cursor: "pointer",
-                }}
+                style={{ width: 44, height: 44, borderRadius: 999, border: "2px solid #222", background: "#d11", cursor: "pointer" }}
               />
             </div>
           ) : (
-            <div style={{ fontSize: 12, opacity: 0.7 }}>
-              처리된 신고입니다.
-            </div>
+            <div style={{ fontSize: 12, opacity: 0.7 }}>처리된 신고입니다.</div>
           )}
         </div>
       </div>

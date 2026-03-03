@@ -1,13 +1,7 @@
 // src/features/event/report/api/adminReportApi.js
 import { apiJson } from "../../../../app/http/request";
 
-function unwrap(body) {
-  // ApiResponse({success, message, data}) 형태면 data만 반환
-  if (body && typeof body === "object" && "success" in body && "data" in body) {
-    return body.data;
-  }
-  return body?.data ?? body;
-}
+const unwrap = (resData) => resData?.data ?? resData;
 
 function throwBackend(error) {
   if (error?.response?.data) throw error.response.data;
@@ -19,13 +13,9 @@ function pickList(pageData) {
   return pageData.items || pageData.content || pageData.list || pageData.records || [];
 }
 
-//  목록(최신순)
 export async function fetchAdminReports({ page = 0, size = 10 } = {}) {
   try {
-    const res = await apiJson().get("/api/admin/reports", {
-      // 백엔드가 sort를 안 받아도 프론트에서 최신순 정렬로 보정함
-      params: { page, size, sort: "createdAt,desc" },
-    });
+    const res = await apiJson().get("/api/admin/reports", { params: { page, size } });
     const data = unwrap(res.data);
     return { raw: data, items: pickList(data) };
   } catch (e) {
@@ -33,7 +23,6 @@ export async function fetchAdminReports({ page = 0, size = 10 } = {}) {
   }
 }
 
-//  상세(모달)
 export async function fetchAdminReportDetail(reportId) {
   try {
     const res = await apiJson().get(`/api/admin/reports/${reportId}`);
@@ -43,7 +32,6 @@ export async function fetchAdminReportDetail(reportId) {
   }
 }
 
-//  승인
 export async function approveAdminReport(reportId) {
   try {
     const res = await apiJson().put(`/api/admin/reports/${reportId}/approve`);
@@ -53,7 +41,6 @@ export async function approveAdminReport(reportId) {
   }
 }
 
-//  반려
 export async function rejectAdminReport(reportId) {
   try {
     const res = await apiJson().put(`/api/admin/reports/${reportId}/reject`);

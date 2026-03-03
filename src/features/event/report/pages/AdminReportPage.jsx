@@ -21,6 +21,19 @@ function formatDate(value) {
   });
 }
 
+function statusLabel(v) {
+  if (v === "PENDING") return "미처리";
+  if (v === "APPROVED") return "승인";
+  if (v === "REJECTED") return "반려";
+  return v || "-";
+}
+
+function statusWeight(v) {
+  // 미처리 먼저
+  if (v === "PENDING") return 0;
+  return 1;
+}
+
 export default function AdminReportPage() {
   const [items, setItems] = useState([]);
   const [raw, setRaw] = useState(null);
@@ -53,9 +66,13 @@ export default function AdminReportPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 최신순 보장(프론트)
+  //  미처리 위 / 처리 아래 + 최신순
   const sorted = useMemo(() => {
     return [...items].sort((a, b) => {
+      const wa = statusWeight(a.reportResult);
+      const wb = statusWeight(b.reportResult);
+      if (wa !== wb) return wa - wb;
+
       const ta = new Date(a.createdAt ?? 0).getTime();
       const tb = new Date(b.createdAt ?? 0).getTime();
       return tb - ta;
@@ -72,12 +89,11 @@ export default function AdminReportPage() {
     const reportId = it.reportId ?? it.id;
     if (!reportId) return;
 
-    // 목록에는 detailText/이름/포스터가 없을 수 있으니 상세로 보강
     try {
       const detail = await fetchAdminReportDetail(reportId);
       setSelected((prev) => ({ ...prev, ...detail }));
     } catch {
-      // 실패해도 모달은 유지
+      // 실패해도 모달 유지
     }
   };
 
@@ -90,15 +106,12 @@ export default function AdminReportPage() {
     const reportId = report?.reportId ?? report?.id;
     if (!reportId) return;
 
-    const ok = window.confirm("이 신고를 승인 처리할까요? (처리 후 목록에서 제거됩니다)");
+    const ok = window.confirm("이 신고를 승인 처리할까요?");
     if (!ok) return;
 
     try {
       await approveAdminReport(reportId);
-
-      //  서버에서 삭제됐으므로, 서버 기준으로 재조회해서 확실히 동기화
-      await load();
-
+      await load(); //  상태 업데이트 반영
       closeDetail();
     } catch (e) {
       alert(e?.message || e?.data || "승인 처리 실패");
@@ -109,15 +122,12 @@ export default function AdminReportPage() {
     const reportId = report?.reportId ?? report?.id;
     if (!reportId) return;
 
-    const ok = window.confirm("이 신고를 반려 처리할까요? (처리 후 목록에서 제거됩니다)");
+    const ok = window.confirm("이 신고를 반려 처리할까요?");
     if (!ok) return;
 
     try {
       await rejectAdminReport(reportId);
-
-      //  서버에서 삭제됐으므로, 서버 기준으로 재조회해서 확실히 동기화
-      await load();
-
+      await load(); //  상태 업데이트 반영
       closeDetail();
     } catch (e) {
       alert(e?.message || e?.data || "반려 처리 실패");
@@ -147,6 +157,7 @@ export default function AdminReportPage() {
                 <th style={{ textAlign: "left", padding: 12, width: 260 }}>행사</th>
                 <th style={{ textAlign: "left", padding: 12 }}>신고 사유</th>
                 <th style={{ textAlign: "left", padding: 12, width: 180 }}>신고일</th>
+                <th style={{ textAlign: "left", padding: 12, width: 110 }}>상태</th>
               </tr>
             </thead>
 
@@ -199,15 +210,14 @@ export default function AdminReportPage() {
                           >
                             {it.eventTitle ?? it.eventName ?? `eventId=${it.eventId}`}
                           </div>
-                          <div style={{ fontSize: 12, opacity: 0.7 }}>
-                            eventId: {it.eventId}
-                          </div>
+                          <div style={{ fontSize: 12, opacity: 0.7 }}>eventId: {it.eventId}</div>
                         </div>
                       </div>
                     </td>
 
                     <td style={{ padding: 12 }}>{it.reasonCategory}</td>
                     <td style={{ padding: 12 }}>{formatDate(it.createdAt)}</td>
+                    <td style={{ padding: 12 }}>{statusLabel(it.reportResult)}</td>
                   </tr>
                 );
               })}
@@ -222,7 +232,6 @@ export default function AdminReportPage() {
         </div>
       )}
 
-      {/*  모달에서만 승인/반려, 성공하면 load()로 목록 갱신 */}
       <AdminReportDetailModal
         open={open}
         report={selected}

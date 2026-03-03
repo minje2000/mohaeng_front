@@ -5,6 +5,32 @@ import styles from '../styles/SignUp.module.css';
 import * as userApi from '../api/UserApi.js'; 
 import { useAuth } from '../../../app/providers/AuthProvider';
 
+function getCookie(name) {
+  const prefix = name + "=";
+  const parts = document.cookie.split("; ");
+  for (const p of parts) {
+    if (p.startsWith(prefix)) return p.slice(prefix.length); // '=' 이후를 통째로
+  }
+  return null;
+}
+
+// base64url(SPRING Base64.getUrlEncoder) -> JSON 파싱
+function parseSocialInfoCookie(cookieValue) {
+  let v = cookieValue.replace(/^"|"$/g, ""); // 따옴표로 감싸진 경우 대비
+
+  // base64url -> base64
+  v = v.replace(/-/g, "+").replace(/_/g, "/");
+
+  // 패딩 보정(가끔 '=' 없이 오는 경우 대비)
+  v = v.padEnd(v.length + (4 - (v.length % 4)) % 4, "=");
+
+  const binary = atob(v);
+  const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+  const jsonStr = new TextDecoder("utf-8").decode(bytes);
+
+  return JSON.parse(jsonStr);
+}
+
 const SocialCompleteForm = () => {
   const navigate = useNavigate();
   const { setTokens } = useAuth();
@@ -24,22 +50,18 @@ const SocialCompleteForm = () => {
   } = usePhoneVerification();
 
   useEffect(() => {
-    const cookies = document.cookie.split(';');
-    const socialCookie = cookies.find(cookie =>
-      cookie.trim().startsWith('SOCIAL_INFO=')
-    );
+    const raw = getCookie("SOCIAL_INFO");
+    
+    if (!raw) return;
 
-    if (socialCookie) {
-      try {
-        const encoded = socialCookie.split('=')[1];
-        const binaryString = atob(encoded);
-        const bytes = Uint8Array.from(binaryString, c => c.charCodeAt(0));
-        const decodedStr = new TextDecoder('utf-8').decode(bytes);
-        const info = JSON.parse(decodedStr);
-        setSocialInfo(info);
-      } catch (e) {
-        console.error('쿠키 파싱 오류', e);
-      }
+    try {
+      const info = parseSocialInfoCookie(raw);
+      setSocialInfo(info);
+
+      // 한 번 읽고 쿠키 제거
+      document.cookie = "SOCIAL_INFO=; Max-Age=0; path=/";
+    } catch (e) {
+      console.error("쿠키 파싱 오류", e, { raw });
     }
   }, []);
 
@@ -129,7 +151,7 @@ const SocialCompleteForm = () => {
                   required 
                 />
                 <button type="button" className={styles.actionBtn} onClick={sendSms}>
-                  인증 요청
+                  본인 인증
                 </button>
               </div>
               <div className={styles.helperText} style={{ color: isSendSms ? 'green' : 'crimson' }}>
@@ -167,7 +189,7 @@ const SocialCompleteForm = () => {
           </button>
         </form>
 
-        <button className={styles.backBtn} onClick={() => navigate('/signup')}>
+        <button className={styles.backBtn} onClick={() => navigate('/api/user/signup')}>
           뒤로가기
         </button>
       </div>

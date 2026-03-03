@@ -2,7 +2,7 @@
 import React from 'react';
 import styles from '../styles/UserInfoMypage.module.css';
 import { useUserInfo } from '../hooks/useUserInfo';
-import { useNavigate, Outlet } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 export function UserInfoIndex() {
   const { userInfo, passwords, loading, isEditing, isPasswordValid, isPasswordMatch, isSaveDisabled, fileInputRef,

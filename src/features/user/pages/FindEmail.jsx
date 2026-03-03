@@ -1,11 +1,12 @@
 // src/features/user/pages/FindEmail.jsx
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useFindEmail } from "../hooks/useFindEmail";
 import { usePhoneVerification } from '../hooks/usePhoneVerification';
 import styles from "../styles/UserCommon.module.css";
 
 export default function FindEmail() {
+  const navigate = useNavigate();
   const { 
     formData, 
     isSubmitted, 
@@ -97,6 +98,9 @@ export default function FindEmail() {
           
           <button type="submit" className={styles.primaryBtn}>
             이메일 찾기
+          </button>
+          <button className={styles.backBtn} onClick={() => navigate('/login')}>
+            뒤로가기
           </button>
         </form>
       </div>

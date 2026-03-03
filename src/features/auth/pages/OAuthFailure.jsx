@@ -22,7 +22,7 @@ export default function OAuthFailure() {
       document.cookie = "OAUTH_ERROR=; path=/; max-age=0";
     }
 
-    navigate("/login", { replace: true });
+    navigate("/api/user/signup", { replace: true });
   }, []);
 
   return null;

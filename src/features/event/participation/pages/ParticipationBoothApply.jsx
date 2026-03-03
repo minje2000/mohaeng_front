@@ -204,24 +204,27 @@ export default function ParticipationBoothApply() {
         })),
       };
 
-      const submitResult = await ParticipationBoothApi.submitBoothApplication(eventId, dto, files);
-      const pctBoothId = submitResult?.data?.pctBoothId || submitResult?.pctBoothId || submitResult;
-
       if (totalPrice === 0) {
+        // ✅ 무료: 바로 DB 저장
+        await ParticipationBoothApi.submitBoothApplication(eventId, dto, files);
         alert('부스 참가 신청이 완료되었습니다.');
         navigate(`/events/${eventId}`);
         return;
       }
 
+      // ✅ 유료: DB 저장 없이 sessionStorage에만 저장 → 결제 성공 후 PaymentSuccess에서 생성
+      sessionStorage.setItem('pendingApply', JSON.stringify({
+        type: 'booth',
+        eventId: Number(eventId),
+        dto,
+      }));
+      sessionStorage.setItem('paymentEventId', `/events/${eventId}`);
+
       const paymentInfo = await preparePayment({
-        pctBoothId,
         eventId:   Number(eventId),
         amount:    totalPrice,
         orderName: `${eventInfo.title} 부스 참가비`,
       });
-
-      sessionStorage.setItem('paymentEventId', `/events/${eventId}`);
-      sessionStorage.setItem('pendingCancel', JSON.stringify({ type: 'booth', id: pctBoothId }));
 
       await openTossPayment({
         clientKey:     paymentInfo.clientKey,
@@ -232,12 +235,12 @@ export default function ParticipationBoothApply() {
         customerEmail: profile.email || '',
       });
 
-      sessionStorage.removeItem('pendingCancel');
     } catch (e) {
       console.error(e);
       alert('신청 또는 결제 준비 중 오류가 발생했습니다.');
     } finally { setIsSubmitting(false); }
   };
+
 
   return (
     <div style={{ minHeight: '100vh', background: THEME.bg, fontFamily: "'Pretendard', sans-serif", color: THEME.text }}>

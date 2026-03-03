@@ -120,13 +120,13 @@ export default function BoothMypage() {
     }
   };
 
-  // 💡 [핵심 로직] 변장하기 전, 원본 데이터(r.status)를 기준으로 '취소'를 완벽하게 걸러냅니다.
   const rows = useMemo(() => {
-    // 1. 순수 원본 상태에서 '취소'인 녀석들을 1차로 박멸합니다.
-    const cleanReceived = received.filter(r => r.status !== '취소' && r.status !== 'CANCEL');
-    const cleanApplied = applied.filter(r => r.status !== '취소' && r.status !== 'CANCEL');
+    // 💡 '결제대기'와 '취소' 상태는 화면 목록에 아예 포함시키지 않습니다.
+    const isInvalid = (s) => !s || s === '취소' || s === '결제대기' || s === 'CANCEL' || s === 'READY';
+    
+    const cleanReceived = received.filter(r => !isInvalid(r.status));
+    const cleanApplied = applied.filter(r => !isInvalid(r.status));
 
-    // 2. 살아남은 정상 데이터들만 화면 표시용(mapDisplayStatus)으로 옷을 갈아입힙니다.
     const toRow = (r, kind) => ({ ...r, _kind: kind, status: mapDisplayStatus(r?.status, kind) });
 
     if (tab === 'RECEIVED') return cleanReceived.map((r) => toRow(r, 'received'));
@@ -137,7 +137,6 @@ export default function BoothMypage() {
       ...cleanApplied.map((r)  => toRow(r, 'applied')),
     ].sort((a, b) => new Date(b?.createdAt ?? 0).getTime() - new Date(a?.createdAt ?? 0).getTime());
   }, [tab, received, applied]);
-
   const onApprove = async (pctBoothId) => {
     if (!pctBoothId) return;
     if (!window.confirm('해당 부스 신청을 승인할까요?')) return;

@@ -5,7 +5,7 @@ const BASE_URL = '/api/eventParticipation';
 // 1. 행사 정보 가져오기 (수정된 /info 경로 사용)
 export const getEventParticipationInfo = async (eventId) => {
   if (!eventId || eventId === '...') return null;
-  const response = await apiJson().get(`${BASE_URL}/info/${eventId}`);
+  const response = await apiJson().get(`/api/events/${eventId}`);
   return response.data; // { eventInfo, booths, facilities ... }
 };
 

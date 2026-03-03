@@ -786,7 +786,7 @@ export default function EventHost() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#F9FAFB', borderRadius: 12, marginBottom: hasFacility ? 16 : 0 }}>
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 800, color: '#111' }}>부대시설 운영</div>
-                  <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>포토존, 푸드트럭 등 부대시설이 있나요?</div>
+                  <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>전기/수도/책상/의자</div>
                 </div>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>
                   <input type="checkbox" checked={hasFacility} onChange={(e) => setHasFacility(e.target.checked)} style={checkStyle} />

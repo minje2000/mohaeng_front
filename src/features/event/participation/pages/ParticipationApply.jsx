@@ -159,26 +159,27 @@ export default function ParticipationApply() {
 
     setIsSubmitting(true);
     try {
-      // EventParticipationController.submitParticipation → pctId 반환
-      const pctId = await submitParticipation(eventId, formData);
-
       if (!isPaid) {
+        // ✅ 무료: 바로 DB 저장
+        await submitParticipation(eventId, formData);
         alert('참가 신청이 완료되었습니다!');
         navigate(`/events/${eventId}`);
         return;
       }
 
-      const paymentInfo = await preparePayment({
-        pctId,
+      // ✅ 유료: DB 저장 없이 sessionStorage에만 저장 → 결제 성공 후 PaymentSuccess에서 생성
+      sessionStorage.setItem('pendingApply', JSON.stringify({
+        type: 'participation',
         eventId: Number(eventId),
+        formData,
+      }));
+      sessionStorage.setItem('paymentEventId', `/events/${eventId}`);
+
+      const paymentInfo = await preparePayment({
+        eventId:   Number(eventId),
         amount:    eventData.price,
         orderName: `${eventData.title} 행사 참가비`,
       });
-
-      // ✅ 결제 실패/취소 시 PaymentFail에서 자동 취소하기 위해 저장
-      // type: 'participation' → EventParticipationController.cancelParticipation(pctId)
-      sessionStorage.setItem('paymentEventId', `/events/${eventId}`);
-      sessionStorage.setItem('pendingCancel', JSON.stringify({ type: 'participation', id: pctId }));
 
       await openTossPayment({
         clientKey:     paymentInfo.clientKey,
@@ -189,13 +190,12 @@ export default function ParticipationApply() {
         customerEmail: userInfo.email || '',
       });
 
-      // 토스 성공 → successUrl로 리다이렉트 → pendingCancel 제거
-      sessionStorage.removeItem('pendingCancel');
     } catch (e) {
       console.error(e);
       alert('신청 처리 중 오류가 발생했습니다.');
     } finally { setIsSubmitting(false); }
   };
+
 
   if (loading || !eventData) return <div style={{ textAlign: 'center', padding: '100px' }}>⏳ 로딩 중...</div>;
 

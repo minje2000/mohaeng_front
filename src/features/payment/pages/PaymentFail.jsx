@@ -33,23 +33,20 @@ export default function PaymentFail() {
     const raw = sessionStorage.getItem('pendingCancel');
     if (!raw) return;
 
-    let pending;
-    try { pending = JSON.parse(raw); } catch { return; }
-
-    const { type, id } = pending ?? {};
+    const { type, id } = JSON.parse(raw);
     if (!id) return;
 
-    // 즉시 제거 (새로고침 등 재진입 방지)
+    // ✅ API 호출 성공 여부와 상관없이 세션은 먼저 비웁니다 (중복 방지)
     sessionStorage.removeItem('pendingCancel');
 
     if (type === 'booth') {
-      ParticipationBoothApi.cancelBoothParticipation(id).catch((e) =>
-        console.warn('[PaymentFail] 부스 신청 자동 취소 실패', e)
-      );
+      ParticipationBoothApi.cancelBoothParticipation(id)
+        .then(() => console.log("결제 취소로 인한 부스 신청 자동 삭제 완료"))
+        .catch((e) => console.warn('부스 신청 자동 취소 실패', e));
     } else if (type === 'participation') {
-      ParticipationApi.cancelParticipation(id).catch((e) =>
-        console.warn('[PaymentFail] 행사 참가 신청 자동 취소 실패', e)
-      );
+      ParticipationApi.cancelParticipation(id)
+        .then(() => console.log("결제 취소로 인한 행사 신청 자동 삭제 완료"))
+        .catch((e) => console.warn('행사 참가 신청 자동 취소 실패', e));
     }
   }, []);
 

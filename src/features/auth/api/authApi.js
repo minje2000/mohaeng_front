@@ -28,11 +28,12 @@ function normalizeTokenPayload(payload) {
     p.accessToken || p.access || p.token || p.jwt || p.access_token || null;
   const refreshToken = p.refreshToken || p.refresh || p.refresh_token || null;
   const userId = p.userId || p.userid || p.username || null;
-
+  
   const jwtPayload = accessToken ? decodeJwt(accessToken) : {};
   const role = p.role || p.authority || p.auth || jwtPayload.role || null;
+  const userName = jwtPayload.username || null;
 
-  return { accessToken, refreshToken, userId, role, raw: p };
+  return { accessToken, refreshToken, userId, role, userName, raw: p };
 }
 
 // 'Bearer ' 1번만 붙이기
@@ -87,6 +88,7 @@ export async function login({ userId, userPwd }) {
     if (token.refreshToken) tokenStore.setRefresh(token.refreshToken);
     tokenStore.setUserId(token.userId || userId);
     if (token.role) tokenStore.setRole(token.role);
+    if (token.userName) tokenStore.setUserName(token.userName);
 
     return token;
   } catch (err) {

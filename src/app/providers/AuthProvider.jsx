@@ -48,6 +48,7 @@ export function AuthProvider({ children }) {
   const [role, setRole] = useState(
     computeRoleFromStores(tokenStore.getAccess())
   );
+  const [userName, setUserName] = useState(tokenStore.getUserName());
 
   const isAuthed = Boolean(accessToken);
   const isAdmin = useMemo(() => computeIsAdmin(role), [role]);
@@ -61,6 +62,7 @@ export function AuthProvider({ children }) {
       setRefreshToken(tokenStore.getRefresh());
       setUserId(tokenStore.getUserId?.() || null);
       setRole(computeRoleFromStores(tokenStore.getAccess()));
+      setUserName(tokenStore.getUserName?.() || null);
     });
     return unsubscribe;
   }, []);
@@ -71,6 +73,7 @@ export function AuthProvider({ children }) {
     const refresh = tokenResponse?.refreshToken || null;
     const uid = tokenResponse?.userId || null;
     const r = normalizeRole(tokenResponse?.role);
+    const uname = tokenResponse?.username || null;
 
     // tokenStore에 저장 (프로젝트 tokenStore 구현에 맞춰 안전하게 호출)
     if (tokenStore.setTokens) {
@@ -82,6 +85,7 @@ export function AuthProvider({ children }) {
 
     if (uid && tokenStore.setUserId) tokenStore.setUserId(uid);
     if (r && tokenStore.setRole) tokenStore.setRole(r);
+    if (uname && tokenStore.setUserName) tokenStore.setUserName(uname);
 
     // Provider 상태 동기화
     const nextAccess = tokenStore.getAccess();
@@ -89,6 +93,7 @@ export function AuthProvider({ children }) {
     setRefreshToken(tokenStore.getRefresh());
     setUserId(tokenStore.getUserId?.() || null);
     setRole(r || computeRoleFromStores(nextAccess));
+    setUserName(tokenStore.getUserName?.() || null);
   }, []);
 
   // 토큰 제거 + 로그아웃 브로드캐스트
@@ -98,6 +103,7 @@ export function AuthProvider({ children }) {
     setRefreshToken(null);
     setUserId(null);
     setRole(null);
+    setUserName(null);
 
     // Provider에서 로그아웃을 수행한 경우에도 앱 전체에 브로드캐스트
     emitLogout();
@@ -112,6 +118,7 @@ export function AuthProvider({ children }) {
       userId,
       accessToken,
       refreshToken,
+      userName,
 
       // 액션
       setTokens,

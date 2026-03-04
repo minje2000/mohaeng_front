@@ -5,6 +5,7 @@ import styles from "./Home.module.css";
 import { apiJson } from '../../app/http/request';
 import NotificationBell from "../../features/notification/components/NotificationBell";
 import { useAuth } from '../../app/providers/AuthProvider';
+import { tokenStore } from '../../app/http/tokenStore';
 
 const REGION_CENTER = {
     서울: { slug: "seoul", id: 1100000000 },
@@ -390,6 +391,7 @@ export default function Home() {
           <div className={styles.navRight}>
             {loggedIn ? (
               <>
+                {tokenStore.getUserName()} 님, 환영합니다!
                 <NotificationBell className={styles.authLink} BellIcon={BellIcon} />
                 <Link className={styles.authLink} to={isAdmin ? "/admin/stats" : "/mypage"}><UserIcon /> 마이페이지</Link>
                 {/* 💡 button 대신 a 태그로 바꿔서 옆의 링크들과 폰트/규격을 완벽하게 통일! */}

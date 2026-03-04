@@ -8,6 +8,20 @@ function unwrap(body) {
   return body?.data ?? body;
 }
 
+function decodeJwt(token) {
+  try {
+    const part = token.split('.')[1];
+    const pad = part.length % 4;
+    const normalized = part.replace(/-/g, '+').replace(/_/g, '/')
+      + (pad ? '='.repeat(4 - pad) : '');
+    return JSON.parse(decodeURIComponent(
+      atob(normalized).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')
+    ));
+  } catch {
+    return {};
+  }
+}
+
 // access/refresh 토큰 키
 function normalizeTokenPayload(payload) {
   const p = payload ?? {};
@@ -15,7 +29,10 @@ function normalizeTokenPayload(payload) {
   const refreshToken = p.refreshToken || null;
   const role = p.role || null;
   const userId = p.userId || null;
-  return { accessToken, refreshToken, userId, role, raw: p };
+  const jwtPayload = accessToken ? decodeJwt(accessToken) : {};
+  const userName = jwtPayload.username || null;
+
+  return { accessToken, refreshToken, userId, role, userName, raw: p };
 }
 
 // 회원가입
@@ -42,6 +59,7 @@ export const completeSocialSignup = async (formData) => {
       if (token.refreshToken) tokenStore.setRefresh(token.refreshToken);
       tokenStore.setUserId(token.userId || formData.email);
       if (token.role) tokenStore.setRole(token.role);
+      if (token.userName) tokenStore.setUserName(token.userName);
   
       return token;
     } catch (err) {

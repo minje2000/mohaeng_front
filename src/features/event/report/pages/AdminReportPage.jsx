@@ -9,21 +9,19 @@ import {
 } from "../api/adminReportApi";
 import AdminReportDetailModal from "../components/AdminReportDetailModal";
 
-//  업로드 경로(프로젝트에 맞게 수정 가능)
+// 업로드 경로(프로젝트에 맞게 수정 가능)
 const UPLOAD_BASE = "http://localhost:8080/upload_files/event";
 const PLACEHOLDER = "https://dummyimage.com/80x80/f3f4f6/666666.png&text=Mohaeng";
 
-//  너희가 정한 신고 사유 라벨(6개)
+// 신고 사유 라벨
 const REASON_LABEL = {
   SPAM: "광고/스팸/도배",
   FRAUD: "허위 정보/내용 불일치",
   COPYRIGHT: "도용/사칭/저작권 침해",
-
   INAPPROPRIATE: "부적절한 내용",
   ABUSE: "부적절한 내용",
   ADULT: "부적절한 내용",
   ILLEGAL: "부적절한 내용",
-
   DUPLICATE: "중복/반복 등록",
   OTHER: "기타",
 };
@@ -46,6 +44,7 @@ function statusLabel(v) {
   if (v === "PENDING") return "미처리";
   if (v === "APPROVED") return "승인";
   if (v === "REJECTED") return "반려";
+  if (v === "REPORT_DELETED") return "삭제(신고승인)";
   return v || "-";
 }
 
@@ -57,7 +56,30 @@ function toImgUrl(v) {
   if (!v) return null;
   if (typeof v !== "string") return null;
   if (v.startsWith("http")) return v;
-  return `${UPLOAD_BASE}/${v}`; // 파일명만 오면 서버 경로 붙이기
+  return `${UPLOAD_BASE}/${v}`;
+}
+
+// 페이지 버튼 숫자 구성(너무 많으면 ... 처리)
+function buildPageItems(totalPages, current) {
+  const last = totalPages - 1;
+  if (totalPages <= 1) return [0];
+
+  const windowSize = 2; // current 기준 앞뒤 2개
+  const set = new Set([0, last]);
+
+  for (let p = current - windowSize; p <= current + windowSize; p += 1) {
+    if (p >= 0 && p <= last) set.add(p);
+  }
+
+  const pages = Array.from(set).sort((a, b) => a - b);
+  const result = [];
+  for (let i = 0; i < pages.length; i += 1) {
+    const p = pages[i];
+    const prev = pages[i - 1];
+    if (i > 0 && p - prev > 1) result.push("...");
+    result.push(p);
+  }
+  return result;
 }
 
 export default function AdminReportPage() {
@@ -72,8 +94,12 @@ export default function AdminReportPage() {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState(null);
 
-  const page = 0;
-  const size = 10;
+  // ✅ 페이지 상태로 변경
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(10);
+
+  const totalPages = Number(raw?.totalPages ?? 0);
+  const totalElements = Number(raw?.totalElements ?? 0);
 
   const load = async () => {
     setLoading(true);
@@ -89,12 +115,13 @@ export default function AdminReportPage() {
     }
   };
 
+  // ✅ page/size 바뀌면 다시 로드
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [page, size]);
 
-  //  미처리 위 / 처리 아래 + 최신순
+  // 미처리 위 / 처리 아래 + 최신순 (현재 “페이지 내”에서만 정렬됨)
   const sorted = useMemo(() => {
     return [...items].sort((a, b) => {
       const wa = statusWeight(a.reportResult);
@@ -161,14 +188,39 @@ export default function AdminReportPage() {
 
   const goEventDetail = (eventId) => {
     if (!eventId) return;
-    navigate(`/events/${eventId}`); //  행사 상세 페이지로 이동
+    navigate(`/events/${eventId}`);
   };
+
+  const pagerItems = useMemo(
+    () => buildPageItems(totalPages, page),
+    [totalPages, page]
+  );
 
   return (
     <div style={{ padding: 16 }}>
       <h2 style={{ margin: 0, marginBottom: 12 }}>행사 신고 관리</h2>
 
-      
+      {/* 페이지 크기 */}
+      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 12 }}>
+        <span style={{ fontSize: 12, opacity: 0.7 }}>총 {totalElements.toLocaleString()}건</span>
+        <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
+          <span style={{ fontSize: 12, opacity: 0.7 }}>페이지 크기</span>
+          <select
+            value={size}
+            onChange={(e) => {
+              const next = Number(e.target.value);
+              setSize(next);
+              setPage(0); // size 바꾸면 0페이지로
+            }}
+          >
+            {[5, 10, 20, 50].map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
 
       {loading && <div>불러오는 중...</div>}
       {!loading && error && <div style={{ color: "crimson" }}>{error}</div>}
@@ -196,7 +248,6 @@ export default function AdminReportPage() {
                   <tr key={reportId} style={{ borderTop: "1px solid #eee" }}>
                     <td style={{ padding: 12 }}>{page * size + (idx + 1)}</td>
 
-                    {/*  행사 클릭 → 행사 상세 */}
                     <td style={{ padding: 12 }}>
                       <div
                         role="button"
@@ -245,14 +296,10 @@ export default function AdminReportPage() {
                           >
                             {it.eventTitle ?? it.eventName ?? "행사"}
                           </div>
-
-                          {/*  eventId 숨김 */}
-                          {/* <div style={{ fontSize: 12, opacity: 0.7 }}>eventId: {it.eventId}</div> */}
                         </div>
                       </div>
                     </td>
 
-                    {/*  신고 사유 클릭 → 신고 상세 팝업 */}
                     <td
                       style={{ padding: 12, cursor: "pointer", textDecoration: "underline" }}
                       onClick={() => openDetail(it)}
@@ -268,6 +315,54 @@ export default function AdminReportPage() {
               })}
             </tbody>
           </table>
+
+          {/* ✅ 페이징 UI */}
+          {totalPages > 1 && (
+            <div
+              style={{
+                display: "flex",
+                gap: 6,
+                alignItems: "center",
+                justifyContent: "center",
+                padding: 12,
+                borderTop: "1px solid #eee",
+                flexWrap: "wrap",
+              }}
+            >
+              <button
+                disabled={page <= 0}
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+              >
+                이전
+              </button>
+
+              {pagerItems.map((p, i) =>
+                p === "..." ? (
+                  <span key={`dots-${i}`} style={{ padding: "0 6px", opacity: 0.6 }}>
+                    …
+                  </span>
+                ) : (
+                  <button
+                    key={p}
+                    onClick={() => setPage(p)}
+                    style={{
+                      fontWeight: p === page ? 800 : 400,
+                      textDecoration: p === page ? "underline" : "none",
+                    }}
+                  >
+                    {p + 1}
+                  </button>
+                )
+              )}
+
+              <button
+                disabled={page >= totalPages - 1}
+                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+              >
+                다음
+              </button>
+            </div>
+          )}
 
           {raw && (
             <div style={{ padding: 12, fontSize: 12, opacity: 0.7 }}>

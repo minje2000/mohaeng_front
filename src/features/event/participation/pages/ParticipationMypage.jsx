@@ -74,6 +74,21 @@ export default function ParticipationMypage() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paged      = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
+  // ✅ 행사 클릭 시 삭제 상태 체크
+  const handleEventClick = (pct) => {
+  if (!pct.eventId) return;
+  const status = (pct.eventStatus ?? '').toString();
+  if (status === 'REPORTDELETED') {
+    alert('이 행사에 대한 신고가 접수되어 삭제 처리 되었습니다.');
+    return;
+  }
+  if (status === 'DELETED') {
+    alert('주최자에 의하여 행사가 삭제되었습니다.');
+    return;
+  }
+  navigate(`/events/${pct.eventId}`);
+};
+
   // ✅ 취소 버튼 클릭 → RefundPolicy 모달 오픈
   const handleCancelClick = (pct) => {
     setRefundModal({ pct });
@@ -162,6 +177,8 @@ export default function ParticipationMypage() {
               ) : paged.map(pct => {
                 const displayStatus = isEnded(pct.eventEndDate) ? '참여완료' : '참여예정';
                 const isProcessing  = processingId === pct.pctId;
+                const eventStatus   = (pct.eventStatus ?? '').toString().toUpperCase();
+                const isDeleted     = eventStatus === 'DELETED' || eventStatus === 'REPORTDELETED';
 
                 return (
                   <tr key={pct.pctId}>
@@ -172,14 +189,16 @@ export default function ParticipationMypage() {
                           src={pct.thumbnail ? `${THUMBNAIL_BASE}${pct.thumbnail}` : '/images/moheng.png'}
                           alt=""
                           className={styles.eventCellThumb}
-                          onClick={() => pct.eventId && navigate(`/events/${pct.eventId}`)}
-                          style={{ cursor: pct.eventId ? 'pointer' : 'default' }}
+                          onClick={() => handleEventClick(pct)}
+                          style={{ cursor: 'pointer' }}
                           onError={e => { e.currentTarget.src = '/images/moheng.png'; }}
                         />
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 2, overflow: 'hidden' }}>
                           <button
                             className={styles.linkTitle}
-                            onClick={() => pct.eventId && navigate(`/events/${pct.eventId}`)}>
+                            onClick={() => handleEventClick(pct)}
+                            style={{ color: isDeleted ? '#9ca3af' : undefined }}
+                          >
                             {pct.eventTitle || `행사 #${pct.eventId}`}
                           </button>
                           {pct.simpleExplain && (

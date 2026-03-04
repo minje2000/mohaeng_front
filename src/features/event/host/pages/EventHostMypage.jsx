@@ -13,7 +13,6 @@ function formatDateRange(startDate, endDate) {
 
 function parseYmdToDate(ymd) {
   if (!ymd) return null;
-  // "YYYY-MM-DD" or "YYYY-MM-DDTHH:mm:ss" 등 방어
   const s = String(ymd).slice(0, 10);
   const [y, m, d] = s.split('-').map((v) => Number(v));
   if (!y || !m || !d) return null;
@@ -33,7 +32,6 @@ function getStatusUI(ev) {
   const boothStart = parseYmdToDate(ev?.boothStartRecruit);
   const boothEnd = parseYmdToDate(ev?.boothEndRecruit);
 
-  // ✅ 백/상세페이지 로직과 동일한 우선순위
   if (endDate && today > endDate) return { key: '종료', label: '행사 종료' };
 
   if (startDate && endDate && today >= startDate && today <= endDate)
@@ -54,14 +52,10 @@ function getStatusUI(ev) {
   return { key: '예정', label: '행사 예정' };
 }
 
-/**
- * ✅ DB에는 파일명(또는 경로)이 들어오고, 실제 파일은 백엔드가 /upload_files/** 로 서빙하는 구조 대응
- */
 const BACKEND = 'http://localhost:8080';
 
 function buildThumbSrc(thumbnail) {
   if (!thumbnail) return '/images/moheng.png';
-
   const t = String(thumbnail);
   if (t.startsWith('http')) return t;
   if (t.startsWith('/upload_files/')) return `${BACKEND}${t}`;
@@ -78,54 +72,23 @@ function statusPillStyle(statusKey) {
     border: '1px solid #E5E7EB',
     background: '#F8FAFC',
     color: '#0F172A',
-
     whiteSpace: 'nowrap',
     flexWrap: 'nowrap',
     wordBreak: 'keep-all',
   };
 
   if (statusKey === '예정')
-    return {
-      ...base,
-      background: '#EFF6FF',
-      border: '1px solid #BFDBFE',
-      color: '#1D4ED8',
-    };
+    return { ...base, background: '#EFF6FF', border: '1px solid #BFDBFE', color: '#1D4ED8' };
   if (statusKey === '진행중')
-    return {
-      ...base,
-      background: '#FFF7ED',
-      border: '1px solid #FED7AA',
-      color: '#C2410C',
-    };
+    return { ...base, background: '#FFF7ED', border: '1px solid #FED7AA', color: '#C2410C' };
   if (statusKey === '참여모집중')
-    return {
-      ...base,
-      background: '#FFF7ED',
-      border: '1px solid #FED7AA',
-      color: '#C2410C',
-    };
+    return { ...base, background: '#FFF7ED', border: '1px solid #FED7AA', color: '#C2410C' };
   if (statusKey === '부스모집중')
-    return {
-      ...base,
-      background: '#F5F3FF',
-      border: '1px solid #DDD6FE',
-      color: '#6D28D9',
-    };
+    return { ...base, background: '#F5F3FF', border: '1px solid #DDD6FE', color: '#6D28D9' };
   if (statusKey === '모집마감' || statusKey === '부스마감')
-    return {
-      ...base,
-      background: '#F3F4F6',
-      border: '1px solid #E5E7EB',
-      color: '#6B7280',
-    };
+    return { ...base, background: '#F3F4F6', border: '1px solid #E5E7EB', color: '#6B7280' };
   if (statusKey === '종료')
-    return {
-      ...base,
-      background: '#ECFDF5',
-      border: '1px solid #A7F3D0',
-      color: '#047857',
-    };
+    return { ...base, background: '#ECFDF5', border: '1px solid #A7F3D0', color: '#047857' };
 
   return base;
 }
@@ -157,6 +120,13 @@ export default function EventHostMypage() {
     navigate(`/events/${eventId}`);
   };
 
+    // ✅ 통계 버튼 클릭 → 관리자 행사 분석 페이지로 이동 (state로 eventId, title 전달)
+  const onGoStats = (ev) => {
+  navigate('/mypage/events/created/stats', {
+    state: { eventId: ev.eventId, eventTitle: ev.title || `행사 #${ev.eventId}` },
+  });
+};
+
   const onDelete = async (ev) => {
     const statusUI = getStatusUI(ev);
     if (statusUI.key !== '예정' && statusUI.key !== '종료') {
@@ -164,12 +134,7 @@ export default function EventHostMypage() {
       return;
     }
 
-    if (
-      !window.confirm(
-        '이 행사를 삭제할까요? (삭제 후 목록에서 숨김 처리됩니다)'
-      )
-    )
-      return;
+    if (!window.confirm('이 행사를 삭제할까요? (삭제 후 목록에서 숨김 처리됩니다)')) return;
 
     try {
       setRemoving(true);
@@ -181,10 +146,8 @@ export default function EventHostMypage() {
         return next;
       });
 
-      // 서버 상태 반영 위해 재조회
       reload?.();
     } catch (e) {
-      // GlobalExceptionHandler가 4xx로 내려주면 message가 보일 수 있음
       const msg =
         e?.response?.data?.message ||
         e?.response?.data?.data ||
@@ -212,59 +175,38 @@ export default function EventHostMypage() {
       >
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr
-              style={{
-                background: '#F9FAFB',
-                borderBottom: '1px solid #E5E7EB',
-              }}
-            >
-              <th style={{ textAlign: 'left', padding: 12, width: 460 }}>
-                행사
-              </th>
-              <th style={{ textAlign: 'left', padding: 12, width: 220 }}>
-                행사 기간
-              </th>
-              <th style={{ textAlign: 'left', padding: 12, width: 140 }}>
-                상태
-              </th>
-              <th style={{ textAlign: 'left', padding: 12, width: 140 }}>
-                관리
-              </th>
+            <tr style={{ background: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
+              <th style={{ textAlign: 'left', padding: 12, width: 380 }}>행사</th>
+              <th style={{ textAlign: 'left', padding: 12, width: 200 }}>행사 기간</th>
+              <th style={{ textAlign: 'left', padding: 12, width: 130 }}>상태</th>
+              {/* ✅ 행사분석 컬럼 추가 */}
+              <th style={{ textAlign: 'left', padding: 12, width: 100 }}>행사분석</th>
+              <th style={{ textAlign: 'left', padding: 12, width: 100 }}>관리</th>
             </tr>
           </thead>
 
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={4} style={{ padding: 18, textAlign: 'center' }}>
+                <td colSpan={5} style={{ padding: 18, textAlign: 'center' }}>
                   불러오는 중...
                 </td>
               </tr>
             ) : visibleItems.length === 0 ? (
               <tr>
-                <td colSpan={4} style={{ padding: 18, textAlign: 'center' }}>
+                <td colSpan={5} style={{ padding: 18, textAlign: 'center' }}>
                   등록한 행사가 없습니다.
                 </td>
               </tr>
             ) : (
               visibleItems.map((ev) => {
                 const statusUI = getStatusUI(ev);
-                const canDelete =
-                  statusUI.key === '예정' || statusUI.key === '종료';
+                const canDelete = statusUI.key === '예정' || statusUI.key === '종료';
 
                 return (
-                  <tr
-                    key={ev.eventId}
-                    style={{ borderBottom: '1px solid #F1F5F9' }}
-                  >
+                  <tr key={ev.eventId} style={{ borderBottom: '1px solid #F1F5F9' }}>
                     <td style={{ padding: 12 }}>
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 12,
-                        }}
-                      >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <img
                           src={buildThumbSrc(ev.thumbnail)}
                           alt="thumb"
@@ -277,30 +219,15 @@ export default function EventHostMypage() {
                             cursor: 'pointer',
                           }}
                           onClick={() => onGoDetail(ev.eventId)}
-                          onError={(e) => {
-                            e.currentTarget.src = '/images/moheng.png';
-                          }}
+                          onError={(e) => { e.currentTarget.src = '/images/moheng.png'; }}
                         />
-
-                        <div
-                          style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 4,
-                          }}
-                        >
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                           <div
                             role="button"
                             tabIndex={0}
                             onClick={() => onGoDetail(ev.eventId)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') onGoDetail(ev.eventId);
-                            }}
-                            style={{
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                              textDecoration: 'none',
-                            }}
+                            onKeyDown={(e) => { if (e.key === 'Enter') onGoDetail(ev.eventId); }}
+                            style={{ fontWeight: 700, cursor: 'pointer', textDecoration: 'none' }}
                           >
                             {ev.title || `행사 #${ev.eventId}`}
                           </div>
@@ -311,20 +238,33 @@ export default function EventHostMypage() {
                       </div>
                     </td>
 
-                    <td
-                      style={{
-                        padding: 12,
-                        color: '#334155',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
+                    <td style={{ padding: 12, color: '#334155', whiteSpace: 'nowrap' }}>
                       {formatDateRange(ev.startDate, ev.endDate)}
                     </td>
 
                     <td style={{ padding: 12 }}>
-                      <span style={statusPillStyle(statusUI.key)}>
-                        {statusUI.label}
-                      </span>
+                      <span style={statusPillStyle(statusUI.key)}>{statusUI.label}</span>
+                    </td>
+
+                    {/* ✅ 통계 버튼 */}
+                    <td style={{ padding: 12 }}>
+                      <button
+                        type="button"
+                        onClick={() => onGoStats(ev)}
+                        style={{
+                          padding: '8px 14px',
+                          borderRadius: 10,
+                          border: '1px solid #BFDBFE',
+                          background: '#EFF6FF',
+                          color: '#1D4ED8',
+                          cursor: 'pointer',
+                          fontSize: 13,
+                          fontWeight: 700,
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        📊 통계
+                      </button>
                     </td>
 
                     <td style={{ padding: 12 }}>
@@ -345,9 +285,7 @@ export default function EventHostMypage() {
                           삭제
                         </button>
                       ) : (
-                        <span style={{ fontSize: 12, color: '#94A3B8' }}>
-                          -
-                        </span>
+                        <span style={{ fontSize: 12, color: '#94A3B8' }}>-</span>
                       )}
                     </td>
                   </tr>
@@ -358,24 +296,14 @@ export default function EventHostMypage() {
         </table>
 
         {/* pagination */}
-        <div
-          style={{
-            display: 'flex',
-            gap: 8,
-            justifyContent: 'center',
-            padding: 14,
-          }}
-        >
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', padding: 14 }}>
           <button
             type="button"
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page <= 1}
             style={{
-              padding: '8px 10px',
-              borderRadius: 10,
-              border: '1px solid #E5E7EB',
-              background: '#fff',
-              cursor: page <= 1 ? 'not-allowed' : 'pointer',
+              padding: '8px 10px', borderRadius: 10, border: '1px solid #E5E7EB',
+              background: '#fff', cursor: page <= 1 ? 'not-allowed' : 'pointer',
             }}
           >
             이전
@@ -387,12 +315,9 @@ export default function EventHostMypage() {
               type="button"
               onClick={() => setPage(p)}
               style={{
-                padding: '8px 10px',
-                borderRadius: 10,
-                border: '1px solid #E5E7EB',
+                padding: '8px 10px', borderRadius: 10, border: '1px solid #E5E7EB',
                 background: p === page ? '#111827' : '#fff',
-                color: p === page ? '#fff' : '#111827',
-                cursor: 'pointer',
+                color: p === page ? '#fff' : '#111827', cursor: 'pointer',
               }}
             >
               {p}
@@ -404,11 +329,8 @@ export default function EventHostMypage() {
             onClick={() => setPage((p) => Math.min(totalPages || p + 1, p + 1))}
             disabled={page >= (totalPages || 1)}
             style={{
-              padding: '8px 10px',
-              borderRadius: 10,
-              border: '1px solid #E5E7EB',
-              background: '#fff',
-              cursor: page >= (totalPages || 1) ? 'not-allowed' : 'pointer',
+              padding: '8px 10px', borderRadius: 10, border: '1px solid #E5E7EB',
+              background: '#fff', cursor: page >= (totalPages || 1) ? 'not-allowed' : 'pointer',
             }}
           >
             다음

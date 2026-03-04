@@ -66,6 +66,7 @@ export const router = createBrowserRouter([
                   { index: true, element: <UserInfoIndex /> }, // 기본은 내정보
                   { path: 'withdrawal', element: <WithdrawalMypage /> },
                   { path: 'events/created',      element: <EventHostMypage /> },
+                  { path: 'events/created/stats', element: <EventStats /> },
                   { path: 'events/participated',  element: <ParticipationMypage /> },
                   { path: 'booths',              element: <BoothMypage /> },
                   { path: 'booths/:pctBoothId',   element: <BoothApplicationDetailMypage /> },

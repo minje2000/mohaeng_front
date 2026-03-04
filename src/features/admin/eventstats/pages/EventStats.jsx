@@ -1,6 +1,6 @@
 // src/features/admin/eventstats/pages/EventStats.jsx
 import React, { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -69,7 +69,6 @@ const HASHTAG_MAP = {
 };
 const GENDER_COLORS = { 남: "#3B82F6", 여: "#EC4899" };
 const THUMBNAIL_BASE = "http://localhost:8080/upload_files/event/";
-// ✅ Issue 2: 주최자 프로필 사진 경로
 const PHOTO_BASE = "http://localhost:8080/upload_files/photo/";
 
 // ─────────── 유틸 ───────────
@@ -124,15 +123,8 @@ function InfoRow({ label, value }) {
 // ══════════════════════════════════════════
 function EventListView({ onSelectEvent }) {
   const [filters, setFilters] = useState({
-    keyword: "",
-    categoryId: "",
-    status: "",
-    city: "",
-    regionId: "",
-    startDate: "",
-    endDate: "",
-    checkFree: false,
-    hideClosed: false,
+    keyword: "", categoryId: "", status: "", city: "", regionId: "",
+    startDate: "", endDate: "", checkFree: false, hideClosed: false,
   });
 
   const [events, setEvents]       = useState([]);
@@ -460,11 +452,9 @@ function EventDetailView({ eventId, eventTitle, onBack }) {
             </div>
           )}
 
-          {/* ✅ Issue 2: 주최자 정보 + 프로필 사진 */}
           <div style={{ borderTop:"1px solid #F3F4F6", paddingTop:12 }}>
             <div style={{ fontSize:12, fontWeight:700, color:"#6B7280", marginBottom:8 }}>주최자 정보</div>
             <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:10 }}>
-              {/* 프로필 사진 */}
               <div style={{
                 width:48, height:48, borderRadius:"50%", flexShrink:0,
                 overflow:"hidden", background:"#F3F4F6", border:"1px solid #E5E7EB",
@@ -479,7 +469,6 @@ function EventDetailView({ eventId, eventTitle, onBack }) {
                   />
                 ) : "🏢"}
               </div>
-              {/* 이름 */}
               <span style={{ fontSize:14, fontWeight:800, color:"#111" }}>{detail.hostName || "-"}</span>
             </div>
             <div style={{ fontSize:13, display:"flex", flexDirection:"column", gap:4 }}>
@@ -524,7 +513,6 @@ function EventDetailView({ eventId, eventTitle, onBack }) {
       </div>
 
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
-
         <section style={sectionStyle}>
           <h3 style={sectionTitleStyle}>행사 참여자 연령대</h3>
           {ageChartData.length === 0 ? (
@@ -581,8 +569,15 @@ function EventDetailView({ eventId, eventTitle, onBack }) {
 //   메인 컴포넌트
 // ══════════════════════════════════════════
 export default function EventStats() {
-  const [selectedEventId, setSelectedEventId]       = useState(null);
-  const [selectedEventTitle, setSelectedEventTitle] = useState("");
+  const location = useLocation();
+
+  // ✅ 마이페이지 통계 버튼으로 진입 시 해당 행사 상세 바로 열기
+  const [selectedEventId, setSelectedEventId] = useState(
+    () => location.state?.eventId ?? null
+  );
+  const [selectedEventTitle, setSelectedEventTitle] = useState(
+    () => location.state?.eventTitle ?? ""
+  );
 
   const handleSelectEvent = (id, title) => {
     setSelectedEventId(id);

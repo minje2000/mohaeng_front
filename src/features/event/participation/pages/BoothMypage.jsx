@@ -16,7 +16,10 @@ const TABS = [
 function mapDisplayStatus(rawStatus, kind) {
   const s = (rawStatus ?? '').toString();
   if (kind === 'received') {
-    if (s === '승인' || s === '반려' || s === '완료') return '완료';
+    // ✅ 승인/반려는 그대로, 나머지는 대기
+    if (s === '승인') return '승인';
+    if (s === '반려') return '반려';
+    if (s === '완료') return '완료';
     return '대기';
   }
   if (s === '승인' || s === '반려' || s === '취소') return s;
@@ -25,21 +28,21 @@ function mapDisplayStatus(rawStatus, kind) {
 
 function StatusBadge({ status, variant }) {
   const s = (status ?? '').toString();
-  if (variant === 'received') {
-    const done  = s === '완료';
-    const style = done
-      ? { border: '1px solid #86EFAC', background: '#F0FDF4', color: '#166534' }
-      : { border: '1px solid #FDE68A', background: '#FFFBEB', color: '#92400E' };
-    return <span style={{ display: 'inline-flex', alignItems: 'center', padding: '4px 10px', borderRadius: 999, fontSize: 12, fontWeight: 900, whiteSpace: 'nowrap', ...style }}>{done ? '완료' : '대기'}</span>;
-  }
+
+  // ✅ received variant도 승인/반려/대기/완료 각각 처리
   const styleMap = {
     대기: { border: '1px solid #FDE68A', background: '#FFFBEB', color: '#92400E' },
     승인: { border: '1px solid #86EFAC', background: '#F0FDF4', color: '#166534' },
     반려: { border: '1px solid #FECACA', background: '#FEF2F2', color: '#991B1B' },
+    완료: { border: '1px solid #86EFAC', background: '#F0FDF4', color: '#166534' },
     취소: { border: '1px solid #E5E7EB', background: '#F8FAFC', color: '#334155' },
   };
   const style = styleMap[s] ?? { border: '1px solid #E5E7EB', background: '#F8FAFC', color: '#334155' };
-  return <span style={{ display: 'inline-flex', alignItems: 'center', padding: '4px 10px', borderRadius: 999, fontSize: 12, fontWeight: 900, whiteSpace: 'nowrap', ...style }}>{s || '-'}</span>;
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', padding: '4px 10px', borderRadius: 999, fontSize: 12, fontWeight: 900, whiteSpace: 'nowrap', ...style }}>
+      {s || '-'}
+    </span>
+  );
 }
 
 function pillButtonStyle(active) {
@@ -70,7 +73,6 @@ export default function BoothMypage() {
   const hasToken = useMemo(() => !!tokenStore.getAccess?.(), []);
   const [tab, setTab] = useState('ALL');
   
-  // 백엔드에서 원본 데이터를 가져옵니다.
   const { received, applied, loading, refresh } = UseBoothManage();
 
   const [refundModal, setRefundModal] = useState({
@@ -121,7 +123,6 @@ export default function BoothMypage() {
   };
 
   const rows = useMemo(() => {
-    // 💡 '결제대기'와 '취소' 상태는 화면 목록에 아예 포함시키지 않습니다.
     const isInvalid = (s) => !s || s === '취소' || s === '결제대기' || s === 'CANCEL' || s === 'READY';
     
     const cleanReceived = received.filter(r => !isInvalid(r.status));
@@ -137,6 +138,7 @@ export default function BoothMypage() {
       ...cleanApplied.map((r)  => toRow(r, 'applied')),
     ].sort((a, b) => new Date(b?.createdAt ?? 0).getTime() - new Date(a?.createdAt ?? 0).getTime());
   }, [tab, received, applied]);
+
   const onApprove = async (pctBoothId) => {
     if (!pctBoothId) return;
     if (!window.confirm('해당 부스 신청을 승인할까요?')) return;
@@ -170,7 +172,6 @@ export default function BoothMypage() {
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 18 }}>
           {TABS.map((t) => {
             const active = tab === t.key;
-            // 💡 탭 카운트도 1차 박멸된 데이터의 갯수를 기준으로 보여줍니다.
             const cleanReceived = received.filter(r => r.status !== '취소' && r.status !== 'CANCEL');
             const cleanApplied = applied.filter(r => r.status !== '취소' && r.status !== 'CANCEL');
             

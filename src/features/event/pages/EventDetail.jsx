@@ -371,7 +371,7 @@ export default function EventDetail() {
                           {ev.capacity.toLocaleString()}명 / 1일 기준
                           {ev.currentParticipantCount != null && (
                             <span style={{ marginLeft: 8, fontSize: 12, color: participationFull ? '#EF4444' : '#9CA3AF' }}>
-                              (전체 누적 {ev.currentParticipantCount}명 신청){participationFull ? ' — 전체 마감' : ''}
+                              (누적 신청자 : {ev.currentParticipantCount}){participationFull ? ' — 전체 마감' : ''}
                             </span>
                           )}
                         </td>

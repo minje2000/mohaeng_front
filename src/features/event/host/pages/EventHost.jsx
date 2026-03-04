@@ -806,7 +806,7 @@ export default function EventHost() {
                         )}
                       </div>
                       <G2>
-                        <div><Label required>시설명</Label><Input placeholder="예: 포토존, 푸드트럭" value={f.faciName} onChange={(e) => updateFaci(i, 'faciName', e.target.value)} /></div>
+                        <div><Label required>시설명</Label><Input placeholder="예: 전기, 인터넷, 의자" value={f.faciName} onChange={(e) => updateFaci(i, 'faciName', e.target.value)} /></div>
                         <div><Label required>단위</Label><Input placeholder="예: 회, 개, 시간" value={f.faciUnit} onChange={(e) => updateFaci(i, 'faciUnit', e.target.value)} /></div>
                         <div><Label required>금액 (원)</Label><Input type="number" min={0} placeholder="0 = 무료" value={f.faciPrice} onChange={(e) => updateFaci(i, 'faciPrice', e.target.value)} /></div>
                         <div>

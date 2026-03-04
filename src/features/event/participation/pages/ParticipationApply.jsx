@@ -41,7 +41,6 @@ const Input    = (props) => <input    {...props} style={{ ...inputStyle, ...prop
 const Select   = (props) => <select   {...props} style={{ ...inputStyle, ...props.style }} />;
 const Textarea = (props) => <textarea {...props} style={{ ...inputStyle, minHeight: '100px', ...props.style }} />;
 
-// 개인정보 제3자 제공 동의 모달
 const TermsModal = ({ onClose }) => {
   const termsContent = `[제공받는 자]
 • 행사 주최자 (이벤트 개설자)
@@ -144,6 +143,16 @@ export default function ParticipationApply() {
   const availableDates = useMemo(() => getDatesInRange(eventData?.startDate, eventData?.endDate), [eventData]);
   const isPaid         = useMemo(() => (eventData?.price || 0) > 0, [eventData]);
 
+  // ✅ 날짜별 잔여 인원 계산
+  const dailyCounts   = eventData?.dailyParticipantCounts ?? {};
+  const capacity      = eventData?.capacity ?? null;
+
+  const getRemain = (date) => {
+    if (capacity == null) return null; // 제한없음
+    const used = dailyCounts[date] ?? 0;
+    return capacity - used;
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -157,17 +166,23 @@ export default function ParticipationApply() {
     if (!formData.pctAgeGroup) return alert('나이대를 선택해주세요.');
     if (!isAgreed)             return alert('개인정보 제공 동의가 필요합니다.');
 
+    // ✅ 프론트 1차 정원 체크 (서버에서도 검증하므로 중복 방지 목적)
+    if (capacity != null) {
+      const remain = getRemain(formData.pctDate);
+      if (remain !== null && remain <= 0) {
+        return alert(`${formData.pctDate} 날짜의 정원이 마감되었습니다. 다른 날짜를 선택해주세요.`);
+      }
+    }
+
     setIsSubmitting(true);
     try {
       if (!isPaid) {
-        // ✅ 무료: 바로 DB 저장
         await submitParticipation(eventId, formData);
         alert('참가 신청이 완료되었습니다!');
         navigate(`/events/${eventId}`);
         return;
       }
 
-      // ✅ 유료: DB 저장 없이 sessionStorage에만 저장 → 결제 성공 후 PaymentSuccess에서 생성
       sessionStorage.setItem('pendingApply', JSON.stringify({
         type: 'participation',
         eventId: Number(eventId),
@@ -260,10 +275,45 @@ export default function ParticipationApply() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
             <div>
               <Label required>참여 날짜</Label>
+              {/* ✅ 날짜 드롭다운 — 잔여 인원 표시 + 마감 비활성화 */}
               <Select name="pctDate" value={formData.pctDate} onChange={handleInputChange}>
                 <option value="">행사 날짜 선택</option>
-                {availableDates.map((date) => <option key={date} value={date}>{date}</option>)}
+                {availableDates.map((date) => {
+                  const remain = getRemain(date);
+                  const isFull = remain !== null && remain <= 0;
+                  const label  = remain === null
+                    ? date                              // 제한없음
+                    : isFull
+                      ? `${date} (마감)`
+                      : `${date} (${remain}명 남음)`;
+                  return (
+                    <option key={date} value={date} disabled={isFull}>
+                      {label}
+                    </option>
+                  );
+                })}
               </Select>
+
+              {/* ✅ 선택된 날짜의 잔여 인원 인라인 표시 */}
+              {formData.pctDate && capacity != null && (() => {
+                const remain = getRemain(formData.pctDate);
+                if (remain === null) return null;
+                const isFull = remain <= 0;
+                const isLow  = remain > 0 && remain <= Math.ceil(capacity * 0.3);
+                return (
+                  <div style={{
+                    marginTop: 6, padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 800,
+                    background: isFull ? '#FEE2E2' : isLow ? '#FEF3C7' : '#ECFDF5',
+                    color:      isFull ? '#DC2626' : isLow ? '#D97706' : '#059669',
+                  }}>
+                    {isFull
+                      ? '❌ 해당 날짜는 정원이 마감되었습니다.'
+                      : isLow
+                        ? `⚠️ 잔여 ${remain}/${capacity}명 — 마감 임박!`
+                        : `✅ 잔여 ${remain}/${capacity}명`}
+                  </div>
+                );
+              })()}
             </div>
             <div><Label>직업</Label><Input name="pctJob"   value={formData.pctJob}   onChange={handleInputChange} placeholder="예: 백엔드 개발자" /></div>
             <div><Label>소속</Label><Input name="pctGroup" value={formData.pctGroup} onChange={handleInputChange} placeholder="회사 또는 학교" /></div>

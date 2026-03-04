@@ -16,7 +16,6 @@ const TABS = [
 function mapDisplayStatus(rawStatus, kind) {
   const s = (rawStatus ?? '').toString();
   if (kind === 'received') {
-    // ✅ 승인/반려는 그대로, 나머지는 대기
     if (s === '승인') return '승인';
     if (s === '반려') return '반려';
     if (s === '완료') return '완료';
@@ -26,10 +25,8 @@ function mapDisplayStatus(rawStatus, kind) {
   return '대기';
 }
 
-function StatusBadge({ status, variant }) {
+function StatusBadge({ status }) {
   const s = (status ?? '').toString();
-
-  // ✅ received variant도 승인/반려/대기/완료 각각 처리
   const styleMap = {
     대기: { border: '1px solid #FDE68A', background: '#FFFBEB', color: '#92400E' },
     승인: { border: '1px solid #86EFAC', background: '#F0FDF4', color: '#166534' },
@@ -146,7 +143,21 @@ export default function BoothMypage() {
     refresh();
   };
 
-  const goEventDetail = (eventId) => { if (eventId) navigate(`/events/${eventId}`); };
+  // ✅ 삭제된 행사 클릭 시 알림창, 정상이면 상세로 이동
+  const goEventDetail = (row) => {
+    if (!row?.eventId) return;
+    const status = (row?.eventStatus ?? '').toString();
+    if (status === 'REPORTDELETED') {
+      alert('이 행사에 대한 신고가 접수되어 삭제 처리 되었습니다.');
+      return;
+    }
+    if (status === 'DELETED') {
+      alert('주최자에 의하여 행사가 삭제되었습니다.');
+      return;
+    }
+    navigate(`/events/${row.eventId}`);
+  };
+
   const goBoothDetail = (pctBoothId) => { if (pctBoothId) navigate(`/mypage/booths/${pctBoothId}`); };
   const pickSimpleExplain = (row) =>
     row?.eventDescription || row?.eventSimpleExplain || row?.simpleExplain || row?.description || '';
@@ -207,14 +218,18 @@ export default function BoothMypage() {
               const kind      = row._kind;
               const status    = row.status;
               const isPending = status === '대기';
+              const isDeleted = ['DELETED', 'REPORTDELETED'].includes(
+                (row?.eventStatus ?? '').toString()
+              );
+
               return (
                 <div key={`${kind}-${row.pctBoothId}`} style={{ border: '1px solid #E5E7EB', borderRadius: 14, background: '#fff', padding: 16, display: 'grid', gridTemplateColumns: 'minmax(280px, 1.2fr) minmax(220px, 1fr) 120px 180px', gap: 12, alignItems: 'center' }}>
-                  {/* Event */}
-                  <button type="button" onClick={() => goEventDetail(row.eventId)} style={{ border: 'none', background: 'transparent', padding: 0, textAlign: 'left', cursor: 'pointer' }}>
+                  {/* Event ✅ row 전체 전달 */}
+                  <button type="button" onClick={() => goEventDetail(row)} style={{ border: 'none', background: 'transparent', padding: 0, textAlign: 'left', cursor: 'pointer' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <img src={eventThumbUrl(row.eventThumbnail)} alt="thumb" style={{ width: 72, height: 54, objectFit: 'cover', borderRadius: 12, border: '1px solid #E5E7EB', background: '#F3F4F6', flex: '0 0 auto' }} onError={(e) => { e.currentTarget.src = '/images/moheng.png'; }} />
+                      <img src={eventThumbUrl(row.eventThumbnail)} alt="thumb" style={{ width: 72, height: 54, objectFit: 'cover', borderRadius: 12, border: '1px solid #E5E7EB', background: '#F3F4F6', flex: '0 0 auto', opacity: isDeleted ? 0.4 : 1 }} onError={(e) => { e.currentTarget.src = '/images/moheng.png'; }} />
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: 14, fontWeight: 900, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.eventTitle || `행사 #${row.eventId}`}</div>
+                        <div style={{ fontSize: 14, fontWeight: 900, color: isDeleted ? '#9ca3af' : '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.eventTitle || `행사 #${row.eventId}`}</div>
                         {pickSimpleExplain(row) && <div style={{ marginTop: 4, fontSize: 12, color: '#64748B', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pickSimpleExplain(row)}</div>}
                       </div>
                     </div>
@@ -228,7 +243,7 @@ export default function BoothMypage() {
                   </button>
                   {/* Status */}
                   <div style={{ textAlign: 'right' }}>
-                    <StatusBadge status={status} variant={kind === 'received' ? 'received' : 'applied'} />
+                    <StatusBadge status={status} />
                   </div>
                   {/* Manage */}
                   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' }}>

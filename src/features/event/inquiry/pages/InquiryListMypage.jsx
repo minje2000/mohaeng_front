@@ -13,8 +13,8 @@ const TABS = [
 function StatusBadge({ status }) {
   const done = status === '완료';
   const style = done
-    ? { border: '1px solid #86EFAC', background: '#F0FDF4', color: '#166534' } // green
-    : { border: '1px solid #FDE68A', background: '#FFFBEB', color: '#92400E' }; // amber
+    ? { border: '1px solid #86EFAC', background: '#F0FDF4', color: '#166534' }
+    : { border: '1px solid #FDE68A', background: '#FFFBEB', color: '#92400E' };
 
   return (
     <span
@@ -65,15 +65,34 @@ export default function InquiryListMypage() {
     return pages;
   }, [page, totalPages]);
 
-  const goEventDetail = (eventId) => {
-    if (!eventId) return;
-    navigate(`/events/${eventId}`);
+  // ✅ 삭제된 행사 클릭 시 알림창, 정상이면 상세로 이동
+  const goEventDetail = (row) => {
+    if (!row?.eventId) return;
+    const status = (row?.eventStatus ?? '').toString();
+    if (status === 'REPORTDELETED') {
+      alert('이 행사에 대한 신고가 접수되어 삭제 처리 되었습니다.');
+      return;
+    }
+    if (status === 'DELETED') {
+      alert('주최자에 의하여 행사가 삭제되었습니다.');
+      return;
+    }
+    navigate(`/events/${row.eventId}`);
   };
 
-  const goEventInquiryTab = (eventId) => {
-    if (!eventId) return;
-    // ✅ 행사 상세페이지의 문의 탭으로 이동(기존 방식 유지)
-    navigate(`/events/${eventId}?tab=inquiry`);
+  // ✅ 문의 탭 이동도 동일하게 삭제 체크
+  const goEventInquiryTab = (row) => {
+    if (!row?.eventId) return;
+    const status = (row?.eventStatus ?? '').toString();
+    if (status === 'REPORTDELETED') {
+      alert('이 행사에 대한 신고가 접수되어 삭제 처리 되었습니다.');
+      return;
+    }
+    if (status === 'DELETED') {
+      alert('주최자에 의하여 행사가 삭제되었습니다.');
+      return;
+    }
+    navigate(`/events/${row.eventId}?tab=inquiry`);
   };
 
   const pickSimpleExplain = (row) => {
@@ -243,6 +262,9 @@ export default function InquiryListMypage() {
           ) : (
             items.map((row) => {
               const simpleExplain = pickSimpleExplain(row);
+              const isDeleted = ['DELETED', 'REPORTDELETED'].includes(
+                (row?.eventStatus ?? '').toString()
+              );
 
               return (
                 <div
@@ -273,9 +295,10 @@ export default function InquiryListMypage() {
                         minWidth: 0,
                       }}
                     >
+                      {/* ✅ row 전체 전달 */}
                       <button
                         type="button"
-                        onClick={() => goEventDetail(row.eventId)}
+                        onClick={() => goEventDetail(row)}
                         style={{
                           border: 'none',
                           padding: 0,
@@ -283,7 +306,7 @@ export default function InquiryListMypage() {
                           cursor: 'pointer',
                           flex: '0 0 auto',
                         }}
-                        title="행사 상세로 이동"
+                        title={isDeleted ? '삭제된 행사입니다' : '행사 상세로 이동'}
                       >
                         <img
                           src={eventThumbUrl(row.eventThumbnail)}
@@ -295,6 +318,7 @@ export default function InquiryListMypage() {
                             objectFit: 'cover',
                             border: '1px solid #E5E7EB',
                             background: '#F3F4F6',
+                            opacity: isDeleted ? 0.4 : 1,
                           }}
                           onError={(e) => {
                             e.currentTarget.src = '/images/moheng.png';
@@ -305,7 +329,7 @@ export default function InquiryListMypage() {
                       <div style={{ minWidth: 0 }}>
                         <button
                           type="button"
-                          onClick={() => goEventDetail(row.eventId)}
+                          onClick={() => goEventDetail(row)}
                           style={{
                             border: 'none',
                             padding: 0,
@@ -314,13 +338,13 @@ export default function InquiryListMypage() {
                             textAlign: 'left',
                             width: '100%',
                           }}
-                          title="행사 상세로 이동"
+                          title={isDeleted ? '삭제된 행사입니다' : '행사 상세로 이동'}
                         >
                           <div
                             style={{
                               fontSize: 14,
                               fontWeight: 900,
-                              color: '#111827',
+                              color: isDeleted ? '#9ca3af' : '#111827',
                               letterSpacing: '-0.02em',
                               whiteSpace: 'nowrap',
                               overflow: 'hidden',
@@ -350,11 +374,11 @@ export default function InquiryListMypage() {
                       </div>
                     </div>
 
-                    {/* Content */}
+                    {/* Content ✅ row 전체 전달 */}
                     <div style={{ minWidth: 0 }}>
                       <button
                         type="button"
-                        onClick={() => goEventInquiryTab(row.eventId)}
+                        onClick={() => goEventInquiryTab(row)}
                         style={{
                           border: '1px solid #E5E7EB',
                           background: '#F9FAFB',
@@ -364,7 +388,7 @@ export default function InquiryListMypage() {
                           cursor: 'pointer',
                           textAlign: 'left',
                         }}
-                        title="행사 상세(문의 탭)으로 이동"
+                        title={isDeleted ? '삭제된 행사입니다' : '행사 상세(문의 탭)으로 이동'}
                       >
                         <div
                           style={{

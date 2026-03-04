@@ -8,7 +8,6 @@ import {
   toggleWishlistNotification,
 } from "../api/wishlistApi";
 
-//  EventDetail.jsx와 동일한 경로로 맞춤
 const UPLOAD_BASE = "http://localhost:8080/upload_files/event";
 const PLACEHOLDER =
   "https://dummyimage.com/80x80/f3f4f6/666666.png&text=Mohaeng";
@@ -17,7 +16,6 @@ function toImgUrl(v) {
   if (!v) return null;
   if (typeof v !== "string") return null;
   if (v.startsWith("http")) return v;
-  // 파일명만 내려오는 경우 → 서버 경로 붙이기
   return `${UPLOAD_BASE}/${v}`;
 }
 
@@ -31,7 +29,6 @@ function getTitle(item) {
 }
 
 function getThumb(item) {
-  //  백엔드가 내려주는 eventThumbnail(파일명) 우선
   return toImgUrl(
     item?.eventThumbnail ||
       item?.thumbnailUrl ||
@@ -103,9 +100,19 @@ export default function WishMyPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleRowClick = (eventId) => {
-    if (!eventId) return;
-    navigate(`/events/${eventId}`);
+  // ✅ 삭제된 행사 클릭 시 알림창, 정상이면 상세로 이동
+  const handleRowClick = (item) => {
+    if (!item?.eventId) return;
+    const status = (item?.eventStatus ?? '').toString();
+    if (status === 'REPORTDELETED') {
+      alert('이 행사에 대한 신고가 접수되어 삭제 처리 되었습니다.');
+      return;
+    }
+    if (status === 'DELETED') {
+      alert('주최자에 의하여 행사가 삭제되었습니다.');
+      return;
+    }
+    navigate(`/events/${item.eventId}`);
   };
 
   const handleRemove = async (wishId) => {
@@ -128,7 +135,6 @@ export default function WishMyPage() {
     const wishId = item?.wishId;
     if (!wishId) return;
 
-    // 1) 낙관적 업데이트
     setItems((prev) =>
       prev.map((it) =>
         it.wishId === wishId ? setNotiEnabledOnItem(it, nextEnabled) : it
@@ -138,14 +144,12 @@ export default function WishMyPage() {
     setTogglingId(wishId);
     try {
       const updated = await toggleWishlistNotification(wishId, nextEnabled);
-      // 2) 서버가 최신 DTO를 주면 반영
       if (updated && typeof updated === "object") {
         setItems((prev) =>
           prev.map((it) => (it.wishId === wishId ? { ...it, ...updated } : it))
         );
       }
     } catch (e) {
-      // 실패 시 롤백
       setItems((prev) =>
         prev.map((it) =>
           it.wishId === wishId ? setNotiEnabledOnItem(it, !nextEnabled) : it
@@ -161,7 +165,6 @@ export default function WishMyPage() {
     <div className={styles.wrap}>
       <div className={styles.titleRow}>
         <h2 className={styles.title}>관심 행사 목록</h2>
-        
       </div>
 
       <div className={styles.table}>
@@ -184,6 +187,9 @@ export default function WishMyPage() {
             const no = page * size + idx + 1;
             const thumb = getThumb(item);
             const title = getTitle(item);
+            const isDeleted = ['DELETED', 'REPORTDELETED'].includes(
+              (item?.eventStatus ?? '').toString()
+            );
 
             const notiEnabled = getNotiEnabled(item);
             const isRemoving = removingId === item.wishId;
@@ -196,16 +202,16 @@ export default function WishMyPage() {
               >
                 <div className={styles.colNo}>{no}</div>
 
-                {/*  이 영역(관심 행사)만 클릭 시 행사 상세로 이동 */}
+                {/* ✅ 클릭 시 삭제 여부 체크 후 이동 */}
                 <div
                   className={styles.colInfo}
                   role="button"
                   tabIndex={0}
-                  title="행사 상세로 이동"
-                  onClick={() => handleRowClick(item.eventId)}
+                  title={isDeleted ? '삭제된 행사입니다' : '행사 상세로 이동'}
+                  onClick={() => handleRowClick(item)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ")
-                      handleRowClick(item.eventId);
+                      handleRowClick(item);
                   }}
                 >
                   <div className={styles.thumb}>
@@ -213,6 +219,7 @@ export default function WishMyPage() {
                       <img
                         src={thumb}
                         alt=""
+                        style={{ opacity: isDeleted ? 0.4 : 1 }}
                         onError={(e) => {
                           e.currentTarget.src = PLACEHOLDER;
                         }}
@@ -223,7 +230,13 @@ export default function WishMyPage() {
                   </div>
 
                   <div className={styles.infoText}>
-                    <div className={styles.eventTitle}>{title}</div>
+                    {/* ✅ 삭제된 행사 제목 회색 처리 */}
+                    <div
+                      className={styles.eventTitle}
+                      style={{ color: isDeleted ? '#9ca3af' : undefined }}
+                    >
+                      {title}
+                    </div>
                   </div>
                 </div>
 

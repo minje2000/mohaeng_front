@@ -46,9 +46,18 @@ export default function ReviewMyPage() {
     };
   }, [page]);
 
+  // ✅ 삭제된 행사 클릭 시 알림창, 정상이면 리뷰 탭으로 이동
   const onClickItem = (item) => {
     if (!item?.eventId) return;
-    //  행사 상세페이지로 이동하면서 리뷰 탭 자동 오픈
+    const status = (item?.eventStatus ?? '').toString();
+    if (status === 'REPORTDELETED') {
+      alert('이 행사에 대한 신고가 접수되어 삭제 처리 되었습니다.');
+      return;
+    }
+    if (status === 'DELETED') {
+      alert('주최자에 의하여 행사가 삭제되었습니다.');
+      return;
+    }
     navigate(`/events/${item.eventId}?tab=review`);
   };
 

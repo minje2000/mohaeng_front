@@ -2,12 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { InquiryApi } from '../api/InquiryApi';
 import { fetchEventDetail } from '../../api/EventDetailAPI';
 
-/**
- * 마이페이지 문의내역
- * - tab(ALL/WRITTEN/RECEIVED)별 목록 + 페이지네이션
- * - 탭 카운트는 각 탭의 totalElements를 별도 조회해서 표시
- * - ✅ 문의 목록 응답에 simpleExplain이 없을 수 있어서, 현재 페이지의 eventId로 행사 상세를 보강 조회(캐시)
- */
 export default function UseMyInquiryList(tab, page, size) {
   const [items, setItems] = useState([]);
   const [totalPages, setTotalPages] = useState(0);
@@ -19,7 +13,6 @@ export default function UseMyInquiryList(tab, page, size) {
   const [countLoading, setCountLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // eventId -> simpleExplain cache
   const [eventSimpleExplainById, setEventSimpleExplainById] = useState({});
   const fetchingRef = useRef(new Set());
 
@@ -50,11 +43,18 @@ export default function UseMyInquiryList(tab, page, size) {
   }, [tab, page, size]);
 
   // ✅ 현재 페이지의 행사 설명 보강(캐시)
+  // ✅ 삭제된 행사(DELETED/REPORTDELETED)는 fetchEventDetail 호출 제외
   useEffect(() => {
     let mounted = true;
 
+    const DELETED_STATUSES = ['DELETED', 'REPORTDELETED'];
+
     const ids = Array.from(
-      new Set((items ?? []).map((it) => it?.eventId).filter(Boolean))
+      new Set(
+        (items ?? [])
+          .filter((it) => it?.eventId && !DELETED_STATUSES.includes((it?.eventStatus ?? '').toString()))
+          .map((it) => it.eventId)
+      )
     );
 
     const need = ids.filter((id) => !eventSimpleExplainById?.[id] && !fetchingRef.current.has(id));
@@ -62,7 +62,6 @@ export default function UseMyInquiryList(tab, page, size) {
 
     (async () => {
       try {
-        // 동시 요청 방지 표시
         need.forEach((id) => fetchingRef.current.add(id));
 
         const results = await Promise.all(

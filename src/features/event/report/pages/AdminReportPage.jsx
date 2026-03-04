@@ -94,7 +94,7 @@ export default function AdminReportPage() {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState(null);
 
-  // ✅ 페이지 상태로 변경
+  //  페이지 상태로 변경
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
 
@@ -115,7 +115,7 @@ export default function AdminReportPage() {
     }
   };
 
-  // ✅ page/size 바뀌면 다시 로드
+  //  page/size 바뀌면 다시 로드
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -316,7 +316,7 @@ export default function AdminReportPage() {
             </tbody>
           </table>
 
-          {/* ✅ 페이징 UI */}
+          {/*  페이징 UI */}
           {totalPages > 1 && (
             <div
               style={{

@@ -14,14 +14,17 @@ const TYPE_LABEL = {
   BOOTH_RECEIVER: "부스 신청 알림",
   BOOTH_ACCEPT: "부스 승인 알림",
   BOOTH_REJECT: "부스 반려 알림",
+
+  REPORT_REFUND:"결제 금액 환불 알림",
+  REPORT_PCTCANCEL:"행사 참여 취소 알림"
 };
 
 export default function NotificationItem({ item, onClick }) {
   const id = item.notificationId ?? item.id;
 
-  // ✅ 원본 타입(코드명)
+  //  원본 타입(코드명)
   const rawType = item.notiTypeName ?? item.typeName ?? "알림";
-  // ✅ 코드명이면 한글로 변환
+  //  코드명이면 한글로 변환
   const typeName = TYPE_LABEL[rawType] ?? rawType;
 
   const contents = item.contents ?? item.message ?? "";
@@ -51,7 +54,7 @@ export default function NotificationItem({ item, onClick }) {
           opacity: 0.86,
           marginTop: 4,
 
-          // ✅ 줄바꿈 + 긴 단어(링크/영문)도 끊기
+          //  줄바꿈 + 긴 단어(링크/영문)도 끊기
           whiteSpace: "pre-wrap",
           wordBreak: "break-word",
           overflowWrap: "anywhere",

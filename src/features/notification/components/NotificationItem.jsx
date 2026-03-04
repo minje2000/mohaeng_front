@@ -1,8 +1,8 @@
 import React from "react";
 
 const TYPE_LABEL = {
-  EVENT_DAY_BEFORE: "행사 하루 전 알림",
-  EVENT_DAY_OF: "행사 당일 알림",
+  EVENT_DAY_BEFORE: "행사 모집 하루 전 알림",
+  EVENT_DAY_OF: "행사 모집 당일 알림",
 
   INQUIRY_RECEIVER: "문의 접수 알림",
   INQUIRY_SENDER: "문의 답변 알림",

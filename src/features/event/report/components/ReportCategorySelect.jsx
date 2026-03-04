@@ -1,7 +1,7 @@
 // src/features/event/report/components/ReportCategorySelect.jsx
 import React from "react";
 
-//  유저가 선택하는 신고 사유(6개)
+// 유저가 선택하는 신고 사유(6개)
 export const REPORT_REASONS = [
   { value: "SPAM", label: "광고/스팸/도배" },
   { value: "FRAUD", label: "허위 정보/내용 불일치" },

@@ -9,9 +9,6 @@ import ReportButton from "../report/components/ReportButton";
 import ReportModal from "../report/components/ReportModal";
 import KakaoMap from '../../../shared/components/common/KakaoMap';
 
-
-
-// 분야/주제
 const TOPIC_MAP = {
   1:'IT', 2:'비즈니스/창업', 3:'마케팅/브랜딩', 4:'디자인/아트',
   5:'재테크/투자', 6:'취업/이직', 7:'자기계발', 8:'인문/사회/과학',
@@ -21,7 +18,6 @@ const TOPIC_MAP = {
   21:'육아/교육', 22:'심리/명상', 23:'연애/결혼', 24:'종교', 25:'기타',
 };
 
-// 해시태그
 const HASHTAG_MAP = {
   1:'즐거운', 2:'평온한', 3:'열정적인', 4:'디지털디톡스',
   5:'창의적인', 6:'영감을주는', 7:'활기찬', 8:'편안한',
@@ -48,12 +44,24 @@ const diffDays = (target) => {
   return Math.ceil((t - today) / (1000 * 60 * 60 * 24));
 };
 
+// ✅ 날짜 범위 생성 헬퍼
+const getDatesInRange = (startDate, endDate) => {
+  if (!startDate || !endDate) return [];
+  const dates = [];
+  let curr = new Date(startDate);
+  const end = new Date(endDate);
+  while (curr <= end) {
+    dates.push(curr.toISOString().split('T')[0]);
+    curr.setDate(curr.getDate() + 1);
+  }
+  return dates;
+};
+
 const UPLOAD_BASE = 'http://localhost:8080/upload_files/event';
-const PHOTO_BASE = 'http://localhost:8080/upload_files/photo';
+const PHOTO_BASE  = 'http://localhost:8080/upload_files/photo';
 const PLACEHOLDER = 'https://dummyimage.com/400x300/f3f4f6/666666.png&text=Mohaeng';
 const imgUrl = (path) => (path ? `${UPLOAD_BASE}/${path}` : PLACEHOLDER);
 
-// ── 날짜 기반 상태 계산 ──
 const getStatusUI = (ev) => {
   if (!ev) return null;
   const today = new Date();
@@ -107,10 +115,8 @@ const getStatusUI = (ev) => {
 };
 
 const shouldShowBooth = (key) => key === '예정' || key === '부스모집중';
-
 const TABS = ['상세정보', '지도', '리뷰', '문의'];
 
-// ── SVG 아이콘 ──
 const HeartIcon = ({ filled }) => (
   <svg width="17" height="17" viewBox="0 0 24 24"
     fill={filled ? '#EF4444' : 'none'} stroke={filled ? '#EF4444' : 'currentColor'}
@@ -132,21 +138,23 @@ const SirenIcon = () => (
   </svg>
 );
 
-// ── 메인 컴포넌트 ──
 export default function EventDetail() {
   const { eventId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [detail, setDetail] = useState(null);
+  const [detail, setDetail]   = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [tab, setTab] = useState('상세정보');
-  const [liked, setLiked] = useState(false);
-  const [alreadyApplied, setAlreadyApplied] = useState(false);
+  const [error, setError]     = useState(null);
+  const [tab, setTab]         = useState('상세정보');
+  const [liked, setLiked]     = useState(false);
+  const [alreadyApplied, setAlreadyApplied]           = useState(false);
   const [alreadyBoothApplied, setAlreadyBoothApplied] = useState(false);
   useWishlistSyncOnEventDetail({ eventId: Number(eventId), liked, setLiked });
   const [reportOpen, setReportOpen] = useState(false);
+
+  // ✅ 날짜 선택 상태 (잔여 인원 표시용)
+  const [selectedDate, setSelectedDate] = useState('');
 
   useEffect(() => {
     const q = new URLSearchParams(location.search);
@@ -175,42 +183,33 @@ export default function EventDetail() {
   }, [eventId]);
 
   if (loading) return <LoadingScreen />;
-  if (error) return <ErrorScreen msg={error} />;
+  if (error)   return <ErrorScreen msg={error} />;
   if (!detail) return null;
 
-  const {
-    eventInfo: ev,
-    hostId,
-    hostName,
-    hostEmail,
-    hostPhone,
-    hostPhoto,
-    booths,
-    facilities,
-  } = detail;
+  const { eventInfo: ev, hostId, hostName, hostEmail, hostPhone, hostPhoto, booths, facilities } = detail;
 
-  const statusUI = getStatusUI(ev);
+  const statusUI  = getStatusUI(ev);
   const statusKey = statusUI?.key;
   const showBooth = ev.hasBooth && booths?.length > 0 && shouldShowBooth(statusKey);
   const showFaci  = ev.hasFacility && facilities?.length > 0 && shouldShowBooth(statusKey);
 
-  const allBoothsFull =
-    statusKey === '부스모집중' &&
-    booths?.length > 0 &&
-    booths.every((b) => b.remainCount != null && b.remainCount <= 0);
+  const allBoothsFull = statusKey === '부스모집중' && booths?.length > 0 && booths.every((b) => b.remainCount != null && b.remainCount <= 0);
 
-  const participationFull =
-    statusKey === '참여모집중' &&
-    ev.capacity != null &&
-    ev.currentParticipantCount != null &&
-    ev.currentParticipantCount >= ev.capacity;
+  // ✅ 날짜별 정원제 — 모든 날짜가 다 마감됐을 때만 전체 마감
+  // (capacity가 없거나 dailyParticipantCounts가 없으면 마감 아님)
+  const participationFull = (() => {
+    if (statusKey !== '참여모집중') return false;
+    if (ev.capacity == null) return false;
+    const dates = getDatesInRange(ev.startDate, ev.endDate);
+    if (dates.length === 0) return false;
+    const counts = ev.dailyParticipantCounts ?? {};
+    return dates.every(date => (counts[date] ?? 0) >= ev.capacity);
+  })();
 
   const topics = ev.topicIds
-    ? ev.topicIds.split(',').map(id => TOPIC_MAP[Number(id.trim())]).filter(Boolean)
-    : [];
+    ? ev.topicIds.split(',').map(id => TOPIC_MAP[Number(id.trim())]).filter(Boolean) : [];
   const hashtags = ev.hashtagIds
-    ? ev.hashtagIds.split(',').map(id => HASHTAG_MAP[Number(id.trim())]).filter(Boolean)
-    : [];
+    ? ev.hashtagIds.split(',').map(id => HASHTAG_MAP[Number(id.trim())]).filter(Boolean) : [];
 
   const statusPeriod = (() => {
     if (!statusUI) return null;
@@ -223,10 +222,23 @@ export default function EventDetail() {
     }
   })();
 
+  // ✅ 날짜별 잔여 인원 계산
+  const availableDates  = getDatesInRange(ev.startDate, ev.endDate);
+  const dailyCounts     = ev.dailyParticipantCounts ?? {};
+  const capacity        = ev.capacity ?? null;
+
+  const getRemain = (date) => {
+    if (capacity == null) return null;
+    const used = dailyCounts[date] ?? 0;
+    return capacity - used;
+  };
+
+  // 선택된 날짜의 잔여
+  const selectedRemain = selectedDate ? getRemain(selectedDate) : null;
+
   const handleShare = () => {
     if (navigator.clipboard) {
-      navigator.clipboard.writeText(window.location.href)
-        .then(() => alert('링크가 복사되었어요!'));
+      navigator.clipboard.writeText(window.location.href).then(() => alert('링크가 복사되었어요!'));
     }
   };
 
@@ -285,6 +297,7 @@ export default function EventDetail() {
         .ed-tab-content { padding:24px; min-height:200px; }
         .ed-tab-content img { max-width:100%; border-radius:10px; margin-bottom:12px; display:block; }
         .ed-empty { text-align:center; padding:32px 0; color:#D1D5DB; font-size:13px; }
+        .ed-date-select { width:100%; padding:8px 12px; borderRadius:10px; border:1.5px solid #E5E7EB; fontSize:13px; fontWeight:700; outline:none; cursor:pointer; background:#fff; }
       `}</style>
 
       <div className="ed-page">
@@ -340,16 +353,14 @@ export default function EventDetail() {
                     {ev.simpleExplain && <tr><th>설명</th><td>{ev.simpleExplain}</td></tr>}
                     <tr><th>행사 기간</th><td>{fmt(ev.startDate)} ~ {fmt(ev.endDate)}</td></tr>
                     <tr>
-  <th>행사 장소</th>
-  <td>
-    {ev.lotNumberAdr || '-'}
-    {ev.detailAdr && (
-      <span style={{ color: '#9CA3AF', marginLeft: 6, fontWeight: 500 }}>
-        {ev.detailAdr}
-      </span>
-    )}
-  </td>
-</tr>
+                      <th>행사 장소</th>
+                      <td>
+                        {ev.lotNumberAdr || '-'}
+                        {ev.detailAdr && (
+                          <span style={{ color: '#9CA3AF', marginLeft: 6, fontWeight: 500 }}>{ev.detailAdr}</span>
+                        )}
+                      </td>
+                    </tr>
                     {ev.price != null && (
                       <tr><th>참가비</th><td>{ev.price === 0 ? '무료' : `${ev.price.toLocaleString()}원`}</td></tr>
                     )}
@@ -357,10 +368,10 @@ export default function EventDetail() {
                       <tr>
                         <th>모집 인원</th>
                         <td>
-                          {ev.capacity.toLocaleString()}명
+                          {ev.capacity.toLocaleString()}명 / 1일 기준
                           {ev.currentParticipantCount != null && (
                             <span style={{ marginLeft: 8, fontSize: 12, color: participationFull ? '#EF4444' : '#9CA3AF' }}>
-                              ({ev.currentParticipantCount}/{ev.capacity}명 신청){participationFull ? ' — 마감' : ''}
+                              (전체 누적 {ev.currentParticipantCount}명 신청){participationFull ? ' — 전체 마감' : ''}
                             </span>
                           )}
                         </td>
@@ -371,6 +382,54 @@ export default function EventDetail() {
                     )}
                   </tbody>
                 </table>
+
+                {/* ✅ 날짜별 잔여 인원 선택 섹션 — 참여모집중 + 정원 있을 때만 노출 */}
+                {statusKey === '참여모집중' && capacity != null && availableDates.length > 0 && (
+                  <div style={{ marginTop: 14, padding: '12px 14px', background: '#FFF7ED', borderRadius: 12, border: '1px solid #FDE68A' }}>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: '#92400E', marginBottom: 8 }}>
+                      📅 날짜별 잔여 인원 확인
+                    </div>
+                    <select
+                      value={selectedDate}
+                      onChange={(e) => setSelectedDate(e.target.value)}
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #FDE68A', fontSize: 13, fontWeight: 700, outline: 'none', cursor: 'pointer', background: '#fff' }}
+                    >
+                      <option value="">날짜를 선택하세요</option>
+                      {availableDates.map((date) => {
+                        const remain = getRemain(date);
+                        const isFull = remain !== null && remain <= 0;
+                        return (
+                          <option key={date} value={date}>
+                            {date}{remain === null ? '' : isFull ? ' — 마감' : ` — ${remain}명 남음`}
+                          </option>
+                        );
+                      })}
+                    </select>
+
+                    {/* 선택된 날짜 잔여 인원 강조 표시 */}
+                    {selectedDate && (() => {
+                      const remain  = getRemain(selectedDate);
+                      if (remain === null) return null;
+                      const isFull  = remain <= 0;
+                      const isLow   = remain > 0 && remain <= Math.ceil(capacity * 0.3);
+                      return (
+                        <div style={{
+                          marginTop: 8, padding: '8px 12px', borderRadius: 10, fontSize: 13, fontWeight: 900,
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          background: isFull ? '#FEE2E2' : isLow ? '#FEF3C7' : '#ECFDF5',
+                          color:      isFull ? '#DC2626' : isLow ? '#D97706' : '#059669',
+                        }}>
+                          <span>{selectedDate}</span>
+                          <span>
+                            {isFull  ? '❌ 마감'
+                             : isLow ? `⚠️ ${remain} / ${capacity}명 — 마감 임박!`
+                             :         `✅ ${remain} / ${capacity}명 남음`}
+                          </span>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -405,10 +464,7 @@ export default function EventDetail() {
                         src={`${PHOTO_BASE}/${hostPhoto}`}
                         alt="주최자"
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                          e.target.parentElement.textContent = '🏢';
-                        }}
+                        onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.textContent = '🏢'; }}
                       />
                     ) : '🏢'}
                   </div>
@@ -423,10 +479,10 @@ export default function EventDetail() {
 
                 {statusUI && (() => {
                   const isParticipation = statusUI.key === '참여모집중';
-                  const isBooth = statusUI.key === '부스모집중';
-                  const alreadyDone = isParticipation ? alreadyApplied : isBooth ? alreadyBoothApplied : false;
-                  const isFull = allBoothsFull || participationFull;
-                  const canClick = statusUI.btnActive && statusUI.btnTo && !isFull;
+                  const isBooth         = statusUI.key === '부스모집중';
+                  const alreadyDone     = isParticipation ? alreadyApplied : isBooth ? alreadyBoothApplied : false;
+                  const isFull          = allBoothsFull || participationFull;
+                  const canClick        = statusUI.btnActive && statusUI.btnTo && !isFull;
 
                   if (canClick) {
                     return (
@@ -449,18 +505,10 @@ export default function EventDetail() {
                   }
 
                   return (
-                    <button
-                      className="ed-main-btn inactive"
-                      disabled
-                      style={{
-                        background: isFull ? '#E5E7EB' : statusUI.btnColor,
-                        color: isFull ? '#9CA3AF' : statusUI.btnTextColor,
-                      }}
-                    >
-                      {allBoothsFull
-                        ? '부스 전체 매진'
-                        : participationFull
-                        ? `정원 마감 (${ev.capacity}명 완료)`
+                    <button className="ed-main-btn inactive" disabled
+                      style={{ background: isFull ? '#E5E7EB' : statusUI.btnColor, color: isFull ? '#9CA3AF' : statusUI.btnTextColor }}>
+                      {allBoothsFull ? '부스 전체 매진'
+                        : participationFull ? `정원 마감 (${ev.capacity}명 완료)`
                         : statusUI.btnLabel}
                     </button>
                   );
@@ -474,17 +522,15 @@ export default function EventDetail() {
                   <div className="ed-booth-grid">
                     {booths.map((b) => {
                       const remain = b.remainCount ?? 0;
-                      const total = b.totalCount ?? 0;
-                      const ratio = total > 0 ? remain / total : 0;
-                      const cls = remain === 0 ? 'out' : ratio <= 0.3 ? 'low' : 'ok';
+                      const total  = b.totalCount ?? 0;
+                      const ratio  = total > 0 ? remain / total : 0;
+                      const cls    = remain === 0 ? 'out' : ratio <= 0.3 ? 'low' : 'ok';
                       return (
                         <div key={b.boothId} className="ed-booth-row">
                           <div className="ed-booth-name">{b.boothName}</div>
                           <div className="ed-booth-meta">
                             {b.boothSize && <span>{b.boothSize}</span>}
-                            <span className="ed-booth-price">
-                              {b.boothPrice === 0 ? '무료' : `${(b.boothPrice ?? 0).toLocaleString()}원`}
-                            </span>
+                            <span className="ed-booth-price">{b.boothPrice === 0 ? '무료' : `${(b.boothPrice ?? 0).toLocaleString()}원`}</span>
                             <span className={`ed-rbadge ${cls}`}>{remain}/{total}</span>
                           </div>
                         </div>
@@ -538,19 +584,11 @@ export default function EventDetail() {
               <button className="ed-icon-btn" onClick={handleShare} title="링크 공유">
                 <ShareIcon />공유
               </button>
-              <button
-                className="ed-icon-btn"
-                title="신고하기"
-                onClick={(e) => { e.stopPropagation(); setReportOpen(true); }}
-              >
+              <button className="ed-icon-btn" title="신고하기" onClick={(e) => { e.stopPropagation(); setReportOpen(true); }}>
                 <SirenIcon />신고
               </button>
             </div>
-            <ReportModal
-              open={reportOpen}
-              onClose={() => setReportOpen(false)}
-              eventId={Number(eventId)}
-            />
+            <ReportModal open={reportOpen} onClose={() => setReportOpen(false)} eventId={Number(eventId)} />
 
             {/* ── 탭 ── */}
             <div className="ed-tabs">
@@ -559,7 +597,6 @@ export default function EventDetail() {
               ))}
             </div>
 
-            {/* ── 탭 콘텐츠 ── */}
             {tab === '상세정보' && (
               <div className="ed-tab-content">
                 {ev.description && (
@@ -576,18 +613,11 @@ export default function EventDetail() {
               </div>
             )}
 
-            {/* ── 지도 탭 (카카오맵) ── */}
             {tab === '지도' && (
-  <div className="ed-tab-content">
-    <KakaoMap
-      address={ev.lotNumberAdr}
-      fallbackAddress={null}
-      detailAddress={ev.detailAdr}  
-      zipCode={ev.zipCode}
-      title={ev.title}
-    />
-  </div>
-)}
+              <div className="ed-tab-content">
+                <KakaoMap address={ev.lotNumberAdr} fallbackAddress={null} detailAddress={ev.detailAdr} zipCode={ev.zipCode} title={ev.title} />
+              </div>
+            )}
 
             {tab === '리뷰' && <EventReviewTab eventId={Number(eventId)} />}
 

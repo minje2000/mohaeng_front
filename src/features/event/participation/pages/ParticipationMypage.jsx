@@ -12,11 +12,12 @@ const PAGE_SIZE = 10;
 const fmtDate = (d) => (d ? String(d).slice(0, 10).replaceAll('-', '.') : '-');
 const fmt     = (n) => (n == null ? '-' : Number(n).toLocaleString());
 
-function isEnded(eventEndDate) {
-  if (!eventEndDate) return false;
+// ✅ 기준: pctDate (신청 시 선택한 참여일)
+function isPast(pctDate) {
+  if (!pctDate) return false;
   const today = new Date(); today.setHours(0, 0, 0, 0);
-  const end   = new Date(eventEndDate); end.setHours(0, 0, 0, 0);
-  return end < today;
+  const d     = new Date(pctDate); d.setHours(0, 0, 0, 0);
+  return d < today;
 }
 
 const STATUS_STYLE = {
@@ -45,8 +46,7 @@ export default function ParticipationMypage() {
   const [processingId, setProcessingId] = useState(null);
   const [page, setPage]                 = useState(1);
 
-  // ✅ 환불 모달 상태
-  const [refundModal, setRefundModal]   = useState(null); // { pct } | null
+  const [refundModal, setRefundModal]   = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -65,36 +65,34 @@ export default function ParticipationMypage() {
 
   const filtered = participations.filter(pct => {
     if (pct.pctStatus === '취소' || pct.pctStatus === '참여삭제') return false;
+    // ✅ 필터 기준: pctDate
     if (filter === 'all')      return true;
-    if (filter === 'upcoming') return !isEnded(pct.eventEndDate);
-    if (filter === 'done')     return isEnded(pct.eventEndDate);
+    if (filter === 'upcoming') return !isPast(pct.pctDate);
+    if (filter === 'done')     return isPast(pct.pctDate);
     return true;
   });
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paged      = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  // ✅ 행사 클릭 시 삭제 상태 체크
   const handleEventClick = (pct) => {
-  if (!pct.eventId) return;
-  const status = (pct.eventStatus ?? '').toString();
-  if (status === 'REPORTDELETED') {
-    alert('이 행사에 대한 신고가 접수되어 삭제 처리 되었습니다.');
-    return;
-  }
-  if (status === 'DELETED') {
-    alert('주최자에 의하여 행사가 삭제되었습니다.');
-    return;
-  }
-  navigate(`/events/${pct.eventId}`);
-};
+    if (!pct.eventId) return;
+    const status = (pct.eventStatus ?? '').toString();
+    if (status === 'REPORTDELETED') {
+      alert('이 행사에 대한 신고가 접수되어 삭제 처리 되었습니다.');
+      return;
+    }
+    if (status === 'DELETED') {
+      alert('주최자에 의하여 행사가 삭제되었습니다.');
+      return;
+    }
+    navigate(`/events/${pct.eventId}`);
+  };
 
-  // ✅ 취소 버튼 클릭 → RefundPolicy 모달 오픈
   const handleCancelClick = (pct) => {
     setRefundModal({ pct });
   };
 
-  // ✅ 모달에서 확인 → 실제 취소 API 호출
   const handleCancelConfirm = async () => {
     const { pct } = refundModal;
     setRefundModal(null);
@@ -110,7 +108,6 @@ export default function ParticipationMypage() {
     }
   };
 
-  // ✅ 삭제 (참여완료 → 마이페이지에서만 제거)
   const handleDelete = async (pct) => {
     if (!window.confirm('참여 내역을 삭제하시겠습니까?\n마이페이지에서만 삭제되며 복구할 수 없습니다.')) return;
     setProcessingId(pct.pctId);
@@ -164,6 +161,7 @@ export default function ParticipationMypage() {
               <tr>
                 <th className={styles.colEvent}>행사</th>
                 <th className={styles.colPeriod}>행사 기간</th>
+                <th className={styles.colStatus}>참여일</th>
                 <th className={styles.colStatus}>상태</th>
                 <th className={styles.colCreated}>결제 금액</th>
                 <th style={{ width: '12%', textAlign: 'left', padding: '12px 14px' }}>관리</th>
@@ -172,10 +170,11 @@ export default function ParticipationMypage() {
             <tbody>
               {paged.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className={styles.empty}>{EMPTY_MSG[filter]}</td>
+                  <td colSpan={6} className={styles.empty}>{EMPTY_MSG[filter]}</td>
                 </tr>
               ) : paged.map(pct => {
-                const displayStatus = isEnded(pct.eventEndDate) ? '참여완료' : '참여예정';
+                // ✅ 상태 기준: pctDate
+                const displayStatus = isPast(pct.pctDate) ? '참여완료' : '참여예정';
                 const isProcessing  = processingId === pct.pctId;
                 const eventStatus   = (pct.eventStatus ?? '').toString().toUpperCase();
                 const isDeleted     = eventStatus === 'DELETED' || eventStatus === 'REPORTDELETED';
@@ -219,6 +218,11 @@ export default function ParticipationMypage() {
                       {fmtDate(pct.eventStartDate)} ~ {fmtDate(pct.eventEndDate)}
                     </td>
 
+                    {/* ✅ 참여일 */}
+                    <td style={{ fontSize: 13, color: '#374151', fontWeight: 700 }}>
+                      {fmtDate(pct.pctDate)}
+                    </td>
+
                     {/* 상태 */}
                     <td><StatusBadge label={displayStatus} /></td>
 
@@ -229,7 +233,6 @@ export default function ParticipationMypage() {
 
                     {/* 관리 */}
                     <td>
-                      {/* 참여예정: 취소 → RefundPolicy 모달 */}
                       {displayStatus === '참여예정' && (
                         <button
                           onClick={() => handleCancelClick(pct)}
@@ -244,7 +247,6 @@ export default function ParticipationMypage() {
                           {isProcessing ? '처리중...' : '취소'}
                         </button>
                       )}
-                      {/* 참여완료: 삭제 */}
                       {displayStatus === '참여완료' && (
                         <button
                           onClick={() => handleDelete(pct)}
@@ -283,7 +285,6 @@ export default function ParticipationMypage() {
         </div>
       )}
 
-      {/* ✅ RefundPolicy 모달 */}
       {refundModal && (
         <div style={{
           position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',

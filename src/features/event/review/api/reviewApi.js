@@ -19,6 +19,19 @@ function buildHeaders(extra = {}) {
   return headers;
 }
 
+//  content 공백이면 제거
+function sanitizeReviewPayload(payload) {
+  const out = { ...(payload || {}) };
+
+  if ('content' in out) {
+    const trimmed = out.content == null ? '' : String(out.content).trim();
+    if (!trimmed) delete out.content;
+    else out.content = trimmed;
+  }
+
+  return out;
+}
+
 async function request(path, { method = 'GET', params, body, headers } = {}) {
   const url = new URL(API_BASE + path, window.location.origin);
   if (params) {
@@ -38,8 +51,12 @@ async function request(path, { method = 'GET', params, body, headers } = {}) {
   const json = await res.json().catch(() => null);
 
   if (!res.ok || (json && json.success === false)) {
-    const msg = json?.message || `HTTP ${res.status}`;
-    throw new Error(msg);
+    const base = json?.message || `HTTP ${res.status}`;
+    const fieldMsg =
+      json?.data && typeof json.data === 'object'
+        ? Object.entries(json.data).map(([k, v]) => `${k}: ${v}`).join(', ')
+        : '';
+    throw new Error(fieldMsg ? `${base} (${fieldMsg})` : base);
   }
 
   return json?.data ?? json;
@@ -78,7 +95,7 @@ export async function createReview(payload) {
   await request(`/api/reviews`, {
     method: 'POST',
     headers: buildHeaders(),
-    body: payload,
+    body: sanitizeReviewPayload(payload),
   });
 }
 
@@ -86,7 +103,7 @@ export async function updateReview(reviewId, payload) {
   await request(`/api/reviews/${reviewId}`, {
     method: 'PUT',
     headers: buildHeaders(),
-    body: payload,
+    body: sanitizeReviewPayload(payload),
   });
 }
 

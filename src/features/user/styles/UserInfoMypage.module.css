@@ -191,3 +191,9 @@
   cursor: not-allowed; /* 금지 아이콘 커서 */
   filter: none; /* 호버 효과 제거 */
 }
+
+.bigProfile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;   /* 프로필 사진처럼 꽉 채움 */
+}

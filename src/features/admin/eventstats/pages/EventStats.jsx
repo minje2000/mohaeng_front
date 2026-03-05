@@ -1,5 +1,6 @@
 // src/features/admin/eventstats/pages/EventStats.jsx
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useMemo } from 'react';
+import { tokenStore } from '../../../../app/http/tokenStore';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer,
@@ -356,7 +357,7 @@ function EventListView({ onSelectEvent }) {
 // ══════════════════════════════════════════
 //   뷰 2: 단일 행사 상세 분석
 // ══════════════════════════════════════════
-function EventDetailView({ eventId, eventTitle, onBack }) {
+function EventDetailView({ eventId, eventTitle, onBack, isAdmin }) {
   const navigate = useNavigate();
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -392,7 +393,9 @@ function EventDetailView({ eventId, eventTitle, onBack }) {
 
   return (
     <div>
-      <button onClick={onBack} style={backBtnStyle}>← 전체 행사 목록으로</button>
+      {isAdmin && (
+  <button onClick={onBack} style={backBtnStyle}>← 전체 행사 목록으로</button>
+)}
       <h2 style={{ margin:"12px 0 20px", fontSize:22, fontWeight:900 }}>행사 분석</h2>
 
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20, marginBottom:20 }}>
@@ -571,6 +574,8 @@ function EventDetailView({ eventId, eventTitle, onBack }) {
 export default function EventStats() {
   const location = useLocation();
 
+  const isAdmin = useMemo(() => tokenStore.getRole?.() === 'ROLE_ADMIN', []);
+
   // ✅ 마이페이지 통계 버튼으로 진입 시 해당 행사 상세 바로 열기
   const [selectedEventId, setSelectedEventId] = useState(
     () => location.state?.eventId ?? null
@@ -592,7 +597,7 @@ export default function EventStats() {
   return (
     <div style={{ maxWidth:1200, margin:"0 auto", padding:"24px 20px" }}>
       {selectedEventId ? (
-        <EventDetailView eventId={selectedEventId} eventTitle={selectedEventTitle} onBack={handleBack} />
+        <EventDetailView eventId={selectedEventId} eventTitle={selectedEventTitle} onBack={handleBack} isAdmin={isAdmin} />
       ) : (
         <EventListView onSelectEvent={handleSelectEvent} />
       )}

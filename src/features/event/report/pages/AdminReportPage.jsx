@@ -8,24 +8,11 @@ import {
   rejectAdminReport,
 } from "../api/adminReportApi";
 import AdminReportDetailModal from "../components/AdminReportDetailModal";
+import { reasonLabel } from "../utils/reasonLabel";
 
 // 업로드 경로(프로젝트에 맞게 수정 가능)
 const UPLOAD_BASE = "http://localhost:8080/upload_files/event";
 const PLACEHOLDER = "https://dummyimage.com/80x80/f3f4f6/666666.png&text=Mohaeng";
-
-// 신고 사유 라벨
-const REASON_LABEL = {
-  SPAM: "광고/스팸/도배",
-  FRAUD: "허위 정보/내용 불일치",
-  COPYRIGHT: "도용/사칭/저작권 침해",
-  INAPPROPRIATE: "부적절한 내용",
-  ABUSE: "부적절한 내용",
-  ADULT: "부적절한 내용",
-  ILLEGAL: "부적절한 내용",
-  DUPLICATE: "중복/반복 등록",
-  OTHER: "기타",
-};
-const reasonLabel = (v) => REASON_LABEL[v] || v || "-";
 
 function formatDate(value) {
   if (!value) return "-";
@@ -94,7 +81,7 @@ export default function AdminReportPage() {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState(null);
 
-  //  페이지 상태로 변경
+  // 페이지 상태
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
 
@@ -115,7 +102,7 @@ export default function AdminReportPage() {
     }
   };
 
-  //  page/size 바뀌면 다시 로드
+  // page/size 바뀌면 다시 로드
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -202,7 +189,10 @@ export default function AdminReportPage() {
 
       {/* 페이지 크기 */}
       <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 12 }}>
-        <span style={{ fontSize: 12, opacity: 0.7 }}>총 {totalElements.toLocaleString()}건</span>
+        <span style={{ fontSize: 12, opacity: 0.7 }}>
+          총 {totalElements.toLocaleString()}건
+        </span>
+
         <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
           <span style={{ fontSize: 12, opacity: 0.7 }}>페이지 크기</span>
           <select
@@ -316,7 +306,7 @@ export default function AdminReportPage() {
             </tbody>
           </table>
 
-          {/*  페이징 UI */}
+          {/* 페이징 UI */}
           {totalPages > 1 && (
             <div
               style={{

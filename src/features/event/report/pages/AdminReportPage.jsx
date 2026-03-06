@@ -10,7 +10,6 @@ import {
 import AdminReportDetailModal from "../components/AdminReportDetailModal";
 import { reasonLabel } from "../utils/reasonLabel";
 
-// 업로드 경로(프로젝트에 맞게 수정 가능)
 const UPLOAD_BASE = "http://localhost:8080/upload_files/event";
 const PLACEHOLDER = "https://dummyimage.com/80x80/f3f4f6/666666.png&text=Mohaeng";
 
@@ -51,7 +50,7 @@ function buildPageItems(totalPages, current) {
   const last = totalPages - 1;
   if (totalPages <= 1) return [0];
 
-  const windowSize = 2; // current 기준 앞뒤 2개
+  const windowSize = 2;
   const set = new Set([0, last]);
 
   for (let p = current - windowSize; p <= current + windowSize; p += 1) {
@@ -69,6 +68,25 @@ function buildPageItems(totalPages, current) {
   return result;
 }
 
+function pageBtnStyle(isActive, isDisabled) {
+  return {
+    minWidth: 32,
+    height: 32,
+    padding: "0 10px",
+    borderRadius: 8,
+    border: `1px solid ${isActive ? "#111" : "#d9d9d9"}`,
+    background: isActive ? "#111" : "#fff",
+    color: isActive ? "#fff" : isDisabled ? "#cfcfcf" : "#111",
+    fontSize: 13,
+    fontWeight: isActive ? 700 : 600,
+    cursor: isDisabled ? "not-allowed" : "pointer",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    boxSizing: "border-box",
+  };
+}
+
 export default function AdminReportPage() {
   const navigate = useNavigate();
 
@@ -83,7 +101,7 @@ export default function AdminReportPage() {
 
   // 페이지 상태
   const [page, setPage] = useState(0);
-  const [size, setSize] = useState(10);
+  const [size] = useState(10);
 
   const totalPages = Number(raw?.totalPages ?? 0);
   const totalElements = Number(raw?.totalElements ?? 0);
@@ -102,13 +120,12 @@ export default function AdminReportPage() {
     }
   };
 
-  // page/size 바뀌면 다시 로드
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, size]);
 
-  // 미처리 위 / 처리 아래 + 최신순 (현재 “페이지 내”에서만 정렬됨)
+  // 미처리 위 / 처리 아래 + 최신순
   const sorted = useMemo(() => {
     return [...items].sort((a, b) => {
       const wa = statusWeight(a.reportResult);
@@ -187,29 +204,8 @@ export default function AdminReportPage() {
     <div style={{ padding: 16 }}>
       <h2 style={{ margin: 0, marginBottom: 12 }}>행사 신고 관리</h2>
 
-      {/* 페이지 크기 */}
-      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 12 }}>
-        <span style={{ fontSize: 12, opacity: 0.7 }}>
-          총 {totalElements.toLocaleString()}건
-        </span>
-
-        <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
-          <span style={{ fontSize: 12, opacity: 0.7 }}>페이지 크기</span>
-          <select
-            value={size}
-            onChange={(e) => {
-              const next = Number(e.target.value);
-              setSize(next);
-              setPage(0); // size 바꾸면 0페이지로
-            }}
-          >
-            {[5, 10, 20, 50].map((n) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
-            ))}
-          </select>
-        </div>
+      <div style={{ marginBottom: 12, fontSize: 12, opacity: 0.7 }}>
+        총 {totalElements.toLocaleString()}건
       </div>
 
       {loading && <div>불러오는 중...</div>}
@@ -217,7 +213,14 @@ export default function AdminReportPage() {
       {!loading && !error && sorted.length === 0 && <div>신고가 없어요.</div>}
 
       {!loading && !error && sorted.length > 0 && (
-        <div style={{ border: "1px solid #eee", borderRadius: 12, overflow: "hidden" }}>
+        <div
+          style={{
+            border: "1px solid #eee",
+            borderRadius: 12,
+            overflow: "hidden",
+            background: "#fff",
+          }}
+        >
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: "#fafafa" }}>
@@ -244,7 +247,9 @@ export default function AdminReportPage() {
                         tabIndex={0}
                         onClick={() => goEventDetail(it.eventId)}
                         onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") goEventDetail(it.eventId);
+                          if (e.key === "Enter" || e.key === " ") {
+                            goEventDetail(it.eventId);
+                          }
                         }}
                         style={{
                           display: "flex",
@@ -291,7 +296,11 @@ export default function AdminReportPage() {
                     </td>
 
                     <td
-                      style={{ padding: 12, cursor: "pointer", textDecoration: "underline" }}
+                      style={{
+                        padding: 12,
+                        cursor: "pointer",
+                        textDecoration: "underline",
+                      }}
                       onClick={() => openDetail(it)}
                       title="신고 상세 보기"
                     >
@@ -306,39 +315,46 @@ export default function AdminReportPage() {
             </tbody>
           </table>
 
-          {/* 페이징 UI */}
           {totalPages > 1 && (
             <div
               style={{
                 display: "flex",
-                gap: 6,
-                alignItems: "center",
                 justifyContent: "center",
-                padding: 12,
+                alignItems: "center",
+                gap: 6,
+                padding: "12px 16px",
                 borderTop: "1px solid #eee",
                 flexWrap: "wrap",
+                background: "#fff",
               }}
             >
               <button
+                type="button"
                 disabled={page <= 0}
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
+                style={pageBtnStyle(false, page <= 0)}
               >
                 이전
               </button>
 
               {pagerItems.map((p, i) =>
                 p === "..." ? (
-                  <span key={`dots-${i}`} style={{ padding: "0 6px", opacity: 0.6 }}>
+                  <span
+                    key={`dots-${i}`}
+                    style={{
+                      padding: "0 4px",
+                      fontSize: 13,
+                      color: "#999",
+                    }}
+                  >
                     …
                   </span>
                 ) : (
                   <button
+                    type="button"
                     key={p}
                     onClick={() => setPage(p)}
-                    style={{
-                      fontWeight: p === page ? 800 : 400,
-                      textDecoration: p === page ? "underline" : "none",
-                    }}
+                    style={pageBtnStyle(p === page, false)}
                   >
                     {p + 1}
                   </button>
@@ -346,17 +362,13 @@ export default function AdminReportPage() {
               )}
 
               <button
+                type="button"
                 disabled={page >= totalPages - 1}
                 onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                style={pageBtnStyle(false, page >= totalPages - 1)}
               >
                 다음
               </button>
-            </div>
-          )}
-
-          {raw && (
-            <div style={{ padding: 12, fontSize: 12, opacity: 0.7 }}>
-              totalElements: {raw.totalElements ?? "?"}, totalPages: {raw.totalPages ?? "?"}
             </div>
           )}
         </div>

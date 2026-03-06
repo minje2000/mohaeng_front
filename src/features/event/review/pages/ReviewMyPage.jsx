@@ -1,14 +1,22 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchMyReviews } from '../api/reviewApi';
 import MyPageReviewList from '../components/MyPageReviewList';
 import '../styles/review-ui.css';
 
+function getPageNumbers(page, totalPages) {
+  const current = page + 1;
+  const safeTotal = Math.max(1, totalPages || 1);
+  const start = Math.max(1, Math.min(current - 2, safeTotal - 4));
+  const end = Math.min(safeTotal, start + 4);
+  return Array.from({ length: end - start + 1 }, (_, idx) => start + idx);
+}
+
 export default function ReviewMyPage() {
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [page, setPage] = useState(0);
-  const size = 10;
+  const size = 5;
 
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -26,13 +34,7 @@ export default function ReviewMyPage() {
         setItems(res.items);
 
         const raw = res.raw || {};
-        const tp =
-          raw.totalPages ??
-          raw.totalPage ??
-          raw.page?.totalPages ??
-          raw.pageInfo?.totalPages ??
-          1;
-
+        const tp = raw.totalPages ?? raw.totalPage ?? raw.page?.totalPages ?? raw.pageInfo?.totalPages ?? 1;
         setTotalPages(Number(tp) || 1);
       } catch (e) {
         if (!alive) return;
@@ -46,7 +48,6 @@ export default function ReviewMyPage() {
     };
   }, [page]);
 
-  // ✅ 삭제된 행사 클릭 시 알림창, 정상이면 리뷰 탭으로 이동
   const onClickItem = (item) => {
     if (!item?.eventId) return;
     const status = (item?.eventStatus ?? '').toString();
@@ -61,13 +62,15 @@ export default function ReviewMyPage() {
     navigate(`/events/${item.eventId}?tab=review`);
   };
 
+  const pageNumbers = useMemo(() => getPageNumbers(page, totalPages), [page, totalPages]);
+
   return (
     <div className="mh-wrap">
       <div className="mh-content">
         <div className="mh-title">리뷰 작성 내역</div>
 
-        {loading && <div className="mh-muted">로딩중...</div>}
-        {!loading && error && <div style={{ color: 'crimson' }}>{error}</div>}
+        {loading && <div className="mh-stateCard">로딩중...</div>}
+        {!loading && error && <div className="mh-stateCard mh-stateError">{error}</div>}
 
         {!loading && !error && (
           <>
@@ -75,19 +78,11 @@ export default function ReviewMyPage() {
 
             {totalPages > 1 && (
               <div className="mh-pagination">
-                <span>[</span>
-                {Array.from({ length: totalPages }).map((_, i) => (
-                  <React.Fragment key={i}>
-                    <button
-                      className={`mh-pageBtn ${i === page ? 'active' : ''}`}
-                      onClick={() => setPage(i)}
-                    >
-                      {i + 1}
-                    </button>
-                    {i !== totalPages - 1 && <span className="mh-dot">.</span>}
-                  </React.Fragment>
+                <button className="mh-pageTextBtn" onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0}>이전</button>
+                {pageNumbers.map((num) => (
+                  <button key={num} className={`mh-pageBtn ${num === page + 1 ? 'active' : ''}`} onClick={() => setPage(num - 1)}>{num}</button>
                 ))}
-                <span>]</span>
+                <button className="mh-pageTextBtn" onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1}>다음</button>
               </div>
             )}
           </>

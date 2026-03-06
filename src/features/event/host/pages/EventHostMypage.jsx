@@ -33,19 +33,14 @@ function getStatusUI(ev) {
   const boothEnd = parseYmdToDate(ev?.boothEndRecruit);
 
   if (endDate && today > endDate) return { key: '종료', label: '행사 종료' };
-
   if (startDate && endDate && today >= startDate && today <= endDate)
     return { key: '진행중', label: '행사 진행 중' };
-
   if (endR && today > endR)
     return { key: '모집마감', label: '행사 참여 모집 마감' };
-
   if (startR && endR && today >= startR && today <= endR)
     return { key: '참여모집중', label: '행사 참여자 모집 중' };
-
   if (boothEnd && today > boothEnd)
     return { key: '부스마감', label: '부스 모집 마감' };
-
   if (boothStart && boothEnd && today >= boothStart && today <= boothEnd)
     return { key: '부스모집중', label: '부스 모집 중' };
 
@@ -66,31 +61,71 @@ function statusPillStyle(statusKey) {
   const base = {
     display: 'inline-flex',
     alignItems: 'center',
-    padding: '4px 10px',
+    justifyContent: 'center',
+    minHeight: 30,
+    padding: '0 12px',
     borderRadius: 999,
     fontSize: 12,
+    fontWeight: 900,
     border: '1px solid #E5E7EB',
     background: '#F8FAFC',
     color: '#0F172A',
     whiteSpace: 'nowrap',
-    flexWrap: 'nowrap',
-    wordBreak: 'keep-all',
   };
 
-  if (statusKey === '예정')
-    return { ...base, background: '#EFF6FF', border: '1px solid #BFDBFE', color: '#1D4ED8' };
-  if (statusKey === '진행중')
-    return { ...base, background: '#FFF7ED', border: '1px solid #FED7AA', color: '#C2410C' };
-  if (statusKey === '참여모집중')
-    return { ...base, background: '#FFF7ED', border: '1px solid #FED7AA', color: '#C2410C' };
-  if (statusKey === '부스모집중')
-    return { ...base, background: '#F5F3FF', border: '1px solid #DDD6FE', color: '#6D28D9' };
-  if (statusKey === '모집마감' || statusKey === '부스마감')
-    return { ...base, background: '#F3F4F6', border: '1px solid #E5E7EB', color: '#6B7280' };
-  if (statusKey === '종료')
-    return { ...base, background: '#ECFDF5', border: '1px solid #A7F3D0', color: '#047857' };
+  if (statusKey === '예정') return { ...base, background: '#EFF6FF', border: '1px solid #BFDBFE', color: '#1D4ED8' };
+  if (statusKey === '진행중' || statusKey === '참여모집중') return { ...base, background: '#FFF7ED', border: '1px solid #FED7AA', color: '#C2410C' };
+  if (statusKey === '부스모집중') return { ...base, background: '#F5F3FF', border: '1px solid #DDD6FE', color: '#6D28D9' };
+  if (statusKey === '모집마감' || statusKey === '부스마감') return { ...base, background: '#F3F4F6', border: '1px solid #E5E7EB', color: '#6B7280' };
+  if (statusKey === '종료') return { ...base, background: '#ECFDF5', border: '1px solid #A7F3D0', color: '#047857' };
 
   return base;
+}
+
+function getPageNumbers(page, totalPages) {
+  const safeTotal = Math.max(1, totalPages || 1);
+  const start = Math.max(1, Math.min(page - 2, safeTotal - 4));
+  const end = Math.min(safeTotal, start + 4);
+  return Array.from({ length: end - start + 1 }, (_, idx) => start + idx);
+}
+
+function Pagination({ page, totalPages, onChange }) {
+  if ((totalPages || 1) <= 1) return null;
+
+  const pages = getPageNumbers(page, totalPages);
+
+  return (
+    <div style={{ marginTop: 18, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+      <button
+        type="button"
+        onClick={() => onChange(Math.max(1, page - 1))}
+        disabled={page <= 1}
+        style={{ minWidth: 56, height: 44, padding: '0 18px', borderRadius: 14, border: '1px solid #D1D5DB', background: '#fff', color: '#9CA3AF', fontWeight: 800, cursor: page <= 1 ? 'not-allowed' : 'pointer' }}
+      >
+        이전
+      </button>
+
+      {pages.map((p) => (
+        <button
+          key={p}
+          type="button"
+          onClick={() => onChange(p)}
+          style={{ width: 44, height: 44, borderRadius: 14, border: p === page ? '1px solid #0F172A' : '1px solid #D1D5DB', background: p === page ? '#0F172A' : '#fff', color: p === page ? '#fff' : '#0F172A', fontWeight: 800, cursor: 'pointer' }}
+        >
+          {p}
+        </button>
+      ))}
+
+      <button
+        type="button"
+        onClick={() => onChange(Math.min(totalPages || 1, page + 1))}
+        disabled={page >= (totalPages || 1)}
+        style={{ minWidth: 56, height: 44, padding: '0 18px', borderRadius: 14, border: '1px solid #D1D5DB', background: '#fff', color: '#0F172A', fontWeight: 800, cursor: page >= (totalPages || 1) ? 'not-allowed' : 'pointer', opacity: page >= (totalPages || 1) ? 0.45 : 1 }}
+      >
+        다음
+      </button>
+    </div>
+  );
 }
 
 export default function EventHostMypage() {
@@ -104,14 +139,6 @@ export default function EventHostMypage() {
   const [removing, setRemoving] = useState(false);
   const [removedIds, setRemovedIds] = useState(() => new Set());
 
-  const pages = useMemo(() => {
-    const out = [];
-    const start = Math.max(1, page - 2);
-    const end = Math.min(totalPages || 1, start + 4);
-    for (let p = start; p <= end; p += 1) out.push(p);
-    return out;
-  }, [page, totalPages]);
-
   const visibleItems = useMemo(() => {
     return (items || []).filter((ev) => !removedIds.has(ev.eventId));
   }, [items, removedIds]);
@@ -120,12 +147,11 @@ export default function EventHostMypage() {
     navigate(`/events/${eventId}`);
   };
 
-    // ✅ 통계 버튼 클릭 → 관리자 행사 분석 페이지로 이동 (state로 eventId, title 전달)
   const onGoStats = (ev) => {
-  navigate('/mypage/events/created/stats', {
-    state: { eventId: ev.eventId, eventTitle: ev.title || `행사 #${ev.eventId}` },
-  });
-};
+    navigate('/mypage/events/created/stats', {
+      state: { eventId: ev.eventId, eventTitle: ev.title || `행사 #${ev.eventId}` },
+    });
+  };
 
   const onDelete = async (ev) => {
     const statusUI = getStatusUI(ev);
@@ -162,180 +188,99 @@ export default function EventHostMypage() {
   if (!hasToken) return <div style={{ padding: 16 }}>로그인이 필요합니다.</div>;
 
   return (
-    <div style={{ maxWidth: 980, margin: '0 auto', padding: 16 }}>
-      <h2 style={{ margin: '8px 0 16px' }}>행사 등록 내역</h2>
+    <div style={{ minHeight: '100vh', background: '#F9FAFB', fontFamily: "'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 18px 40px' }}>
+        <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: '-0.03em', color: '#111827', marginBottom: 18 }}>행사 등록 내역</div>
 
-      <div
-        style={{
-          background: '#fff',
-          border: '1px solid #E5E7EB',
-          borderRadius: 14,
-          overflow: 'hidden',
-        }}
-      >
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ background: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
-              <th style={{ textAlign: 'left', padding: 12, width: 380 }}>행사</th>
-              <th style={{ textAlign: 'left', padding: 12, width: 200 }}>행사 기간</th>
-              <th style={{ textAlign: 'left', padding: 12, width: 130 }}>상태</th>
-              {/* ✅ 행사분석 컬럼 추가 */}
-              <th style={{ textAlign: 'left', padding: 12, width: 100 }}>행사분석</th>
-              <th style={{ textAlign: 'left', padding: 12, width: 100 }}>관리</th>
-            </tr>
-          </thead>
+        <div style={{ padding: '12px 18px', border: '1px solid #E5E7EB', borderRadius: 18, background: '#fff', color: '#64748B', fontSize: 13, fontWeight: 900, display: 'grid', gridTemplateColumns: 'minmax(290px, 1.5fr) 180px 140px 120px 96px', gap: 12 }}>
+          <div>행사</div>
+          <div>행사 기간</div>
+          <div>상태</div>
+          <div style={{ textAlign: 'center' }}>행사분석</div>
+          <div style={{ textAlign: 'center' }}>관리</div>
+        </div>
 
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={5} style={{ padding: 18, textAlign: 'center' }}>
-                  불러오는 중...
-                </td>
-              </tr>
-            ) : visibleItems.length === 0 ? (
-              <tr>
-                <td colSpan={5} style={{ padding: 18, textAlign: 'center' }}>
-                  등록한 행사가 없습니다.
-                </td>
-              </tr>
-            ) : (
-              visibleItems.map((ev) => {
-                const statusUI = getStatusUI(ev);
-                const canDelete = statusUI.key === '예정' || statusUI.key === '종료';
+        <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {loading ? (
+            <div style={{ padding: '24px 18px', border: '1px solid #E5E7EB', borderRadius: 18, background: '#fff', color: '#6B7280', fontWeight: 800 }}>
+              불러오는 중...
+            </div>
+          ) : visibleItems.length === 0 ? (
+            <div style={{ padding: '24px 18px', border: '1px dashed #D1D5DB', borderRadius: 18, background: '#fff', color: '#6B7280', fontWeight: 800, textAlign: 'center' }}>
+              등록한 행사가 없습니다.
+            </div>
+          ) : (
+            visibleItems.map((ev) => {
+              const statusUI = getStatusUI(ev);
+              const canDelete = statusUI.key === '예정' || statusUI.key === '종료';
 
-                return (
-                  <tr key={ev.eventId} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                    <td style={{ padding: 12 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <img
-                          src={buildThumbSrc(ev.thumbnail)}
-                          alt="thumb"
-                          style={{
-                            width: 64,
-                            height: 48,
-                            objectFit: 'cover',
-                            borderRadius: 10,
-                            border: '1px solid #E5E7EB',
-                            cursor: 'pointer',
-                          }}
-                          onClick={() => onGoDetail(ev.eventId)}
-                          onError={(e) => { e.currentTarget.src = '/images/moheng.png'; }}
-                        />
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                          <div
-                            role="button"
-                            tabIndex={0}
-                            onClick={() => onGoDetail(ev.eventId)}
-                            onKeyDown={(e) => { if (e.key === 'Enter') onGoDetail(ev.eventId); }}
-                            style={{ fontWeight: 700, cursor: 'pointer', textDecoration: 'none' }}
-                          >
-                            {ev.title || `행사 #${ev.eventId}`}
-                          </div>
-                          <div style={{ fontSize: 12, color: '#64748B' }}>
-                            {ev.simpleExplain || ''}
-                          </div>
-                        </div>
+              return (
+                <div key={ev.eventId} style={{ border: '1px solid #E5E7EB', borderRadius: 18, background: '#fff', boxShadow: '0 10px 22px rgba(17,24,39,0.06)', padding: 16, display: 'grid', gridTemplateColumns: 'minmax(290px, 1.5fr) 180px 140px 120px 96px', gap: 12, alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                    <img
+                      src={buildThumbSrc(ev.thumbnail)}
+                      alt="thumb"
+                      style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 16, border: '1px solid #E5E7EB', cursor: 'pointer', flex: '0 0 auto', background: '#F3F4F6' }}
+                      onClick={() => onGoDetail(ev.eventId)}
+                      onError={(e) => { e.currentTarget.src = '/images/moheng.png'; }}
+                    />
+                    <div style={{ minWidth: 0 }}>
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => onGoDetail(ev.eventId)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') onGoDetail(ev.eventId); }}
+                        style={{ fontSize: 15, fontWeight: 900, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: 'pointer' }}
+                      >
+                        {ev.title || `행사 #${ev.eventId}`}
                       </div>
-                    </td>
+                      {ev.simpleExplain ? (
+                        <div style={{ marginTop: 4, fontSize: 12, color: '#64748B', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {ev.simpleExplain}
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
 
-                    <td style={{ padding: 12, color: '#334155', whiteSpace: 'nowrap' }}>
-                      {formatDateRange(ev.startDate, ev.endDate)}
-                    </td>
+                  <div style={{ fontSize: 13, color: '#334155', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                    {formatDateRange(ev.startDate, ev.endDate)}
+                  </div>
 
-                    <td style={{ padding: 12 }}>
-                      <span style={statusPillStyle(statusUI.key)}>{statusUI.label}</span>
-                    </td>
+                  <div>
+                    <span style={statusPillStyle(statusUI.key)}>{statusUI.label}</span>
+                  </div>
 
-                    {/* ✅ 통계 버튼 */}
-                    <td style={{ padding: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'center' }}>
+                    <button
+                      type="button"
+                      onClick={() => onGoStats(ev)}
+                      style={{ padding: '9px 14px', borderRadius: 12, border: '1px solid #BFDBFE', background: '#EFF6FF', color: '#1D4ED8', cursor: 'pointer', fontSize: 13, fontWeight: 800, whiteSpace: 'nowrap' }}
+                    >
+                      통계
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'center' }}>
+                    {canDelete ? (
                       <button
                         type="button"
-                        onClick={() => onGoStats(ev)}
-                        style={{
-                          padding: '8px 14px',
-                          borderRadius: 10,
-                          border: '1px solid #BFDBFE',
-                          background: '#EFF6FF',
-                          color: '#1D4ED8',
-                          cursor: 'pointer',
-                          fontSize: 13,
-                          fontWeight: 700,
-                          whiteSpace: 'nowrap',
-                        }}
+                        disabled={removing}
+                        onClick={() => onDelete(ev)}
+                        style={{ padding: '9px 14px', borderRadius: 12, border: '1px solid #FECACA', background: '#FEF2F2', color: '#B91C1C', cursor: removing ? 'not-allowed' : 'pointer', fontWeight: 800 }}
                       >
-                        📊 통계
+                        삭제
                       </button>
-                    </td>
-
-                    <td style={{ padding: 12 }}>
-                      {canDelete ? (
-                        <button
-                          type="button"
-                          disabled={removing}
-                          onClick={() => onDelete(ev)}
-                          style={{
-                            padding: '8px 10px',
-                            borderRadius: 10,
-                            border: '1px solid #FCA5A5',
-                            background: '#FEF2F2',
-                            color: '#B91C1C',
-                            cursor: removing ? 'not-allowed' : 'pointer',
-                          }}
-                        >
-                          삭제
-                        </button>
-                      ) : (
-                        <span style={{ fontSize: 12, color: '#94A3B8' }}>-</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-
-        {/* pagination */}
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', padding: 14 }}>
-          <button
-            type="button"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page <= 1}
-            style={{
-              padding: '8px 10px', borderRadius: 10, border: '1px solid #E5E7EB',
-              background: '#fff', cursor: page <= 1 ? 'not-allowed' : 'pointer',
-            }}
-          >
-            이전
-          </button>
-
-          {pages.map((p) => (
-            <button
-              key={p}
-              type="button"
-              onClick={() => setPage(p)}
-              style={{
-                padding: '8px 10px', borderRadius: 10, border: '1px solid #E5E7EB',
-                background: p === page ? '#111827' : '#fff',
-                color: p === page ? '#fff' : '#111827', cursor: 'pointer',
-              }}
-            >
-              {p}
-            </button>
-          ))}
-
-          <button
-            type="button"
-            onClick={() => setPage((p) => Math.min(totalPages || p + 1, p + 1))}
-            disabled={page >= (totalPages || 1)}
-            style={{
-              padding: '8px 10px', borderRadius: 10, border: '1px solid #E5E7EB',
-              background: '#fff', cursor: page >= (totalPages || 1) ? 'not-allowed' : 'pointer',
-            }}
-          >
-            다음
-          </button>
+                    ) : (
+                      <span style={{ fontSize: 12, color: '#94A3B8', fontWeight: 800 }}>-</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
+
+        <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </div>
     </div>
   );

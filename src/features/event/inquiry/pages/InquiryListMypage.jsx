@@ -449,18 +449,19 @@ export default function InquiryListMypage() {
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
               style={{
-                width: 36,
-                height: 36,
-                borderRadius: 12,
-                border: '1px solid #E5E7EB',
+                minWidth: 56,
+                height: 44,
+                padding: '0 18px',
+                borderRadius: 14,
+                border: '1px solid #D1D5DB',
                 background: '#fff',
                 cursor: page <= 1 ? 'not-allowed' : 'pointer',
-                fontWeight: 900,
-                color: '#111827',
+                fontWeight: 800,
+                color: '#9CA3AF',
                 opacity: page <= 1 ? 0.45 : 1,
               }}
             >
-              ‹
+              이전
             </button>
 
             {pageButtons.map((p) => (
@@ -469,15 +470,15 @@ export default function InquiryListMypage() {
                 type="button"
                 onClick={() => setPage(p)}
                 style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 12,
+                  width: 44,
+                  height: 44,
+                  borderRadius: 14,
                   border:
-                    p === page ? '1px solid #111827' : '1px solid #E5E7EB',
-                  background: p === page ? '#111827' : '#fff',
-                  color: p === page ? '#fff' : '#111827',
+                    p === page ? '1px solid #0F172A' : '1px solid #D1D5DB',
+                  background: p === page ? '#0F172A' : '#fff',
+                  color: p === page ? '#fff' : '#0F172A',
                   cursor: 'pointer',
-                  fontWeight: 900,
+                  fontWeight: 800,
                 }}
               >
                 {p}
@@ -489,18 +490,19 @@ export default function InquiryListMypage() {
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages}
               style={{
-                width: 36,
-                height: 36,
-                borderRadius: 12,
-                border: '1px solid #E5E7EB',
+                minWidth: 56,
+                height: 44,
+                padding: '0 18px',
+                borderRadius: 14,
+                border: '1px solid #D1D5DB',
                 background: '#fff',
                 cursor: page >= totalPages ? 'not-allowed' : 'pointer',
-                fontWeight: 900,
-                color: '#111827',
+                fontWeight: 800,
+                color: '#0F172A',
                 opacity: page >= totalPages ? 0.45 : 1,
               }}
             >
-              ›
+              다음
             </button>
           </div>
         ) : null}

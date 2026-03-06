@@ -1,52 +1,83 @@
-// src/features/event/participation/pages/ParticipationMypage.jsx
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiJson } from '../../../../app/http/request';
 import styles from './ParticipationMypage.module.css';
 import RefundPolicy from '../../../payment/pages/RefundPolicy';
 
-
 const THUMBNAIL_BASE = 'http://localhost:8080/upload_files/event/';
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 5;
 
 const fmtDate = (d) => (d ? String(d).slice(0, 10).replaceAll('-', '.') : '-');
-const fmt     = (n) => (n == null ? '-' : Number(n).toLocaleString());
+const fmt = (n) => (n == null ? '-' : Number(n).toLocaleString());
 
-// ✅ 기준: pctDate (신청 시 선택한 참여일)
 function isPast(pctDate) {
   if (!pctDate) return false;
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const d     = new Date(pctDate); d.setHours(0, 0, 0, 0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const d = new Date(pctDate);
+  d.setHours(0, 0, 0, 0);
   return d < today;
 }
 
 const STATUS_STYLE = {
-  '참여예정': { bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.35)', color: '#065f46' },
-  '참여완료': { bg: 'rgba(59,130,246,0.12)', border: 'rgba(59,130,246,0.35)', color: '#1e40af' },
+  참여예정: { bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.35)', color: '#065f46' },
+  참여완료: { bg: 'rgba(59,130,246,0.12)', border: 'rgba(59,130,246,0.35)', color: '#1e40af' },
 };
 
 function StatusBadge({ label }) {
   const s = STATUS_STYLE[label] || { bg: '#f3f4f6', border: '#e5e7eb', color: '#374151' };
   return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', height: 26,
-      padding: '0 10px', borderRadius: 999, fontSize: 12, fontWeight: 700,
-      background: s.bg, border: `1px solid ${s.border}`, color: s.color,
-    }}>
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 30,
+        padding: '0 12px',
+        borderRadius: 999,
+        fontSize: 12,
+        fontWeight: 900,
+        background: s.bg,
+        border: `1px solid ${s.border}`,
+        color: s.color,
+        whiteSpace: 'nowrap',
+      }}
+    >
       {label}
     </span>
   );
 }
 
+function getPageNumbers(page, totalPages) {
+  const safeTotal = Math.max(1, totalPages || 1);
+  const start = Math.max(1, Math.min(page - 2, safeTotal - 4));
+  const end = Math.min(safeTotal, start + 4);
+  return Array.from({ length: end - start + 1 }, (_, idx) => start + idx);
+}
+
+function Pagination({ page, totalPages, onChange }) {
+  if ((totalPages || 1) <= 1) return null;
+  const pages = getPageNumbers(page, totalPages);
+
+  return (
+    <div className={styles.pagination}>
+      <button className={styles.pageTextBtn} onClick={() => onChange(Math.max(1, page - 1))} disabled={page === 1}>이전</button>
+      {pages.map((p) => (
+        <button key={p} className={`${styles.pageBtn} ${page === p ? styles.pageActive : ''}`} onClick={() => onChange(p)}>{p}</button>
+      ))}
+      <button className={styles.pageTextBtn} onClick={() => onChange(Math.min(totalPages, page + 1))} disabled={page === totalPages}>다음</button>
+    </div>
+  );
+}
+
 export default function ParticipationMypage() {
   const navigate = useNavigate();
-  const [filter, setFilter]             = useState('all');
+  const [filter, setFilter] = useState('all');
   const [participations, setParticipations] = useState([]);
-  const [loading, setLoading]           = useState(false);
+  const [loading, setLoading] = useState(false);
   const [processingId, setProcessingId] = useState(null);
-  const [page, setPage]                 = useState(1);
-
-  const [refundModal, setRefundModal]   = useState(null);
+  const [page, setPage] = useState(1);
+  const [refundModal, setRefundModal] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -63,17 +94,22 @@ export default function ParticipationMypage() {
   useEffect(() => { load(); }, [load]);
   useEffect(() => { setPage(1); }, [filter]);
 
-  const filtered = participations.filter(pct => {
+  const filtered = useMemo(() => participations.filter((pct) => {
     if (pct.pctStatus === '취소' || pct.pctStatus === '참여삭제') return false;
-    // ✅ 필터 기준: pctDate
-    if (filter === 'all')      return true;
+    if (filter === 'all') return true;
     if (filter === 'upcoming') return !isPast(pct.pctDate);
-    if (filter === 'done')     return isPast(pct.pctDate);
+    if (filter === 'done') return isPast(pct.pctDate);
     return true;
-  });
+  }), [participations, filter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paged      = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const counts = useMemo(() => ({
+    all: participations.filter((pct) => pct.pctStatus !== '취소' && pct.pctStatus !== '참여삭제').length,
+    upcoming: participations.filter((pct) => pct.pctStatus !== '취소' && pct.pctStatus !== '참여삭제' && !isPast(pct.pctDate)).length,
+    done: participations.filter((pct) => pct.pctStatus !== '취소' && pct.pctStatus !== '참여삭제' && isPast(pct.pctDate)).length,
+  }), [participations]);
 
   const handleEventClick = (pct) => {
     if (!pct.eventId) return;
@@ -122,185 +158,105 @@ export default function ParticipationMypage() {
   };
 
   const EMPTY_MSG = {
-    all:      '참여한 행사가 없습니다.',
+    all: '참여한 행사가 없습니다.',
     upcoming: '참여 예정인 행사가 없습니다.',
-    done:     '참여 완료된 행사가 없습니다.',
+    done: '참여 완료된 행사가 없습니다.',
   };
 
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+  const tabs = [
+    { key: 'all', label: '전체' },
+    { key: 'upcoming', label: '참여 예정' },
+    { key: 'done', label: '참여 완료' },
+  ];
 
   return (
-    <div className={styles.container}>
-      <h2 className={styles.pageTitle}>행사 참여 내역</h2>
+    <div className={styles.pageShell}>
+      <div className={styles.container}>
+        <h2 className={styles.pageTitle}>행사 참여 내역</h2>
 
-      {/* 필터 탭 */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-        {[
-          { key: 'all',      label: '전체' },
-          { key: 'upcoming', label: '참여 예정' },
-          { key: 'done',     label: '참여 완료' },
-        ].map(f => (
-          <button key={f.key} onClick={() => setFilter(f.key)} style={{
-            padding: '7px 18px', borderRadius: 999, border: '1px solid',
-            borderColor: filter === f.key ? '#111827' : '#e5e7eb',
-            background:  filter === f.key ? '#111827' : '#fff',
-            color:       filter === f.key ? '#fff'    : '#6b7280',
-            fontWeight: 700, fontSize: 13, cursor: 'pointer',
-          }}>
-            {f.label}
-          </button>
-        ))}
-      </div>
+        <div className={styles.filterTabs}>
+          {tabs.map((f) => {
+            const active = filter === f.key;
+            return (
+              <button key={f.key} onClick={() => setFilter(f.key)} className={`${styles.filterBtn} ${active ? styles.filterBtnActive : ''}`}>
+                <span>{f.label}</span>
+                <span className={`${styles.filterCount} ${active ? styles.filterCountActive : ''}`}>{counts[f.key]}</span>
+              </button>
+            );
+          })}
+        </div>
 
-      <div className={styles.tableWrap}>
-        {loading ? (
-          <div className={styles.empty}>불러오는 중...</div>
-        ) : (
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th className={styles.colEvent}>행사</th>
-                <th className={styles.colPeriod}>행사 기간</th>
-                <th className={styles.colStatus}>참여일</th>
-                <th className={styles.colStatus}>상태</th>
-                <th className={styles.colCreated}>결제 금액</th>
-                <th style={{ width: '12%', textAlign: 'left', padding: '12px 14px' }}>관리</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paged.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className={styles.empty}>{EMPTY_MSG[filter]}</td>
-                </tr>
-              ) : paged.map(pct => {
-                // ✅ 상태 기준: pctDate
-                const displayStatus = isPast(pct.pctDate) ? '참여완료' : '참여예정';
-                const isProcessing  = processingId === pct.pctId;
-                const eventStatus   = (pct.eventStatus ?? '').toString().toUpperCase();
-                const isDeleted     = eventStatus === 'DELETED' || eventStatus === 'REPORTDELETED';
+        <div className={styles.headerBar}>
+          <div className={styles.colEvent}>행사</div>
+          <div className={styles.colPeriod}>행사 기간</div>
+          <div className={styles.colJoin}>참여일</div>
+          <div className={styles.colStatus}>상태</div>
+          <div className={styles.colPrice}>결제 금액</div>
+          <div className={styles.colManage}>관리</div>
+        </div>
 
-                return (
-                  <tr key={pct.pctId}>
-                    {/* 행사 */}
-                    <td>
-                      <div className={styles.eventCell}>
-                        <img
-                          src={pct.thumbnail ? `${THUMBNAIL_BASE}${pct.thumbnail}` : '/images/moheng.png'}
-                          alt=""
-                          className={styles.eventCellThumb}
-                          onClick={() => handleEventClick(pct)}
-                          style={{ cursor: 'pointer' }}
-                          onError={e => { e.currentTarget.src = '/images/moheng.png'; }}
-                        />
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, overflow: 'hidden' }}>
-                          <button
-                            className={styles.linkTitle}
-                            onClick={() => handleEventClick(pct)}
-                            style={{ color: isDeleted ? '#9ca3af' : undefined }}
-                          >
-                            {pct.eventTitle || `행사 #${pct.eventId}`}
-                          </button>
-                          {pct.simpleExplain && (
-                            <span style={{
-                              fontSize: 12, color: '#9ca3af',
-                              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                              maxWidth: 340,
-                            }}>
-                              {pct.simpleExplain}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </td>
+        <div className={styles.listWrap}>
+          {loading ? (
+            <div className={styles.stateCard}>불러오는 중...</div>
+          ) : paged.length === 0 ? (
+            <div className={styles.emptyCard}>{EMPTY_MSG[filter]}</div>
+          ) : paged.map((pct) => {
+            const displayStatus = isPast(pct.pctDate) ? '참여완료' : '참여예정';
+            const isProcessing = processingId === pct.pctId;
+            const eventStatus = (pct.eventStatus ?? '').toString().toUpperCase();
+            const isDeleted = eventStatus === 'DELETED' || eventStatus === 'REPORTDELETED';
 
-                    {/* 행사 기간 */}
-                    <td style={{ fontSize: 13, color: '#6b7280' }}>
-                      {fmtDate(pct.eventStartDate)} ~ {fmtDate(pct.eventEndDate)}
-                    </td>
+            return (
+              <div key={pct.pctId} className={styles.rowCard}>
+                <div className={styles.colEvent}>
+                  <div className={styles.eventCell}>
+                    <img
+                      src={pct.thumbnail ? `${THUMBNAIL_BASE}${pct.thumbnail}` : '/images/moheng.png'}
+                      alt=""
+                      className={styles.eventCellThumb}
+                      onClick={() => handleEventClick(pct)}
+                      style={{ cursor: 'pointer' }}
+                      onError={(e) => { e.currentTarget.src = '/images/moheng.png'; }}
+                    />
+                    <div className={styles.eventTextWrap}>
+                      <button className={styles.linkTitle} onClick={() => handleEventClick(pct)} style={{ color: isDeleted ? '#9ca3af' : undefined }}>
+                        {pct.eventTitle || `행사 #${pct.eventId}`}
+                      </button>
+                      {pct.simpleExplain ? <span className={styles.eventSummary}>{pct.simpleExplain}</span> : null}
+                    </div>
+                  </div>
+                </div>
 
-                    {/* ✅ 참여일 */}
-                    <td style={{ fontSize: 13, color: '#374151', fontWeight: 700 }}>
-                      {fmtDate(pct.pctDate)}
-                    </td>
+                <div className={styles.colPeriod}>{fmtDate(pct.eventStartDate)} ~ {fmtDate(pct.eventEndDate)}</div>
+                <div className={styles.colJoin}>{fmtDate(pct.pctDate)}</div>
+                <div className={styles.colStatus}><StatusBadge label={displayStatus} /></div>
+                <div className={styles.colPrice}>{pct.payAmount > 0 ? `${fmt(pct.payAmount)}원` : '무료'}</div>
+                <div className={styles.colManage}>
+                  {displayStatus === '참여예정' ? (
+                    <button onClick={() => handleCancelClick(pct)} disabled={isProcessing} className={styles.cancelBtn}>
+                      {isProcessing ? '처리중...' : '취소'}
+                    </button>
+                  ) : (
+                    <button onClick={() => handleDelete(pct)} disabled={isProcessing} className={styles.deleteBtn}>
+                      {isProcessing ? '처리중...' : '삭제'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
 
-                    {/* 상태 */}
-                    <td><StatusBadge label={displayStatus} /></td>
+        <Pagination page={page} totalPages={totalPages} onChange={setPage} />
 
-                    {/* 결제 금액 */}
-                    <td style={{ fontWeight: 700 }}>
-                      {pct.payAmount > 0 ? `${fmt(pct.payAmount)}원` : '무료'}
-                    </td>
-
-                    {/* 관리 */}
-                    <td>
-                      {displayStatus === '참여예정' && (
-                        <button
-                          onClick={() => handleCancelClick(pct)}
-                          disabled={isProcessing}
-                          style={{
-                            padding: '6px 12px', borderRadius: 8,
-                            border: '1px solid #fca5a5', background: '#fef2f2',
-                            color: '#b91c1c', fontSize: 12, fontWeight: 700,
-                            cursor: isProcessing ? 'not-allowed' : 'pointer',
-                            whiteSpace: 'nowrap',
-                          }}>
-                          {isProcessing ? '처리중...' : '취소'}
-                        </button>
-                      )}
-                      {displayStatus === '참여완료' && (
-                        <button
-                          onClick={() => handleDelete(pct)}
-                          disabled={isProcessing}
-                          style={{
-                            padding: '6px 12px', borderRadius: 8,
-                            border: '1px solid #e5e7eb', background: '#f9fafb',
-                            color: '#6b7280', fontSize: 12, fontWeight: 700,
-                            cursor: isProcessing ? 'not-allowed' : 'pointer',
-                            whiteSpace: 'nowrap',
-                          }}>
-                          {isProcessing ? '처리중...' : '삭제'}
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        {refundModal && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '20px' }}>
+            <div style={{ width: '100%', maxWidth: 480 }}>
+              <RefundPolicy onClose={() => setRefundModal(null)} onConfirm={handleCancelConfirm} eventStartDate={refundModal.pct.eventStartDate} paidAmount={refundModal.pct.payAmount || 0} />
+            </div>
+          </div>
         )}
       </div>
-
-      {/* 페이지네이션 */}
-      {totalPages > 1 && (
-        <div className={styles.pagination}>
-          <button className={styles.pageBtn} onClick={() => setPage(p => p - 1)} disabled={page === 1}>‹</button>
-          {pages.map(p => (
-            <button key={p}
-              className={`${styles.pageBtn} ${page === p ? styles.pageActive : ''}`}
-              onClick={() => setPage(p)}>
-              {p}
-            </button>
-          ))}
-          <button className={styles.pageBtn} onClick={() => setPage(p => p + 1)} disabled={page === totalPages}>›</button>
-        </div>
-      )}
-
-      {refundModal && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 9999, padding: '20px',
-        }}>
-          <div style={{ width: '100%', maxWidth: 480 }}>
-            <RefundPolicy
-              onClose={() => setRefundModal(null)}
-              onConfirm={handleCancelConfirm}
-              eventStartDate={refundModal.pct.eventStartDate}
-              paidAmount={refundModal.pct.payAmount || 0}
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 }

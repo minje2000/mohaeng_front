@@ -8,11 +8,9 @@ export default function UserSideMenu() {
 
   return (
     <aside className={styles.sidebar}>
-      {/* <div className={styles.profileIcon} /> */}
       <div className={styles.title}>마이페이지</div>
 
       <nav className={styles.menu}>
-        {/* /mypage는 "내정보" 기본 화면(인덱스) */}
         <NavLink to="/mypage" end className={linkClass}>
           개인 정보 관리
         </NavLink>

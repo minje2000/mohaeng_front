@@ -8,6 +8,7 @@ import useWishlistSyncOnEventDetail from '../wishlist/hooks/useWishlistSyncOnEve
 import ReportButton from "../report/components/ReportButton";
 import ReportModal from "../report/components/ReportModal";
 import KakaoMap from '../../../shared/components/common/KakaoMap';
+import ShareModal from '../../../shared/components/Modal/ShareModal';
 
 const TOPIC_MAP = {
   1:'IT', 2:'비즈니스/창업', 3:'마케팅/브랜딩', 4:'디자인/아트',
@@ -152,6 +153,7 @@ export default function EventDetail() {
   const [alreadyBoothApplied, setAlreadyBoothApplied] = useState(false);
   useWishlistSyncOnEventDetail({ eventId: Number(eventId), liked, setLiked });
   const [reportOpen, setReportOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   // ✅ 날짜 선택 상태 (잔여 인원 표시용)
   const [selectedDate, setSelectedDate] = useState('');
@@ -581,14 +583,15 @@ export default function EventDetail() {
                 onClick={() => setLiked((p) => !p)} title={liked ? '관심 취소' : '관심 행사 등록'}>
                 <HeartIcon filled={liked} />{liked ? '관심 등록됨' : '관심 행사'}
               </button>
-              <button className="ed-icon-btn" onClick={handleShare} title="링크 공유">
-                <ShareIcon />공유
-              </button>
+              <button className="ed-icon-btn" onClick={() => setShareOpen(true)} title="공유하기">
+  <ShareIcon />공유
+</button>
               <button className="ed-icon-btn" title="신고하기" onClick={(e) => { e.stopPropagation(); setReportOpen(true); }}>
                 <SirenIcon />신고
               </button>
             </div>
             <ReportModal open={reportOpen} onClose={() => setReportOpen(false)} eventId={Number(eventId)} />
+            <ShareModal open={shareOpen} onClose={() => setShareOpen(false)} ev={ev} />
 
             {/* ── 탭 ── */}
             <div className="ed-tabs">

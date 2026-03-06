@@ -64,7 +64,10 @@ const STATUS_COLOR = {
     "부스모집마감":  "#9CA3AF",
 };
 
-// ✅ Issue 11: 날짜 포맷 헬퍼 (YYYY-MM-DD → YYYY.MM.DD)
+// 숨길 행사 상태 목록
+const HIDDEN_STATUSES = new Set(["deleted", "reportdeleted", "report_deleted"]);
+
+// 날짜 포맷 헬퍼 (YYYY-MM-DD → YYYY.MM.DD)
 const fmtDate = (d) => {
     if (!d) return '-';
     return String(d).replaceAll('-', '.');
@@ -129,11 +132,10 @@ const EventList = () => {
                     filterEnd: searchParams.get("filterEnd") || "",
                     checkFree: searchParams.get("checkFree") === "true",
                     hideClosed: recruitFilter === "hideClosed",
-                    // ✅ Issue 5: 상태 필터 — 값이 있을 때만 포함 (undefined면 axios가 생략함)
                     ...(isStatusFilter && { eventStatus: recruitFilter }),
-                    topicIds: searchParams.getAll("topicIds").length > 0 
-    ? searchParams.getAll("topicIds") 
-    : null,
+                    topicIds: searchParams.getAll("topicIds").length > 0
+                        ? searchParams.getAll("topicIds")
+                        : null,
                 };
                 const data = await fetchEventList(params);
                 setEvents(data.content || []);
@@ -147,8 +149,10 @@ const EventList = () => {
         loadData();
     }, [searchParams]);
 
-    // ✅ Issue 5: 상태 필터링은 백엔드에서 처리하므로 클라이언트 필터 불필요
-    const filteredEvents = events;
+    // 삭제된 행사(deleted) 및 신고삭제된 행사(reportdeleted) 제외
+    const filteredEvents = events.filter(
+        (event) => !HIDDEN_STATUSES.has(event.eventStatus?.toLowerCase())
+    );
 
     const setFilter = (key, value) => {
         const next = new URLSearchParams(searchParams);
@@ -364,7 +368,6 @@ const EventList = () => {
                                                 <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                                     · 지역 : {event.region?.regionName || event.region?.name || '지역미상'}
                                                 </span>
-                                                {/* ✅ Issue 11: 시작일 ~ 종료일 표시 */}
                                                 <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                                     · 기간 : {fmtDate(event.startDate)} ~ {fmtDate(event.endDate)}
                                                 </span>

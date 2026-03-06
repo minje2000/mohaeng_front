@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { usePhoneVerification } from '../hooks/usePhoneVerification.js'; 
 import styles from '../styles/SignUp.module.css'; 
 import * as userApi from '../api/UserApi.js'; 
 import { useAuth } from '../../../app/providers/AuthProvider';
+import { useModal } from '../hooks/usePerInfoTermsModal';
+import SignUpTerms from '../pages/SignUpTerms';
 
 function getCookie(name) {
   const prefix = name + "=";
@@ -35,6 +37,8 @@ const SocialCompleteForm = () => {
   const navigate = useNavigate();
   const { setTokens } = useAuth();
   const [socialInfo, setSocialInfo] = useState(null);
+  const [agreed, setAgreed] = useState(false);
+  const { isOpen, openModal, closeModal } = useModal();
 
   const {
     phone,
@@ -73,6 +77,11 @@ const SocialCompleteForm = () => {
       return;
     }
 
+    if (!agreed) {
+      alert('개인 정보 수집 및 이용에 동의해주세요.');
+      return;
+    }
+
     try {
       const socialUserDto = {
         provider: socialInfo.provider,
@@ -99,6 +108,9 @@ const SocialCompleteForm = () => {
       <div className={styles.wrapper}>
         {/* 헤더 섹션 */}
         <div className={styles.headerSection}>
+          <Link to="/">
+            <img src="/images/moheng.png" alt="모행" className={styles.logoImg} />
+          </Link>
           <h2 className={styles.title}>구글 계정 연동 회원가입</h2>
           <p style={{ fontSize: '14px', color: '#6b7280', marginTop: '8px' }}>
             전화번호 입력 및 본인 인증 시 회원가입이 완료됩니다!
@@ -183,6 +195,48 @@ const SocialCompleteForm = () => {
               )}
             </div>
           </div>
+
+          <div className={styles.agreementWrapper}>
+            <input
+              type="checkbox"
+              id="agree"
+              name="agreement"
+              checked={agreed}
+              onChange={(e) => setAgreed(e.target.checked)} 
+            />
+            <label htmlFor="agree" style={{ marginLeft: '5px' }}> 
+              [필수] 개인 정보 수집 및 이용 동의
+            </label>
+            <button 
+              type="button" 
+              onClick={openModal}
+              style={{ 
+                marginLeft: 'auto', background: 'none', border: 'none', 
+                color: '#888', textDecoration: 'underline', cursor: 'pointer', fontSize: '12px' 
+              }}
+            >
+              보기
+            </button>
+          </div>
+
+          {/* 모달 렌더링 */}
+          {isOpen && (
+            <div 
+              style={{
+                position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+                backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center',
+                alignItems: 'center', zIndex: 9999, padding: '20px'
+              }}
+              onClick={closeModal} // 배경 클릭 시 닫기
+            >
+              <div 
+                style={{ width: '100%', maxWidth: '480px' }} 
+                onClick={(e) => e.stopPropagation()} // 내부 클릭 시 닫힘 방지
+              >
+                <SignUpTerms onClose={closeModal} />
+              </div>
+            </div>
+          )}
 
           <button type="submit" className={styles.submitBtn}>
             회원가입

@@ -1,27 +1,23 @@
-// src/features/event/review/components/MyPageReviewList.jsx
 import React from 'react';
 import MyPageReviewItem from './MyPageReviewItem';
 
 export default function MyPageReviewList({ items = [], onClickItem }) {
-  if (!items.length) return <div className="mh-muted">작성한 리뷰가 없어요.</div>;
+  if (!items.length) return <div className="mh-emptyCard">작성한 리뷰가 없어요.</div>;
 
   return (
-    <div className="mh-table">
-      <div className="mh-table-head">
-        <div className="mh-cell">번호</div>
-        <div className="mh-cell">행사 제목</div>
-        <div className="mh-cell">평균 별점</div>
-        <div className="mh-cell">등록일</div>
+    <div>
+      <div className="mh-tableHeadBar">
+        <div className="mh-colEvent">행사</div>
+        <div className="mh-colContent">리뷰 내용</div>
+        <div className="mh-colDate">작성일</div>
+        <div className="mh-colRating">평균 별점</div>
       </div>
 
-      {items.map((it, idx) => (
-        <MyPageReviewItem
-          key={it.reviewId ?? idx}
-          index={idx}
-          item={it}
-          onClick={() => onClickItem(it)} //  그대로
-        />
-      ))}
+      <div className="mh-tableCards">
+        {items.map((it, idx) => (
+          <MyPageReviewItem key={it.reviewId ?? idx} item={it} onClick={() => onClickItem(it)} />
+        ))}
+      </div>
     </div>
   );
 }

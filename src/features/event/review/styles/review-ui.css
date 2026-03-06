@@ -1,24 +1,90 @@
 /* src/features/event/review/styles/review-ui.css */
 
-.mh-wrap { width: 100%; min-height: 100vh; background: #fff; }
-.mh-content { padding: 18px 22px; }
-.mh-title { font-size: 28px; font-weight: 800; margin: 8px 0 18px; }
+.mh-wrap { width: 100%; min-height: 100vh; background: #f9fafb; font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+.mh-content { max-width: 1100px; margin: 0 auto; padding: 28px 18px 40px; }
+.mh-title { font-size: 22px; font-weight: 900; letter-spacing: -0.03em; margin: 0 0 18px; color: #111827; }
 .mh-muted { color: #666; }
 
-.mh-table { width: 100%; border-top: 2px solid #222; border-bottom: 2px solid #222; }
-.mh-table-head, .mh-table-row { display: grid; grid-template-columns: 90px 1fr 220px 140px; align-items: center; }
-.mh-table-head { font-weight: 800; padding: 10px 0; border-bottom: 1px dashed #bdbdbd; }
-.mh-table-row { padding: 12px 0; border-bottom: 1px dashed #d0d0d0; cursor: pointer; }
-.mh-table-row:hover { background: #fafafa; }
-.mh-cell { padding: 0 10px; border-right: 1px dashed #d0d0d0; }
-.mh-cell:last-child { border-right: none; }
-.mh-eventTitle { font-weight: 700; }
-.mh-date { font-size: 12px; color: #666; }
+.mh-stateCard,
+.mh-emptyCard {
+  padding: 24px 18px;
+  border-radius: 18px;
+  background: #fff;
+  color: #6b7280;
+  font-weight: 800;
+}
 
-.mh-pagination { display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 12px; }
-.mh-pageBtn { border: none; background: transparent; cursor: pointer; padding: 4px 6px; font-weight: 800; }
-.mh-pageBtn.active { text-decoration: underline; }
-.mh-dot { opacity: 0.6; }
+.mh-stateCard { border: 1px solid #e5e7eb; }
+.mh-emptyCard { border: 1px dashed #d1d5db; text-align: center; }
+.mh-stateError { color: #b91c1c; }
+
+.mh-tableHeadBar {
+  padding: 12px 18px;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  background: #fff;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 900;
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(260px, 1.9fr) 120px 150px;
+  gap: 12px;
+  align-items: center;
+}
+
+.mh-tableCards { margin-top: 10px; display: flex; flex-direction: column; gap: 12px; }
+
+.mh-cardRow {
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 10px 22px rgba(17,24,39,0.06);
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(260px, 1.9fr) 120px 150px;
+  gap: 12px;
+  align-items: center;
+}
+
+.mh-colEvent,
+.mh-colContent,
+.mh-colDate,
+.mh-colRating { min-width: 0; }
+
+.mh-eventTitle {
+  font-size: 15px;
+  font-weight: 900;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mh-reviewLink {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  border-radius: 14px;
+  padding: 10px 12px;
+  text-align: left;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.mh-reviewLink.empty { color: #6b7280; }
+.mh-reviewLink:hover { border-color: #cbd5e1; }
+
+.mh-date { font-size: 13px; color: #64748b; font-weight: 700; }
+
+.mh-pagination { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 18px; flex-wrap: wrap; }
+.mh-pageBtn, .mh-pageTextBtn { height: 44px; border-radius: 14px; border: 1px solid #d1d5db; background: #fff; cursor: pointer; font-weight: 800; }
+.mh-pageTextBtn { min-width: 56px; padding: 0 18px; }
+.mh-pageBtn { width: 44px; }
+.mh-pageBtn.active { background: #0f172a; color: #fff; border-color: #0f172a; }
+.mh-pageBtn:disabled, .mh-pageTextBtn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .mh-tabBar { margin: 12px 0 14px; border-top: 1px solid #222; border-bottom: 1px solid #222; padding: 10px 0; display: flex; gap: 0; }
 .mh-tabLink { padding: 6px 16px; font-weight: 800; color: #111; text-decoration: none; }
@@ -31,42 +97,72 @@
 .mh-star.clickable { cursor: pointer; user-select: none; }
 
 .mh-reviewPanel { border: 1px solid #222; border-radius: 14px; padding: 12px; }
-
 .mh-myReviewBox { border: 2px solid #222; border-radius: 30px; padding: 18px; }
 .mh-myHeaderRow { display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; font-weight: 900; margin-bottom: 8px; }
 .mh-myStarsRow { display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; margin-bottom: 10px; }
-
 .mh-myTextArea { width: 97.5%; min-height: 110px; resize: vertical; border-radius: 18px; border: 1px solid #ddd; padding: 12px 14px; outline: none; font-size: 14px; }
 .mh-myActions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
-
 .mh-btn { border: 1px solid #bbb; background: #f3f3f3; padding: 8px 16px; border-radius: 999px; cursor: pointer; font-weight: 900; }
 .mh-btn:hover { background: #ededed; }
 .mh-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-
 .mh-otherTable { margin-top: 14px; border-top: 1px dashed #222; }
 .mh-otherRow { display: grid; grid-template-columns: 180px 1fr 120px; border-bottom: 1px dashed #d0d0d0; }
 .mh-otherLeft { padding: 10px; border-right: 1px dashed #d0d0d0; }
 .mh-otherBody { padding: 10px; border-right: 1px dashed #d0d0d0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mh-otherDate { padding: 10px; font-size: 12px; color: #666; text-align: right; }
 .mh-userName { font-weight: 900; margin-bottom: 6px; }
-.mh-avgLine { display: flex; align-items: center; gap: 8px; }
-.mh-avgNum { font-size: 12px; color: #666; }
-/*  소수점 별점(반별) */
-.mh-starWrap {
-  position: relative;
-  display: inline-block;
-  line-height: 1;
+.mh-avgLine { display: inline-flex; align-items: center; gap: 8px; }
+.mh-avgNum { font-size: 13px; color: #475569; font-weight: 800; }
+.mh-starWrap { position: relative; display: inline-block; line-height: 1; }
+.mh-starBase { color: #ddd; }
+.mh-starFill { position: absolute; left: 0; top: 0; overflow: hidden; white-space: nowrap; color: #e0b400; }
+
+
+.mh-eventCell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
 }
 
-.mh-starBase {
-  color: #ddd; /* 비어있는 별 */
+.mh-thumbWrap {
+  flex: 0 0 auto;
 }
 
-.mh-starFill {
-  position: absolute;
-  left: 0;
-  top: 0;
-  overflow: hidden;   /*  width 만큼 잘려서 반별 표현 */
+.mh-eventThumb {
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  object-fit: cover;
+  border: 1px solid #e5e7eb;
+  background: #f3f4f6;
+}
+
+.mh-eventMeta {
+  min-width: 0;
+}
+
+.mh-eventSummary {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 700;
   white-space: nowrap;
-  color: #e0b400;     /* 채워진 별 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mh-colRating {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.mh-colDate {
+  white-space: nowrap;
+}
+
+.mh-reviewLink {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
 }

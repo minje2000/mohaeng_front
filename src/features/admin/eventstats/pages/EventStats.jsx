@@ -8,6 +8,9 @@ import {
 } from 'recharts';
 import { EventStatsApi } from '../api/EventStatsApi';
 
+// 숨길 행사 상태 목록
+const HIDDEN_STATUSES = new Set(["deleted", "reportdeleted", "report_deleted"]);
+
 // ─────────── 지역 데이터 ───────────
 const CITY_IDS = {
   "서울": 1100000000, "부산": 2600000000, "대구": 2700000000, "인천": 2800000000,
@@ -153,7 +156,11 @@ function EventListView({ onSelectEvent }) {
         size: 10,
       });
       const data = res.data;
-      setEvents(data.content || []);
+      // 삭제된 행사(deleted) 및 신고삭제된 행사(reportdeleted) 제외
+      const visibleContent = (data.content || []).filter(
+        (ev) => !HIDDEN_STATUSES.has(ev.eventStatus?.toLowerCase())
+      );
+      setEvents(visibleContent);
       setPageInfo({
         totalElements: data.totalElements || 0,
         totalPages:    data.totalPages    || 0,
@@ -394,8 +401,8 @@ function EventDetailView({ eventId, eventTitle, onBack, isAdmin }) {
   return (
     <div>
       {isAdmin && (
-  <button onClick={onBack} style={backBtnStyle}>← 전체 행사 목록으로</button>
-)}
+        <button onClick={onBack} style={backBtnStyle}>← 전체 행사 목록으로</button>
+      )}
       <h2 style={{ margin:"12px 0 20px", fontSize:22, fontWeight:900 }}>행사 분석</h2>
 
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20, marginBottom:20 }}>
@@ -576,7 +583,6 @@ export default function EventStats() {
 
   const isAdmin = useMemo(() => tokenStore.getRole?.() === 'ROLE_ADMIN', []);
 
-  // ✅ 마이페이지 통계 버튼으로 진입 시 해당 행사 상세 바로 열기
   const [selectedEventId, setSelectedEventId] = useState(
     () => location.state?.eventId ?? null
   );

@@ -1,18 +1,22 @@
 .sidebar {
   width: 260px;
+  min-width: 260px;
+  max-width: 260px;
   flex-shrink: 0;
+  box-sizing: border-box;
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 12px;
   padding: 18px 14px;
   background: #fff;
 }
 
-.profileIcon {
-  width: 64px;
-  height: 64px;
-  margin: 6px auto 18px;
-  border-radius: 50%;
-  background: #e9ecef;
+.title {
+  font-size: 20px;
+  font-weight: 700;
+  text-align: center;
+  padding: 20px 0;
+  border-bottom: 1px solid #ddd;
+  margin-bottom: 10px;
 }
 
 .menu {
@@ -32,6 +36,7 @@
   background: transparent;
   border: 1px solid transparent;
   transition: 0.15s;
+  box-sizing: border-box;
 }
 
 .item:hover {
@@ -42,121 +47,4 @@
   background: rgba(0, 0, 0, 0.06);
   border-color: rgba(0, 0, 0, 0.1);
   font-weight: 700;
-}
-
-.container {
-  display: flex;
-  gap: 24px;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 24px 16px;
-}
-
-/* 좌측 사이드바 */
-.sidebar {
-  width: 220px;
-  background: #fff;
-  border-right: 1px solid #ddd;
-  padding: 30px 20px;
-}
-
-.sidebar button {
-  display: block;
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 10px;
-  background: none;
-  border: none;
-  text-align: left;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.sidebar button:hover {
-  background: #f0f0f0;
-}
-
-.active {
-  border: 1px solid #000;
-}
-
-/* 프로필 아이콘 */
-.profileIcon {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  border: 2px solid #000;
-  margin-bottom: 20px;
-}
-
-/* 본문 */
-.content {
-  flex: 1;
-  min-width: 0;
-}
-
-.content h2 {
-  margin-bottom: 30px;
-}
-
-/* 프로필 박스 */
-.profileBox {
-  background: #fff;
-  padding: 40px;
-  text-align: center;
-  border-radius: 6px;
-}
-
-.bigProfile {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  border: 3px solid #000;
-  margin: 0 auto 20px;
-}
-
-.info p {
-  margin: 6px 0;
-}
-
-.buttons {
-  margin-top: 25px;
-}
-
-.primary {
-  background: #f4b04f;
-  border: none;
-  padding: 10px 18px;
-  margin-right: 10px;
-  cursor: pointer;
-}
-
-.secondary {
-  background: #f4b04f;
-  border: none;
-  padding: 10px 18px;
-  cursor: pointer;
-}
-
-/* 링크도 버튼처럼 보이게 */
-.menuBtn {
-  display: block;
-  width: 100%;
-  text-align: left;
-  padding: 10px 12px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  border-radius: 8px;
-  text-decoration: none;
-  color: inherit;
-}
-
-.title {
-  font-size: 20px;
-  font-weight: 700;
-  text-align: center;
-  padding: 20px 0;
-  border-bottom: 1px solid #ddd;
-  margin-bottom: 10px;
 }

@@ -9,33 +9,18 @@ const MENU = [
   { label: '행사 분석', to: '/admin/analysis' },
 ];
 
-function MenuIcon() {
-  return (
-    <span className={styles.icon} aria-hidden="true">
-      ▦
-    </span>
-  );
-}
-
 export default function AdminSideMenu({ className = '' }) {
+  const linkClass = ({ isActive }) =>
+    isActive ? `${styles.item} ${styles.active}` : styles.item;
+
   return (
     <aside className={`${styles.sidebar} ${className}`}>
-      {/* <div className={styles.profileWrap}>
-        <div className={styles.avatar} />
-      </div> */}
-      <div className={styles.title}>마이페이지</div>
+      <div className={styles.title}>관리자 마이페이지</div>
 
-      <nav className={styles.nav}>
+      <nav className={styles.menu}>
         {MENU.map((item) => (
-          <NavLink
-            key={item.label}
-            to={item.to}
-            className={({ isActive }) =>
-              `${styles.item} ${isActive ? styles.active : ''}`
-            }
-          >
-            <MenuIcon />
-            <span className={styles.label}>{item.label}</span>
+          <NavLink key={item.label} to={item.to} className={linkClass}>
+            {item.label}
           </NavLink>
         ))}
       </nav>

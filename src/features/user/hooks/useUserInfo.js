@@ -92,19 +92,21 @@ export function useUserInfo() {
     // 전화번호 변경 후 본인 인증 여부 확인
     if (isPhoneChanged && !phoneAuth.isVerified) return true;
 
-    // 데이터 변경 여부
-    const hasDataChanged = 
-      JSON.stringify({ ...initialInfo, phone: initialInfo.phone }) !== 
-      JSON.stringify({ ...userInfo, phone: phoneAuth.phone }) || !!selectedFile;
+    // 항목별 변경 여부 체크
+    const isPasswordChanged = isBASIC && (passwords.newPwd !== '' || passwords.confirmPwd !== '');
+    const isPhotoChanged = !!selectedFile || deletePhoto; // 새 파일이 있거나, 기존 사진 삭제를 눌렀을 때
+    
+    // 전체 변경 여부 합산 (셋 중 하나라도 true면 변경)
+    const hasAnyChanged = isPhoneChanged || isPasswordChanged || isPhotoChanged;
 
-    if (!isBASIC) return !hasDataChanged;
-
-    // 일반 로그인의 경우 비밀번호 로직 포함
-    if (passwords.newPwd || passwords.confirmPwd) {
+    // 일반 로그인(BASIC)인 경우 비밀번호 유효성 추가 검사
+    if (isPasswordChanged) {
+      // 비밀번호를 입력 중이라면 유효성과 일치 여부까지 확인
       return !(isPasswordValid && isPasswordMatch);
-    }
-    return !hasDataChanged;
-  }, [initialInfo, userInfo, phoneAuth.phone, phoneAuth.isVerified, isBASIC, passwords, selectedFile]);
+  }
+
+    return !hasAnyChanged;
+  }, [initialInfo.phone, phoneAuth.phone, phoneAuth.isVerified, isBASIC, passwords, isPasswordValid, isPasswordMatch, selectedFile, deletePhoto]);
 
   const handlePwdChange = (e) => {
     const { name, value } = e.target;

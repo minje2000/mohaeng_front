@@ -31,4 +31,12 @@ export const EventStatsApi = {
   // 카테고리별 통계 (레거시 유지)
   getEventCountByCategory: () =>
     apiJson().get(`${BASE}/category`),
+
+  // ✅ 참여자 목록 (페이징)
+  getEventParticipants: (eventId, params = {}) => {
+    const q = new URLSearchParams();
+    q.set('page', params.page ?? 0);
+    q.set('size', params.size ?? 10);
+    return apiJson().get(`${BASE}/events/${eventId}/participants?${q.toString()}`);
+  },
 };

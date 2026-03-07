@@ -6,12 +6,10 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
 } from 'recharts';
-import { EventStatsApi } from '../api/EventStatsApi';
+import { EventStatsApi } from '../api/EventStatsAPI';
 
-// 숨길 행사 상태 목록
 const HIDDEN_STATUSES = new Set(["deleted", "reportdeleted", "report_deleted"]);
 
-// ─────────── 지역 데이터 ───────────
 const CITY_IDS = {
   "서울": 1100000000, "부산": 2600000000, "대구": 2700000000, "인천": 2800000000,
   "광주": 2900000000, "대전": 3000000000, "울산": 3100000000, "세종": 3611000000,
@@ -71,24 +69,28 @@ const HASHTAG_MAP = {
   25:'지속가능한', 26:'흥미진진한', 27:'진지한', 28:'자유로운',
   29:'집중하는', 30:'친환경적인',
 };
-const GENDER_COLORS = { 남: "#3B82F6", 여: "#EC4899" };
+
+const GENDER_COLORS  = { 남: "#3B82F6", 여: "#EC4899" };
+const GENDER_MAP     = { M: '남성', F: '여성' };
+const AGE_GROUP_MAP  = { '1':'10대', '2':'20대', '3':'30대', '4':'40대', '5':'50대', '6':'60대 이상' };
+
 const THUMBNAIL_BASE = "http://localhost:8080/upload_files/event/";
-const PHOTO_BASE = "http://localhost:8080/upload_files/photo/";
+const PHOTO_BASE     = "http://localhost:8080/upload_files/photo/";
 
 // ─────────── 유틸 ───────────
-const fmt = (n) => (n == null ? "-" : Number(n).toLocaleString());
+const fmt     = (n) => (n == null ? "-" : Number(n).toLocaleString());
 const fmtDate = (d) => (d ? String(d).replaceAll("-", ".") : "-");
 
 // ─────────── StatusBadge ───────────
 function StatusBadge({ status }) {
   const map = {
-    행사예정: { bg:"#EDE9FE", color:"#7C3AED" },
-    부스모집중: { bg:"#DBEAFE", color:"#1D4ED8" },
+    행사예정:      { bg:"#EDE9FE", color:"#7C3AED" },
+    부스모집중:    { bg:"#DBEAFE", color:"#1D4ED8" },
     행사참여모집중: { bg:"#D1FAE5", color:"#065F46" },
-    행사중: { bg:"#FEF3C7", color:"#92400E" },
-    행사종료: { bg:"#F3F4F6", color:"#6B7280" },
-    행사참여마감: { bg:"#F3F4F6", color:"#6B7280" },
-    부스모집마감: { bg:"#F3F4F6", color:"#6B7280" },
+    행사중:        { bg:"#FEF3C7", color:"#92400E" },
+    행사종료:      { bg:"#F3F4F6", color:"#6B7280" },
+    행사참여마감:  { bg:"#F3F4F6", color:"#6B7280" },
+    부스모집마감:  { bg:"#F3F4F6", color:"#6B7280" },
   };
   const s = map[status] || { bg:"#F3F4F6", color:"#374151" };
   return (
@@ -99,7 +101,6 @@ function StatusBadge({ status }) {
   );
 }
 
-// ─────────── StatCard ───────────
 function StatCard({ label, value, unit = "건" }) {
   return (
     <div style={{ flex:1, border:"1px solid #E5E7EB", borderRadius:12,
@@ -112,12 +113,87 @@ function StatCard({ label, value, unit = "건" }) {
   );
 }
 
-// ─────────── InfoRow ───────────
 function InfoRow({ label, value }) {
   return (
     <div style={{ display:"flex", gap:8 }}>
       <span style={{ color:"#9CA3AF", minWidth:60, flexShrink:0 }}>{label}</span>
       <span style={{ color:"#111", fontWeight:600 }}>{value || "-"}</span>
+    </div>
+  );
+}
+
+// ─────────── 신청서 모달 ───────────
+function ApplicationModal({ participant, eventTitle, onClose }) {
+  if (!participant) return null;
+
+  const THEME = {
+    primary: '#FFD700', secondary: '#D97706', bg: '#F9FAFB',
+    border: '#E5E7EB', text: '#111827', subText: '#9CA3AF',
+  };
+
+  const SectionBox = ({ children, title }) => (
+    <div style={{ background:'#fff', borderRadius:'20px', border:`1px solid ${THEME.border}`, marginBottom:'24px', overflow:'hidden' }}>
+      <div style={{ padding:'14px 22px', background:`linear-gradient(to right, ${THEME.primary}15, transparent)`, borderBottom:`1px solid ${THEME.border}`, fontSize:'15px', fontWeight:'800', color:THEME.text }}>{title}</div>
+      <div style={{ padding:'22px' }}>{children}</div>
+    </div>
+  );
+
+  const ReadField = ({ label, value }) => (
+    <div>
+      <div style={{ fontSize:'13px', fontWeight:'700', color:'#374151', marginBottom:'6px' }}>{label}</div>
+      <div style={{ width:'100%', padding:'11px 15px', borderRadius:'10px', border:`1px solid ${THEME.border}`, fontSize:'14px', background:'#F3F4F6', color: value ? '#111' : THEME.subText, minHeight: 42, boxSizing:'border-box' }}>
+        {value || '미입력'}
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:9999, padding:'20px' }}
+      onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div style={{ background:THEME.bg, borderRadius:18, width:'100%', maxWidth:680, maxHeight:'90vh', overflowY:'auto', boxShadow:'0 20px 60px rgba(0,0,0,0.25)' }}>
+        {/* 헤더 */}
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'20px 26px', borderBottom:`1px solid ${THEME.border}`, background:'#fff', borderRadius:'18px 18px 0 0', position:'sticky', top:0, zIndex:1 }}>
+          <div>
+            <div style={{ fontSize:18, fontWeight:900, color:'#111' }}>참가 신청서</div>
+            <div style={{ fontSize:13, color:THEME.subText, marginTop:3 }}>{eventTitle}</div>
+          </div>
+          <button onClick={onClose} style={{ background:'none', border:'none', fontSize:24, cursor:'pointer', color:'#9CA3AF', lineHeight:1 }}>&times;</button>
+        </div>
+
+        <div style={{ padding:'24px 26px' }}>
+          {/* 신청자 정보 */}
+          <SectionBox title="신청자 정보">
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'16px' }}>
+              <ReadField label="이름"   value={participant.name} />
+              <ReadField label="연락처" value={participant.phone} />
+              <div style={{ gridColumn:'1/-1' }}>
+                <ReadField label="이메일" value={participant.email} />
+              </div>
+              <ReadField label="성별"  value={GENDER_MAP[participant.pctGender] || participant.pctGender} />
+              <ReadField label="나이대" value={AGE_GROUP_MAP[participant.pctAgeGroup] || participant.pctAgeGroup} />
+            </div>
+          </SectionBox>
+
+          {/* 추가 정보 */}
+          <SectionBox title="추가 정보">
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'16px', marginBottom:'16px' }}>
+              <ReadField label="참여 날짜" value={participant.pctDate} />
+              <ReadField label="직업"     value={participant.pctJob} />
+              <ReadField label="소속"     value={participant.pctGroup} />
+              <ReadField label="직급"     value={participant.pctRank} />
+              <div style={{ gridColumn:'1/-1' }}>
+                <ReadField label="참여 경로" value={participant.pctRoot} />
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize:'13px', fontWeight:'700', color:'#374151', marginBottom:'6px' }}>자유 소개</div>
+              <div style={{ width:'100%', padding:'11px 15px', borderRadius:'10px', border:`1px solid ${THEME.border}`, fontSize:'14px', background:'#F3F4F6', color: participant.pctIntroduce ? '#111' : THEME.subText, minHeight:90, boxSizing:'border-box', lineHeight:1.7, whiteSpace:'pre-wrap' }}>
+                {participant.pctIntroduce || '미입력'}
+              </div>
+            </div>
+          </SectionBox>
+        </div>
+      </div>
     </div>
   );
 }
@@ -136,8 +212,8 @@ function EventListView({ onSelectEvent }) {
   const [currentPage, setCurrentPage] = useState(0);
   const [loading, setLoading]     = useState(false);
 
-  const [monthlyData, setMonthlyData]     = useState([]);
-  const [selectedYear, setSelectedYear]   = useState(new Date().getFullYear());
+  const [monthlyData, setMonthlyData]   = useState([]);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   const loadEvents = useCallback(async (page = 0) => {
     setLoading(true);
@@ -156,7 +232,6 @@ function EventListView({ onSelectEvent }) {
         size: 10,
       });
       const data = res.data;
-      // 삭제된 행사(deleted) 및 신고삭제된 행사(reportdeleted) 제외
       const visibleContent = (data.content || []).filter(
         (ev) => !HIDDEN_STATUSES.has(ev.eventStatus?.toLowerCase())
       );
@@ -215,8 +290,7 @@ function EventListView({ onSelectEvent }) {
         <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:16 }}>
           <div style={{ display:"flex", gap:10, flexWrap:"wrap", alignItems:"center" }}>
             <input
-              type="text"
-              placeholder="제목·한줄설명 검색 (Enter)"
+              type="text" placeholder="제목·한줄설명 검색 (Enter)"
               value={filters.keyword}
               onChange={e => setFilter("keyword", e.target.value)}
               onKeyDown={e => e.key === "Enter" && handleSearch()}
@@ -237,39 +311,25 @@ function EventListView({ onSelectEvent }) {
               <option value="">시/도 전체</option>
               {Object.keys(CITY_IDS).map(city => <option key={city} value={city}>{city}</option>)}
             </select>
-
             {filters.city && districtList.length > 0 && (
               <select value={filters.regionId} onChange={e => setFilter("regionId", e.target.value)} style={selectStyle}>
                 <option value="">시/군/구 전체</option>
                 {districtList.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
               </select>
             )}
-
-            <div style={{ display:"flex", alignItems:"center", gap:6, border:"1px solid #E5E7EB",
-              borderRadius:8, padding:"6px 10px", background:"#fff" }}>
-              <input type="date" value={filters.startDate}
-                onChange={e => setFilter("startDate", e.target.value)} style={dateInputStyle} />
+            <div style={{ display:"flex", alignItems:"center", gap:6, border:"1px solid #E5E7EB", borderRadius:8, padding:"6px 10px", background:"#fff" }}>
+              <input type="date" value={filters.startDate} onChange={e => setFilter("startDate", e.target.value)} style={dateInputStyle} />
               <span style={{ color:"#9CA3AF" }}>~</span>
-              <input type="date" value={filters.endDate} min={filters.startDate}
-                onChange={e => setFilter("endDate", e.target.value)} style={dateInputStyle} />
+              <input type="date" value={filters.endDate} min={filters.startDate} onChange={e => setFilter("endDate", e.target.value)} style={dateInputStyle} />
             </div>
-
             <label style={checkboxLabelStyle}>
-              <input type="checkbox" checked={filters.checkFree}
-                onChange={e => setFilter("checkFree", e.target.checked)} />
-              무료만
+              <input type="checkbox" checked={filters.checkFree} onChange={e => setFilter("checkFree", e.target.checked)} />무료만
             </label>
             <label style={checkboxLabelStyle}>
-              <input type="checkbox" checked={filters.hideClosed}
-                onChange={e => setFilter("hideClosed", e.target.checked)} />
-              종료 제외
+              <input type="checkbox" checked={filters.hideClosed} onChange={e => setFilter("hideClosed", e.target.checked)} />종료 제외
             </label>
-
             <button onClick={handleSearch} style={searchBtnStyle}>검색</button>
-            <button onClick={() => {
-              setFilters({ keyword:"", categoryId:"", status:"", city:"", regionId:"",
-                startDate:"", endDate:"", checkFree:false, hideClosed:false });
-            }} style={{ ...searchBtnStyle, background:"#6B7280" }}>초기화</button>
+            <button onClick={() => setFilters({ keyword:"", categoryId:"", status:"", city:"", regionId:"", startDate:"", endDate:"", checkFree:false, hideClosed:false })} style={{ ...searchBtnStyle, background:"#6B7280" }}>초기화</button>
           </div>
         </div>
 
@@ -278,8 +338,7 @@ function EventListView({ onSelectEvent }) {
             <thead>
               <tr style={{ background:"#F9FAFB", borderBottom:"1px solid #E5E7EB" }}>
                 {["썸네일","카테고리","행사 제목","지역","행사 기간","상태","조회수"].map(h => (
-                  <th key={h} style={{ textAlign:"left", padding:"10px 12px",
-                    fontWeight:700, color:"#374151", whiteSpace:"nowrap" }}>{h}</th>
+                  <th key={h} style={{ textAlign:"left", padding:"10px 12px", fontWeight:700, color:"#374151", whiteSpace:"nowrap" }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -296,19 +355,14 @@ function EventListView({ onSelectEvent }) {
                   onMouseLeave={e => e.currentTarget.style.background = ""}
                 >
                   <td style={{ padding:"8px 12px" }}>
-                    <img
-                      src={ev.thumbnail ? `${THUMBNAIL_BASE}${ev.thumbnail}` : ""}
-                      alt=""
+                    <img src={ev.thumbnail ? `${THUMBNAIL_BASE}${ev.thumbnail}` : ""} alt=""
                       style={{ width:48, height:36, objectFit:"cover", borderRadius:6, background:"#F3F4F6" }}
-                      onError={e => { e.target.style.display = "none"; }}
-                    />
+                      onError={e => { e.target.style.display = "none"; }} />
                   </td>
                   <td style={{ padding:"10px 12px", color:"#6B7280" }}>{ev.categoryName || "-"}</td>
                   <td style={{ padding:"10px 12px", fontWeight:700, color:"#1D4ED8", textDecoration:"underline" }}>{ev.title}</td>
                   <td style={{ padding:"10px 12px", color:"#374151" }}>{ev.location || "-"}</td>
-                  <td style={{ padding:"10px 12px", color:"#374151", whiteSpace:"nowrap" }}>
-                    {fmtDate(ev.startDate)} ~ {fmtDate(ev.endDate)}
-                  </td>
+                  <td style={{ padding:"10px 12px", color:"#374151", whiteSpace:"nowrap" }}>{fmtDate(ev.startDate)} ~ {fmtDate(ev.endDate)}</td>
                   <td style={{ padding:"10px 12px" }}><StatusBadge status={ev.eventStatus} /></td>
                   <td style={{ padding:"10px 12px", color:"#374151" }}>{fmt(ev.views)}</td>
                 </tr>
@@ -323,11 +377,7 @@ function EventListView({ onSelectEvent }) {
             {Array.from({ length: Math.min(pageInfo.totalPages, 10) }, (_, i) => {
               const start = Math.max(0, Math.min(currentPage - 4, pageInfo.totalPages - 10));
               const p = start + i;
-              return (
-                <button key={p} onClick={() => loadEvents(p)} style={pageBtnStyle(currentPage === p, false)}>
-                  {p + 1}
-                </button>
-              );
+              return <button key={p} onClick={() => loadEvents(p)} style={pageBtnStyle(currentPage === p, false)}>{p + 1}</button>;
             })}
             <button disabled={pageInfo.last} onClick={() => loadEvents(currentPage + 1)} style={pageBtnStyle(false, pageInfo.last)}>다음</button>
           </div>
@@ -337,9 +387,7 @@ function EventListView({ onSelectEvent }) {
       <section style={{ ...sectionStyle, marginTop:20 }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
           <h3 style={{ ...sectionTitleStyle, marginBottom:0 }}>월별 행사</h3>
-          <select value={selectedYear}
-            onChange={e => setSelectedYear(Number(e.target.value))}
-            style={{ ...selectStyle, fontSize:13 }}>
+          <select value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))} style={{ ...selectStyle, fontSize:13 }}>
             {[2023, 2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}년</option>)}
           </select>
         </div>
@@ -350,9 +398,7 @@ function EventListView({ onSelectEvent }) {
             <YAxis allowDecimals={false} tick={{ fontSize:12 }} />
             <Tooltip formatter={v => `${v}개`} />
             <Bar dataKey="count" name="행사 수" radius={[4,4,0,0]}>
-              {monthlyData.map((_, i) => (
-                <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-              ))}
+              {monthlyData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
             </Bar>
           </BarChart>
         </ResponsiveContainer>
@@ -366,8 +412,17 @@ function EventListView({ onSelectEvent }) {
 // ══════════════════════════════════════════
 function EventDetailView({ eventId, eventTitle, onBack, isAdmin }) {
   const navigate = useNavigate();
-  const [detail, setDetail] = useState(null);
+  const [detail, setDetail]   = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // ── 참여자 목록 상태
+  const [participants, setParticipants]     = useState([]);
+  const [pctPageInfo, setPctPageInfo]       = useState({ totalElements:0, totalPages:0, first:true, last:true });
+  const [pctCurrentPage, setPctCurrentPage] = useState(0);
+  const [pctLoading, setPctLoading]         = useState(false);
+
+  // ── 신청서 모달 상태
+  const [selectedParticipant, setSelectedParticipant] = useState(null);
 
   useEffect(() => {
     setLoading(true);
@@ -377,18 +432,38 @@ function EventDetailView({ eventId, eventTitle, onBack, isAdmin }) {
       .finally(() => setLoading(false));
   }, [eventId]);
 
+  const loadParticipants = useCallback(async (page = 0) => {
+    setPctLoading(true);
+    try {
+      const res  = await EventStatsApi.getEventParticipants(eventId, { page, size: 10 });
+      const data = res.data;
+      setParticipants(data.content || []);
+      setPctPageInfo({
+        totalElements: data.totalElements || 0,
+        totalPages:    data.totalPages    || 0,
+        first:         data.first         ?? true,
+        last:          data.last          ?? true,
+      });
+      setPctCurrentPage(page);
+    } catch (e) {
+      console.error("참여자 목록 로딩 실패", e);
+    } finally {
+      setPctLoading(false);
+    }
+  }, [eventId]);
+
+  useEffect(() => { loadParticipants(0); }, [loadParticipants]);
+
   if (loading) return <div style={{ padding:40, textAlign:"center", color:"#9CA3AF" }}>분석 데이터 불러오는 중...</div>;
   if (!detail)  return <div style={{ padding:40, textAlign:"center", color:"#EF4444" }}>데이터를 불러올 수 없습니다.</div>;
 
   const topics = detail.topicIds
-    ? detail.topicIds.split(",").map(id => TOPIC_MAP[Number(id.trim())]).filter(Boolean)
-    : [];
+    ? detail.topicIds.split(",").map(id => TOPIC_MAP[Number(id.trim())]).filter(Boolean) : [];
   const hashtags = detail.hashtagIds
-    ? detail.hashtagIds.split(",").map(id => HASHTAG_MAP[Number(id.trim())]).filter(Boolean)
-    : [];
+    ? detail.hashtagIds.split(",").map(id => HASHTAG_MAP[Number(id.trim())]).filter(Boolean) : [];
 
   const genderChartData = [
-    { name:"남", value: Number(detail.maleCount || 0) },
+    { name:"남", value: Number(detail.maleCount   || 0) },
     { name:"여", value: Number(detail.femaleCount || 0) },
   ].filter(d => d.value > 0);
 
@@ -398,13 +473,30 @@ function EventDetailView({ eventId, eventTitle, onBack, isAdmin }) {
         .sort((a, b) => a.age.localeCompare(b.age))
     : [];
 
+  // ✅ 유입경로 도넛 데이터 — detail.rootCounts: { "인스타그램": 5, "블로그/카페": 3, ... }
+  const rootChartData = detail.rootCounts
+    ? Object.entries(detail.rootCounts)
+        .map(([name, value]) => ({ name, value: Number(value) }))
+        .filter(d => d.value > 0)
+        .sort((a, b) => b.value - a.value)
+    : [];
+
   return (
     <div>
+      {selectedParticipant && (
+        <ApplicationModal
+          participant={selectedParticipant}
+          eventTitle={detail.title || eventTitle}
+          onClose={() => setSelectedParticipant(null)}
+        />
+      )}
+
       {isAdmin && (
         <button onClick={onBack} style={backBtnStyle}>← 전체 행사 목록으로</button>
       )}
       <h2 style={{ margin:"12px 0 20px", fontSize:22, fontWeight:900 }}>행사 분석</h2>
 
+      {/* ── 상단 2열: 기본정보 + 통계 ── */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20, marginBottom:20 }}>
 
         {/* 기본 정보 */}
@@ -420,18 +512,14 @@ function EventDetailView({ eventId, eventTitle, onBack, isAdmin }) {
             <div style={{ width:100, height:80, borderRadius:10, flexShrink:0, overflow:"hidden",
               background:"#F3F4F6", border:"1px solid #E5E7EB" }}>
               {detail.thumbnail ? (
-                <img
-                  src={`${THUMBNAIL_BASE}${detail.thumbnail}`}
-                  alt="썸네일"
+                <img src={`${THUMBNAIL_BASE}${detail.thumbnail}`} alt="썸네일"
                   style={{ width:"100%", height:"100%", objectFit:"cover" }}
-                  onError={e => { e.target.src = ""; e.target.style.display = "none"; }}
-                />
+                  onError={e => { e.target.src = ""; e.target.style.display = "none"; }} />
               ) : (
                 <div style={{ width:"100%", height:"100%", display:"flex", alignItems:"center",
                   justifyContent:"center", fontSize:11, color:"#9CA3AF" }}>이미지 없음</div>
               )}
             </div>
-
             <div style={{ display:"flex", flexDirection:"column", gap:5, fontSize:13 }}>
               <InfoRow label="행사 기간" value={detail.eventPeriod} />
               <InfoRow label="행사 장소" value={detail.location} />
@@ -445,8 +533,7 @@ function EventDetailView({ eventId, eventTitle, onBack, isAdmin }) {
                 <div style={{ display:"flex", flexWrap:"wrap", alignItems:"center", gap:6 }}>
                   <span style={{ fontSize:11, fontWeight:800, color:"#9CA3AF", whiteSpace:"nowrap" }}>주제</span>
                   {topics.map((tag, i) => (
-                    <span key={i} style={{ background:"#FFF7ED", color:"#F97316", borderRadius:999,
-                      padding:"3px 10px", fontSize:12, fontWeight:800 }}>{tag}</span>
+                    <span key={i} style={{ background:"#FFF7ED", color:"#F97316", borderRadius:999, padding:"3px 10px", fontSize:12, fontWeight:800 }}>{tag}</span>
                   ))}
                 </div>
               )}
@@ -454,8 +541,7 @@ function EventDetailView({ eventId, eventTitle, onBack, isAdmin }) {
                 <div style={{ display:"flex", flexWrap:"wrap", alignItems:"center", gap:6 }}>
                   <span style={{ fontSize:11, fontWeight:800, color:"#9CA3AF", whiteSpace:"nowrap" }}>태그</span>
                   {hashtags.map((tag, i) => (
-                    <span key={i} style={{ background:"#F3F4F6", color:"#6B7280", borderRadius:999,
-                      padding:"3px 10px", fontSize:12, fontWeight:700 }}>#{tag}</span>
+                    <span key={i} style={{ background:"#F3F4F6", color:"#6B7280", borderRadius:999, padding:"3px 10px", fontSize:12, fontWeight:700 }}>#{tag}</span>
                   ))}
                 </div>
               )}
@@ -465,25 +551,19 @@ function EventDetailView({ eventId, eventTitle, onBack, isAdmin }) {
           <div style={{ borderTop:"1px solid #F3F4F6", paddingTop:12 }}>
             <div style={{ fontSize:12, fontWeight:700, color:"#6B7280", marginBottom:8 }}>주최자 정보</div>
             <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:10 }}>
-              <div style={{
-                width:48, height:48, borderRadius:"50%", flexShrink:0,
-                overflow:"hidden", background:"#F3F4F6", border:"1px solid #E5E7EB",
-                display:"flex", alignItems:"center", justifyContent:"center", fontSize:20,
-              }}>
+              <div style={{ width:48, height:48, borderRadius:"50%", flexShrink:0, overflow:"hidden",
+                background:"#F3F4F6", border:"1px solid #E5E7EB", display:"flex", alignItems:"center", justifyContent:"center", fontSize:20 }}>
                 {detail.hostPhoto ? (
-                  <img
-                    src={`${PHOTO_BASE}${detail.hostPhoto}`}
-                    alt="주최자"
+                  <img src={`${PHOTO_BASE}${detail.hostPhoto}`} alt="주최자"
                     style={{ width:"100%", height:"100%", objectFit:"cover" }}
-                    onError={e => { e.target.style.display = "none"; e.target.parentElement.textContent = "🏢"; }}
-                  />
+                    onError={e => { e.target.style.display = "none"; e.target.parentElement.textContent = "🏢"; }} />
                 ) : "🏢"}
               </div>
               <span style={{ fontSize:14, fontWeight:800, color:"#111" }}>{detail.hostName || "-"}</span>
             </div>
             <div style={{ fontSize:13, display:"flex", flexDirection:"column", gap:4 }}>
               <InfoRow label="이메일" value={detail.hostEmail} />
-              <InfoRow label="전화" value={detail.hostPhone} />
+              <InfoRow label="전화"   value={detail.hostPhone} />
             </div>
           </div>
         </section>
@@ -497,9 +577,7 @@ function EventDetailView({ eventId, eventTitle, onBack, isAdmin }) {
             <StatCard label="리뷰 수"   value={detail.reviewCount}      unit="개" />
             <StatCard label="관심 수"   value={detail.wishCount}        unit="개" />
           </div>
-
-          <div style={{ background:"#F8FAFC", borderRadius:12, padding:"14px 18px",
-            border:"1px solid #E5E7EB" }}>
+          <div style={{ background:"#F8FAFC", borderRadius:12, padding:"14px 18px", border:"1px solid #E5E7EB" }}>
             <div style={{ fontWeight:700, fontSize:14, marginBottom:10 }}>수익 현황</div>
             <div style={{ fontSize:13, display:"flex", flexDirection:"column", gap:6 }}>
               <div style={{ display:"flex", justifyContent:"space-between" }}>
@@ -514,38 +592,38 @@ function EventDetailView({ eventId, eventTitle, onBack, isAdmin }) {
             <div style={{ marginTop:10, paddingTop:10, borderTop:"1px solid #E5E7EB",
               display:"flex", justifyContent:"space-between", alignItems:"center" }}>
               <span style={{ fontWeight:700, fontSize:15 }}>총 수익</span>
-              <span style={{ fontWeight:900, fontSize:20, color:"#111" }}>
-                {fmt(detail.totalRevenue)}원
-              </span>
+              <span style={{ fontWeight:900, fontSize:20, color:"#111" }}>{fmt(detail.totalRevenue)}원</span>
             </div>
           </div>
         </section>
       </div>
 
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
+      {/* ── 하단 3열: 연령대 + 성별 + 유입경로 ── */}
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:20, marginBottom:20 }}>
+
+        {/* 연령대 */}
         <section style={sectionStyle}>
-          <h3 style={sectionTitleStyle}>행사 참여자 연령대</h3>
+          <h3 style={sectionTitleStyle}>참여자 연령대</h3>
           {ageChartData.length === 0 ? (
             <div style={emptyStyle}>연령대 데이터 없음<br /><span style={{ fontSize:12 }}>(참여 신청 시 연령대 정보 필요)</span></div>
           ) : (
             <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={ageChartData} barSize={28} margin={{ top:4, right:8, left:-10, bottom:0 }}>
+              <BarChart data={ageChartData} barSize={24} margin={{ top:4, right:8, left:-10, bottom:0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="age" tick={{ fontSize:12 }} />
-                <YAxis allowDecimals={false} tick={{ fontSize:12 }} />
+                <XAxis dataKey="age" tick={{ fontSize:11 }} />
+                <YAxis allowDecimals={false} tick={{ fontSize:11 }} />
                 <Tooltip formatter={v => `${v}명`} />
                 <Bar dataKey="count" name="인원" radius={[4,4,0,0]}>
-                  {ageChartData.map((_, i) => (
-                    <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                  ))}
+                  {ageChartData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
           )}
         </section>
 
+        {/* 성별 */}
         <section style={sectionStyle}>
-          <h3 style={sectionTitleStyle}>행사 참여자 성별</h3>
+          <h3 style={sectionTitleStyle}>참여자 성별</h3>
           {genderChartData.length === 0 ? (
             <div style={emptyStyle}>성별 데이터 없음</div>
           ) : (
@@ -554,15 +632,11 @@ function EventDetailView({ eventId, eventTitle, onBack, isAdmin }) {
                 <Pie
                   data={genderChartData}
                   cx="50%" cy="50%"
-                  innerRadius={50} outerRadius={85}
+                  innerRadius={45} outerRadius={78}
                   dataKey="value"
-                  label={({ name, value, percent }) =>
-                    `${name === "남" ? "남성" : "여성"} ${value}명 (${(percent * 100).toFixed(0)}%)`}
-                  fontSize={12}
+                  fontSize={11}
                 >
-                  {genderChartData.map((d, i) => (
-                    <Cell key={i} fill={GENDER_COLORS[d.name] || "#9CA3AF"} />
-                  ))}
+                  {genderChartData.map((d, i) => <Cell key={i} fill={GENDER_COLORS[d.name] || "#9CA3AF"} />)}
                 </Pie>
                 <Legend formatter={v => v === "남" ? "남성" : "여성"} />
                 <Tooltip formatter={(v, n) => [`${v}명`, n === "남" ? "남성" : "여성"]} />
@@ -570,7 +644,111 @@ function EventDetailView({ eventId, eventTitle, onBack, isAdmin }) {
             </ResponsiveContainer>
           )}
         </section>
+
+        {/* ✅ 유입경로 도넛 */}
+        <section style={sectionStyle}>
+          <h3 style={sectionTitleStyle}>참여자 유입경로</h3>
+          {rootChartData.length === 0 ? (
+            <div style={emptyStyle}>유입경로 데이터 없음</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={220}>
+              <PieChart>
+                <Pie
+                  data={rootChartData}
+                  cx="50%" cy="45%"
+                  innerRadius={45} outerRadius={75}
+                  dataKey="value"
+                  fontSize={11}
+                >
+                  {rootChartData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                </Pie>
+                <Legend
+                  formatter={(value, entry) => (
+                    <span style={{ fontSize:11, color:"#374151" }}>{value} ({entry.payload.value}명)</span>
+                  )}
+                />
+                <Tooltip formatter={(v, n) => [`${v}명`, n]} />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+        </section>
       </div>
+
+      {/* ✅ 참여자 목록 */}
+      <section style={sectionStyle}>
+        <div style={{ display:"flex", alignItems:"baseline", gap:10, marginBottom:16 }}>
+          <h3 style={{ ...sectionTitleStyle, marginBottom:0 }}>참여자 목록</h3>
+          <span style={{ fontSize:13, color:"#9CA3AF", fontWeight:500 }}>
+            {pctLoading ? "..." : `총 ${fmt(pctPageInfo.totalElements)}명`}
+          </span>
+        </div>
+
+        <div style={{ border:"1px solid #E5E7EB", borderRadius:12, overflow:"hidden" }}>
+          <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
+            <thead>
+              <tr style={{ background:"#F9FAFB", borderBottom:"1px solid #E5E7EB" }}>
+                {["이름","이메일","성별","나이대","참여 날짜","유입경로",""].map((h, i) => (
+                  <th key={i} style={{ textAlign:"left", padding:"10px 14px", fontWeight:700, color:"#374151", whiteSpace:"nowrap" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {pctLoading ? (
+                <tr><td colSpan={7} style={{ padding:24, textAlign:"center", color:"#9CA3AF" }}>불러오는 중...</td></tr>
+              ) : participants.length === 0 ? (
+                <tr><td colSpan={7} style={{ padding:24, textAlign:"center", color:"#9CA3AF" }}>참여자가 없습니다.</td></tr>
+              ) : participants.map((p, i) => (
+                <tr key={p.participationId ?? i}
+                  style={{ borderBottom:"1px solid #F1F5F9" }}
+                  onMouseEnter={e => e.currentTarget.style.background = "#F8FAFC"}
+                  onMouseLeave={e => e.currentTarget.style.background = ""}
+                >
+                  <td style={{ padding:"10px 14px", fontWeight:700, color:"#111" }}>{p.name || "-"}</td>
+                  <td style={{ padding:"10px 14px", color:"#6B7280" }}>{p.email || "-"}</td>
+                  <td style={{ padding:"10px 14px", color:"#374151" }}>
+                    {p.pctGender ? (
+                      <span style={{
+                        display:"inline-block", padding:"2px 10px", borderRadius:999, fontSize:12, fontWeight:700,
+                        background: p.pctGender === 'M' ? "#DBEAFE" : "#FCE7F3",
+                        color:      p.pctGender === 'M' ? "#1D4ED8" : "#BE185D",
+                      }}>
+                        {GENDER_MAP[p.pctGender] || p.pctGender}
+                      </span>
+                    ) : "-"}
+                  </td>
+                  <td style={{ padding:"10px 14px", color:"#374151" }}>{AGE_GROUP_MAP[p.pctAgeGroup] || p.pctAgeGroup || "-"}</td>
+                  <td style={{ padding:"10px 14px", color:"#374151", whiteSpace:"nowrap" }}>{p.pctDate || "-"}</td>
+                  <td style={{ padding:"10px 14px", color:"#6B7280" }}>{p.pctRoot || "-"}</td>
+                  <td style={{ padding:"10px 14px" }}>
+                    <button
+                      onClick={() => setSelectedParticipant(p)}
+                      style={{ padding:"5px 14px", borderRadius:8, border:"1px solid #E5E7EB",
+                        background:"#fff", fontSize:12, fontWeight:700, color:"#374151",
+                        cursor:"pointer", whiteSpace:"nowrap", transition:"all 0.15s" }}
+                      onMouseEnter={e => { e.currentTarget.style.background = "#111"; e.currentTarget.style.color = "#fff"; e.currentTarget.style.borderColor = "#111"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = "#374151"; e.currentTarget.style.borderColor = "#E5E7EB"; }}
+                    >
+                      신청서 보기
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {pctPageInfo.totalPages > 1 && (
+          <div style={{ display:"flex", justifyContent:"center", gap:6, marginTop:16 }}>
+            <button disabled={pctPageInfo.first} onClick={() => loadParticipants(pctCurrentPage - 1)} style={pageBtnStyle(false, pctPageInfo.first)}>이전</button>
+            {Array.from({ length: Math.min(pctPageInfo.totalPages, 10) }, (_, i) => {
+              const start = Math.max(0, Math.min(pctCurrentPage - 4, pctPageInfo.totalPages - 10));
+              const p = start + i;
+              return <button key={p} onClick={() => loadParticipants(p)} style={pageBtnStyle(pctCurrentPage === p, false)}>{p + 1}</button>;
+            })}
+            <button disabled={pctPageInfo.last} onClick={() => loadParticipants(pctCurrentPage + 1)} style={pageBtnStyle(false, pctPageInfo.last)}>다음</button>
+          </div>
+        )}
+      </section>
     </div>
   );
 }
@@ -580,25 +758,13 @@ function EventDetailView({ eventId, eventTitle, onBack, isAdmin }) {
 // ══════════════════════════════════════════
 export default function EventStats() {
   const location = useLocation();
+  const isAdmin  = useMemo(() => tokenStore.getRole?.() === 'ROLE_ADMIN', []);
 
-  const isAdmin = useMemo(() => tokenStore.getRole?.() === 'ROLE_ADMIN', []);
+  const [selectedEventId, setSelectedEventId]       = useState(() => location.state?.eventId    ?? null);
+  const [selectedEventTitle, setSelectedEventTitle] = useState(() => location.state?.eventTitle ?? "");
 
-  const [selectedEventId, setSelectedEventId] = useState(
-    () => location.state?.eventId ?? null
-  );
-  const [selectedEventTitle, setSelectedEventTitle] = useState(
-    () => location.state?.eventTitle ?? ""
-  );
-
-  const handleSelectEvent = (id, title) => {
-    setSelectedEventId(id);
-    setSelectedEventTitle(title);
-  };
-
-  const handleBack = () => {
-    setSelectedEventId(null);
-    setSelectedEventTitle("");
-  };
+  const handleSelectEvent = (id, title) => { setSelectedEventId(id); setSelectedEventTitle(title); };
+  const handleBack        = () => { setSelectedEventId(null); setSelectedEventTitle(""); };
 
   return (
     <div style={{ maxWidth:1200, margin:"0 auto", padding:"24px 20px" }}>
@@ -612,47 +778,18 @@ export default function EventStats() {
 }
 
 // ── 공통 스타일 ──
-const sectionStyle = {
-  background:"#fff", border:"1px solid #E5E7EB", borderRadius:14, padding:"20px 22px",
-};
-const sectionTitleStyle = {
-  margin:"0 0 16px", fontSize:15, fontWeight:900,
-  borderLeft:"4px solid #111", paddingLeft:10, color:"#111",
-};
-const inputStyle = {
-  padding:"7px 12px", borderRadius:8, border:"1px solid #E5E7EB",
-  fontSize:13, fontWeight:600, color:"#374151", outline:"none", background:"#fff",
-};
-const selectStyle = {
-  padding:"7px 12px", borderRadius:8, border:"1px solid #E5E7EB",
-  fontSize:13, fontWeight:600, color:"#374151", background:"#fff",
-  cursor:"pointer", outline:"none",
-};
-const dateInputStyle = {
-  border:"none", outline:"none", background:"transparent",
-  fontSize:13, fontWeight:700, color:"#374151", cursor:"pointer",
-};
-const checkboxLabelStyle = {
-  display:"flex", alignItems:"center", gap:5,
-  fontSize:13, fontWeight:600, color:"#374151", cursor:"pointer",
-};
-const searchBtnStyle = {
-  padding:"7px 18px", borderRadius:8, border:"none",
-  background:"#111", color:"#fff", fontSize:13, fontWeight:700, cursor:"pointer",
-};
-const backBtnStyle = {
-  background:"none", border:"1px solid #E5E7EB", borderRadius:8,
-  padding:"7px 14px", cursor:"pointer", fontSize:13, fontWeight:600, color:"#374151",
-};
-const emptyStyle = {
-  height:180, display:"flex", flexDirection:"column",
-  alignItems:"center", justifyContent:"center",
-  color:"#9CA3AF", fontSize:14, textAlign:"center", lineHeight:1.8,
-};
-
+const sectionStyle      = { background:"#fff", border:"1px solid #E5E7EB", borderRadius:14, padding:"20px 22px" };
+const sectionTitleStyle = { margin:"0 0 16px", fontSize:15, fontWeight:900, borderLeft:"4px solid #111", paddingLeft:10, color:"#111" };
+const inputStyle        = { padding:"7px 12px", borderRadius:8, border:"1px solid #E5E7EB", fontSize:13, fontWeight:600, color:"#374151", outline:"none", background:"#fff" };
+const selectStyle       = { padding:"7px 12px", borderRadius:8, border:"1px solid #E5E7EB", fontSize:13, fontWeight:600, color:"#374151", background:"#fff", cursor:"pointer", outline:"none" };
+const dateInputStyle    = { border:"none", outline:"none", background:"transparent", fontSize:13, fontWeight:700, color:"#374151", cursor:"pointer" };
+const checkboxLabelStyle= { display:"flex", alignItems:"center", gap:5, fontSize:13, fontWeight:600, color:"#374151", cursor:"pointer" };
+const searchBtnStyle    = { padding:"7px 18px", borderRadius:8, border:"none", background:"#111", color:"#fff", fontSize:13, fontWeight:700, cursor:"pointer" };
+const backBtnStyle      = { background:"none", border:"1px solid #E5E7EB", borderRadius:8, padding:"7px 14px", cursor:"pointer", fontSize:13, fontWeight:600, color:"#374151" };
+const emptyStyle        = { height:180, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", color:"#9CA3AF", fontSize:14, textAlign:"center", lineHeight:1.8 };
 const pageBtnStyle = (isActive, isDisabled) => ({
-  padding:"8px 14px", minWidth:38, height:38, borderRadius:8,
-  fontSize:13, fontWeight:900, cursor: isDisabled ? "not-allowed" : "pointer",
+  padding:"8px 14px", minWidth:38, height:38, borderRadius:8, fontSize:13, fontWeight:900,
+  cursor: isDisabled ? "not-allowed" : "pointer",
   backgroundColor: isActive ? "#111" : "#fff",
   color: isActive ? "#fff" : (isDisabled ? "#D1D5DB" : "#374151"),
   border: `1px solid ${isActive ? "#111" : "#E5E7EB"}`,

@@ -618,7 +618,7 @@ export default function EventDetail() {
 
             {tab === '지도' && (
               <div className="ed-tab-content">
-                <KakaoMap address={ev.lotNumberAdr} fallbackAddress={null} detailAddress={ev.detailAdr} zipCode={ev.zipCode} title={ev.title} />
+                <KakaoMap address={ev.lotNumberAdr} fallbackAddress={ev.detailAdr} detailAddress={ev.detailAdr} zipCode={ev.zipCode} title={ev.title} />
               </div>
             )}
 

@@ -6,7 +6,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
 } from 'recharts';
-import { EventStatsApi } from '../api/EventStatsAPI';
+import { EventStatsApi } from '../api/EventStatsApi';
 
 const HIDDEN_STATUSES = new Set(["deleted", "reportdeleted", "report_deleted"]);
 

@@ -164,7 +164,6 @@ const HASHTAGS = [
 const INIT_BOOTH = () => ({ boothName: '', boothSize: '', boothPrice: '', boothNote: '', totalCount: '' });
 const INIT_FACI = () => ({ faciName: '', faciPrice: '', faciUnit: '', hasCount: false, totalCount: '' });
 
-// ✅ 부스 모집 마감일 max 계산 헬퍼 (Issue 1)
 const dayBefore = (dateStr) => {
   if (!dateStr) return undefined;
   const d = new Date(dateStr);
@@ -365,7 +364,6 @@ export default function EventHost() {
   const updateBooth = (i, f, v) => setBooths((p) => p.map((b, idx) => (idx === i ? { ...b, [f]: v } : b)));
   const updateFaci = (i, f, v) => setFacis((p) => p.map((x, idx) => (idx === i ? { ...x, [f]: v } : x)));
 
-  // ✅ Issue 6: profileImg 포함
   const [hostInfo, setHostInfo] = useState({ name: '', email: '', phone: '', profileImg: '' });
 
   useEffect(() => {
@@ -382,7 +380,7 @@ export default function EventHost() {
           name: d.name || '',
           email: d.email || '',
           phone: d.phone || '',
-          profileImg: d.profileImg || '',   // ✅ Issue 6
+          profileImg: d.profileImg || '',
         });
         setLoading(false);
       })
@@ -424,12 +422,17 @@ export default function EventHost() {
 
   const minEndDate = form.startDate || today;
   const minEndRecruit = form.startRecruit || today;
-  const maxEndRecruit = form.startDate || '';
+  // ✅ 수정 1: 참여 모집 종료일 max = 행사 시작일 하루 전
+  const maxEndRecruit = dayBefore(form.startDate) || '';
   const minBoothEndRecruit = form.boothStartRecruit || '';
   const minEndTime = form.startDate === form.endDate ? form.startTime || '' : '';
 
-  // ✅ Issue 1: 부스 모집 max = 참여 모집 시작일 - 1일
+  // 부스 모집 max = 참여 모집 시작일 - 1일
   const boothMaxDate = dayBefore(form.startRecruit);
+
+  // ✅ 수정 2: 부스 날짜가 오늘 이전인지 여부 (경고용, 차단 아님)
+  const boothStartIsPast = form.boothStartRecruit && form.boothStartRecruit < today;
+  const boothEndIsPast = form.boothEndRecruit && form.boothEndRecruit < today;
 
   const handleBoothToggle = (v) => {
     setHasBooth(v);
@@ -451,7 +454,6 @@ export default function EventHost() {
     if (!form.isFree && !form.price) { alert('참가비를 입력해주세요.'); return false; }
     if (!form.noLimit && !form.capacity) { alert('모집 인원을 입력하거나 제한없음을 선택해주세요.'); return false; }
     if (hasBooth) {
-      // ✅ Issue 1: 부스 모집 종료일은 참여 모집 시작일 이전
       if (form.boothEndRecruit && form.startRecruit && form.boothEndRecruit >= form.startRecruit) {
         alert(`부스 모집 종료일(${form.boothEndRecruit})은 행사 참여 모집 시작일(${form.startRecruit}) 이전이어야 해요.`);
         return false;
@@ -541,6 +543,9 @@ export default function EventHost() {
                     onChange={(e) => {
                       setF('startDate', e.target.value);
                       if (form.endDate && e.target.value > form.endDate) setF('endDate', '');
+                      // 행사 시작일 변경 시 모집 종료일이 새 max를 초과하면 초기화
+                      const newMax = dayBefore(e.target.value);
+                      if (newMax && form.endRecruit && form.endRecruit > newMax) setF('endRecruit', '');
                     }} />
                 </div>
                 <div>
@@ -571,7 +576,8 @@ export default function EventHost() {
             <div style={{ fontSize: 13, fontWeight: 800, color: '#92400E', marginBottom: 4 }}>📅 행사 참여 모집 기간</div>
             {form.startDate && (
               <div style={{ fontSize: 11, color: '#B45309', marginBottom: 10 }}>
-                모집 종료일은 행사 시작일({form.startDate}) 이전이어야 해요.
+                {/* ✅ 수정 1: "하루 전까지" 안내 문구 */}
+                모집 종료일은 행사 시작일 하루 전({dayBefore(form.startDate)})까지 가능해요.
               </div>
             )}
             <G2>
@@ -581,7 +587,6 @@ export default function EventHost() {
                   onChange={(e) => {
                     setF('startRecruit', e.target.value);
                     if (form.endRecruit && e.target.value > form.endRecruit) setF('endRecruit', '');
-                    // ✅ Issue 1: 부스 날짜가 새 startRecruit 이후면 초기화
                     if (form.boothStartRecruit && e.target.value <= form.boothStartRecruit) setF('boothStartRecruit', '');
                     if (form.boothEndRecruit && e.target.value <= form.boothEndRecruit) setF('boothEndRecruit', '');
                   }} />
@@ -589,9 +594,7 @@ export default function EventHost() {
               <div>
                 <Label required>모집 종료일</Label>
                 <Input type="date" value={form.endRecruit} min={minEndRecruit} max={maxEndRecruit || undefined}
-                  onChange={(e) => {
-                    setF('endRecruit', e.target.value);
-                  }} />
+                  onChange={(e) => setF('endRecruit', e.target.value)} />
               </div>
             </G2>
           </div>
@@ -665,8 +668,6 @@ export default function EventHost() {
         {/* SECTION 3 — 주최자 정보 */}
         <SectionCard step="3" title="주최자 정보" icon="🏢">
           <div style={{ padding: '14px 16px', background: '#F9FAFB', borderRadius: 12, border: '1px solid #E5E7EB', marginBottom: 4 }}>
-
-            {/* ✅ Issue 6: 프로필 사진 */}
             {hostInfo.profileImg && (
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
                 <img
@@ -677,7 +678,6 @@ export default function EventHost() {
                 />
               </div>
             )}
-
             <div style={{ fontSize: 12, color: '#9CA3AF', fontWeight: 700, marginBottom: 12 }}>
               로그인한 계정 정보로 자동 설정됩니다. 수정이 필요하면 마이페이지에서 변경해주세요.
             </div>
@@ -722,7 +722,6 @@ export default function EventHost() {
 
           {hasBooth && (
             <>
-              {/* ✅ Issue 1: 부스 모집 기간 패널 */}
               <div style={{ padding: '14px 16px', background: '#FFFBEB', borderRadius: 12, border: '1px solid #FDE68A', marginBottom: 16 }}>
                 <div style={{ fontSize: 13, fontWeight: 800, color: '#92400E', marginBottom: 4 }}>📅 부스 모집 기간</div>
                 {form.startRecruit ? (
@@ -743,6 +742,12 @@ export default function EventHost() {
                         setF('boothStartRecruit', e.target.value);
                         if (form.boothEndRecruit && e.target.value > form.boothEndRecruit) setF('boothEndRecruit', '');
                       }} />
+                    {/* ✅ 수정 2: 부스 시작일이 오늘 이전이면 경고 */}
+                    {boothStartIsPast && (
+                      <div style={{ marginTop: 5, fontSize: 11, color: '#DC2626', fontWeight: 700 }}>
+                        ⚠️ 부스 모집 시작일이 오늘 이전입니다. 참여자를 모집할 수 없게 됩니다.
+                      </div>
+                    )}
                   </div>
                   <div>
                     <Label>부스 모집 종료일</Label>
@@ -750,6 +755,12 @@ export default function EventHost() {
                       min={minBoothEndRecruit}
                       max={boothMaxDate}
                       onChange={(e) => setF('boothEndRecruit', e.target.value)} />
+                    {/* ✅ 수정 2: 부스 종료일이 오늘 이전이면 경고 */}
+                    {boothEndIsPast && (
+                      <div style={{ marginTop: 5, fontSize: 11, color: '#DC2626', fontWeight: 700 }}>
+                        ⚠️ 부스 모집 종료일이 오늘 이전입니다. 참여자를 모집할 수 없게 됩니다.
+                      </div>
+                    )}
                   </div>
                 </G2>
               </div>

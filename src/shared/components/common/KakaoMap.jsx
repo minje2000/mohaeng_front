@@ -87,10 +87,14 @@ export default function KakaoMap({ address, fallbackAddress, detailAddress, zipC
       return;
     }
 
-    // "로/길/대로 + 숫자" 이후 건물명 제거
+    // ✅ 수정: 층/호/빌딩 등 건물 상세만 제거 — 도로명 내 숫자는 보존
     const cleanAddress = (addr) => {
-      const match = addr.match(/^(.*?(?:로|길|대로)\s*\d+)/);
-      return match ? match[1] : addr;
+      if (!addr) return addr;
+      return addr
+        .replace(/\s+\d+층.*$/, '')          // "2층 305호" 이후 제거
+        .replace(/\s+\d+호.*$/, '')           // "305호" 이후 제거
+        .replace(/\s+[가-힣]*(빌딩|타워|아파트|오피스텔|센터|플라자|빌|관).*$/, '') // 건물명 이후 제거
+        .trim();
     };
 
     window.kakao.maps.load(() => {
@@ -132,7 +136,13 @@ export default function KakaoMap({ address, fallbackAddress, detailAddress, zipC
           }
           // 3단계: fallback 주소로 재시도
           if (fallbackAddress && fallbackAddress !== targetAddress) {
-            geocoder.addressSearch(cleanAddress(fallbackAddress), drawMap);
+            geocoder.addressSearch(fallbackAddress, (result3, stat3) => {
+              if (stat3 === window.kakao.maps.services.Status.OK) {
+                drawMap(result3, stat3);
+              } else {
+                setStatus('error');
+              }
+            });
           } else {
             setStatus('error');
           }

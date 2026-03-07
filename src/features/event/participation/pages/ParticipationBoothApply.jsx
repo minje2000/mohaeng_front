@@ -6,7 +6,6 @@ import { preparePayment } from '../../../payment/api/PaymentAPI';
 import Header from '../../../../shared/components/common/Header';
 
 const UPLOAD_BASE_EVENT  = 'http://localhost:8080/upload_files/event';
-// ✅ 주최자가 부스 등록 시 첨부한 파일 경로 (fileType = "HBOOTH")
 const UPLOAD_BASE_HBOOTH = 'http://localhost:8080/upload_files/hbooth';
 const PHOTO_BASE         = 'http://localhost:8080/upload_files/photo';
 const PLACEHOLDER        = 'https://dummyimage.com/400x400/f3f4f6/666666.png&text=Mohaeng';
@@ -26,6 +25,53 @@ const THEME = {
   primary: '#FFD700', secondary: '#D97706', bg: '#F9FAFB',
   border: '#E5E7EB', text: '#111827', subText: '#9CA3AF',
 };
+
+// ✅ 이미지 강제 다운로드 헬퍼
+const downloadFile = async (url, filename) => {
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  } catch {
+    alert('다운로드에 실패했습니다.');
+  }
+};
+
+// ✅ 이미지 라이트박스 모달
+const LightboxModal = ({ src, filename, onClose }) => (
+  <div
+    onClick={onClose}
+    style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '20px' }}
+  >
+    <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', maxWidth: '90vw', maxHeight: '85vh', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
+      <img
+        src={src}
+        alt={filename}
+        style={{ maxWidth: '100%', maxHeight: '75vh', borderRadius: '12px', objectFit: 'contain', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}
+      />
+      <div style={{ display: 'flex', gap: '10px' }}>
+        <button
+          onClick={() => downloadFile(src, filename)}
+          style={{ padding: '9px 22px', borderRadius: '8px', border: 'none', background: THEME.primary, color: '#000', fontWeight: '800', fontSize: '13px', cursor: 'pointer' }}
+        >
+          ⬇ 다운로드
+        </button>
+        <button
+          onClick={onClose}
+          style={{ padding: '9px 22px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.1)', color: '#fff', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}
+        >
+          닫기
+        </button>
+      </div>
+    </div>
+    {/* 바깥 클릭 닫기 안내 */}
+    <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', marginTop: '10px' }}>배경을 클릭하면 닫힙니다</p>
+  </div>
+);
 
 const SectionBox = ({ children, title, disabled = false }) => (
   <div style={{ background: '#fff', borderRadius: '20px', border: `1px solid ${THEME.border}`, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', marginBottom: '30px', overflow: 'hidden', opacity: disabled ? 0.5 : 1, pointerEvents: disabled ? 'none' : 'auto', transition: 'all 0.3s' }}>
@@ -121,6 +167,9 @@ export default function ParticipationBoothApply() {
   const [eventData, setEventData]           = useState(null);
   const [showTermsModal, setShowTermsModal] = useState(false);
 
+  // ✅ 라이트박스 상태
+  const [lightbox, setLightbox] = useState(null); // { src, filename }
+
   const [selectedBoothId, setSelectedBoothId]       = useState('');
   const [selectedFacilities, setSelectedFacilities] = useState([]);
 
@@ -173,8 +222,6 @@ export default function ParticipationBoothApply() {
   if (loading || !eventData) return <div style={{ textAlign: 'center', padding: '100px' }}>⏳ 신청서를 구성 중입니다...</div>;
 
   const { eventInfo, booths, facilities } = eventData;
-
-  // ✅ 주최자가 행사 등록 시 첨부한 부스 파일 (EventDto.boothFilePaths)
   const boothFilePaths = eventInfo?.boothFilePaths || [];
 
   const handleSubmit = async () => {
@@ -205,19 +252,13 @@ export default function ParticipationBoothApply() {
       };
 
       if (totalPrice === 0) {
-        // ✅ 무료: 바로 DB 저장
         await ParticipationBoothApi.submitBoothApplication(eventId, dto, files);
         alert('부스 참가 신청이 완료되었습니다.');
         navigate(`/events/${eventId}`);
         return;
       }
 
-      // ✅ 유료: DB 저장 없이 sessionStorage에만 저장 → 결제 성공 후 PaymentSuccess에서 생성
-      sessionStorage.setItem('pendingApply', JSON.stringify({
-        type: 'booth',
-        eventId: Number(eventId),
-        dto,
-      }));
+      sessionStorage.setItem('pendingApply', JSON.stringify({ type: 'booth', eventId: Number(eventId), dto }));
       sessionStorage.setItem('paymentEventId', `/events/${eventId}`);
 
       const paymentInfo = await preparePayment({
@@ -241,11 +282,19 @@ export default function ParticipationBoothApply() {
     } finally { setIsSubmitting(false); }
   };
 
-
   return (
     <div style={{ minHeight: '100vh', background: THEME.bg, fontFamily: "'Pretendard', sans-serif", color: THEME.text }}>
       <Header />
       {showTermsModal && <TermsModal onClose={() => setShowTermsModal(false)} />}
+
+      {/* ✅ 라이트박스 */}
+      {lightbox && (
+        <LightboxModal
+          src={lightbox.src}
+          filename={lightbox.filename}
+          onClose={() => setLightbox(null)}
+        />
+      )}
 
       <div style={{ maxWidth: '900px', margin: '0 auto', padding: '50px 20px 100px' }}>
         <h2 style={{ fontSize: '26px', fontWeight: '900', marginBottom: '30px' }}>부스 참가 신청서</h2>
@@ -265,63 +314,68 @@ export default function ParticipationBoothApply() {
           </div>
         </SectionBox>
 
-        {/* ✅ 주최자 부스 첨부파일 섹션 (boothFilePaths가 있을 때만 표시) */}
+        {/* ✅ 부스 안내 자료 — 이미지: 미리보기+다운로드 / 비이미지: 다운로드만 */}
         {boothFilePaths.length > 0 && (
           <SectionBox title="📎 부스 안내 자료 (주최자 첨부)">
             <p style={{ fontSize: '13px', color: THEME.subText, marginBottom: '16px', marginTop: '-8px' }}>
               주최자가 등록한 부스 관련 참고 자료입니다. 신청 전 확인해주세요.
             </p>
 
-            {/* 이미지 파일: 미리보기 */}
+            {/* 이미지: 썸네일 클릭 → 라이트박스, 다운로드 버튼 별도 */}
             {boothFilePaths.filter(isImageFile).length > 0 && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
-                {boothFilePaths.filter(isImageFile).map((filename, i) => (
-                  <a
-                    key={i}
-                    href={`${UPLOAD_BASE_HBOOTH}/${filename}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <img
-                      src={`${UPLOAD_BASE_HBOOTH}/${filename}`}
-                      alt={`부스자료 ${i + 1}`}
-                      style={{
-                        width: '120px', height: '90px',
-                        objectFit: 'cover', borderRadius: '10px',
-                        border: `1px solid ${THEME.border}`,
-                        cursor: 'pointer',
-                        transition: 'transform 0.2s',
-                      }}
-                      onMouseOver={(e) => (e.target.style.transform = 'scale(1.04)')}
-                      onMouseOut={(e) => (e.target.style.transform = 'scale(1)')}
-                      onError={(e) => { e.target.style.display = 'none'; }}
-                    />
-                  </a>
-                ))}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', marginBottom: '16px' }}>
+                {boothFilePaths.filter(isImageFile).map((filename, i) => {
+                  const src = `${UPLOAD_BASE_HBOOTH}/${filename}`;
+                  return (
+                    <div key={i} style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                      {/* 이미지 썸네일 — 클릭 없음, 버튼으로 제어 */}
+                      <div style={{ borderRadius: '10px', overflow: 'hidden', border: `1px solid ${THEME.border}` }}>
+                        <img
+                          src={src}
+                          alt={`부스자료 ${i + 1}`}
+                          style={{ width: '120px', height: '90px', objectFit: 'cover', display: 'block' }}
+                          onError={(e) => { e.target.style.display = 'none'; }}
+                        />
+                      </div>
+                      {/* 다운로드 버튼 */}
+                      <button
+                        onClick={() => downloadFile(src, filename)}
+                        style={{ fontSize: '11px', fontWeight: '700', color: THEME.secondary, background: 'none', border: `1px solid ${THEME.border}`, borderRadius: '6px', padding: '4px 0', cursor: 'pointer', width: '120px' }}
+                      >
+                        ⬇ 다운로드
+                      </button>
+                      {/* 미리보기 버튼 */}
+                      <button
+                        onClick={() => setLightbox({ src, filename })}
+                        style={{ fontSize: '11px', fontWeight: '700', color: '#fff', background: '#374151', border: 'none', borderRadius: '6px', padding: '4px 0', cursor: 'pointer', width: '120px' }}
+                      >
+                        🔍 미리보기
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             )}
 
-            {/* 비이미지 파일: 다운로드 링크 */}
+            {/* 비이미지 파일: 다운로드 버튼 */}
             {boothFilePaths.filter((f) => !isImageFile(f)).length > 0 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {boothFilePaths.filter((f) => !isImageFile(f)).map((filename, i) => (
-                  <a
+                  <div
                     key={i}
-                    href={`${UPLOAD_BASE_HBOOTH}/${filename}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{
-                      display: 'inline-flex', alignItems: 'center', gap: '8px',
-                      padding: '10px 14px', borderRadius: '10px',
-                      border: `1px solid ${THEME.border}`, background: '#FAFAFA',
-                      color: THEME.text, fontWeight: '700', fontSize: '13px',
-                      textDecoration: 'none',
-                    }}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: '10px', border: `1px solid ${THEME.border}`, background: '#FAFAFA' }}
                   >
-                    <span>📄</span>
-                    <span>{filename}</span>
-                    <span style={{ marginLeft: 'auto', fontSize: '11px', color: THEME.subText }}>다운로드</span>
-                  </a>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: '700', color: THEME.text }}>
+                      <span>📄</span>
+                      <span>{filename}</span>
+                    </div>
+                    <button
+                      onClick={() => downloadFile(`${UPLOAD_BASE_HBOOTH}/${filename}`, filename)}
+                      style={{ fontSize: '12px', fontWeight: '800', color: THEME.secondary, background: `${THEME.primary}20`, border: 'none', borderRadius: '6px', padding: '5px 14px', cursor: 'pointer', flexShrink: 0 }}
+                    >
+                      ⬇ 다운로드
+                    </button>
+                  </div>
                 ))}
               </div>
             )}

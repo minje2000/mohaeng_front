@@ -33,34 +33,85 @@ export default function InquiryForm({ eventId, onSaved }) {
   return (
     <form
       onSubmit={onSubmit}
-      style={{ border: '1px solid #ddd', borderRadius: 12, padding: 12 }}
+      style={{
+        border: '1px solid #E5E7EB',
+        borderRadius: 18,
+        padding: 20,
+        background: '#FFFFFF',
+        boxShadow: '0 6px 18px rgba(15, 23, 42, 0.04)',
+      }}
     >
-      <div style={{ fontWeight: 700, marginBottom: 8 }}>문의 작성</div>
+      <div
+        style={{
+          fontWeight: 800,
+          fontSize: 26,
+          color: '#111827',
+          marginBottom: 14,
+          letterSpacing: '-0.02em',
+        }}
+      >
+        문의 작성
+      </div>
 
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
         placeholder="문의 내용을 입력하세요"
         rows={4}
+        disabled={submitting}
         style={{
           width: '100%',
-          borderRadius: 10,
-          border: '1px solid #ccc',
-          padding: 10,
+          borderRadius: 16,
+          border: '1px solid #D1D5DB',
+          padding: '16px 18px',
+          fontSize: 16,
+          lineHeight: 1.6,
+          boxSizing: 'border-box',
+          resize: 'vertical',
+          minHeight: 120,
+          outline: 'none',
+          background: '#F9FAFB',
+          color: '#111827',
         }}
       />
 
       <div
-        style={{ display: 'flex', gap: 8, marginTop: 10, alignItems: 'center' }}
+        style={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          alignItems: 'center',
+          gap: 12,
+          marginTop: 14,
+        }}
       >
+        {error && (
+          <div
+            style={{
+              fontSize: 13,
+              color: '#DC2626',
+            }}
+          >
+            등록 실패
+          </div>
+        )}
+
         <button
           type="submit"
-          disabled={submitting}
-          style={{ padding: '8px 12px' }}
+          disabled={submitting || !content.trim()}
+          style={{
+            padding: '11px 18px',
+            borderRadius: 12,
+            border: 'none',
+            background: submitting || !content.trim() ? '#E5E7EB' : '#111827',
+            color: submitting || !content.trim() ? '#9CA3AF' : '#FFFFFF',
+            fontSize: 15,
+            fontWeight: 700,
+            cursor: submitting || !content.trim() ? 'not-allowed' : 'pointer',
+            minWidth: 96,
+          }}
         >
           {submitting ? '등록 중...' : '등록'}
         </button>
-        {error && <span style={{ color: 'crimson' }}>등록 실패</span>}
       </div>
     </form>
   );

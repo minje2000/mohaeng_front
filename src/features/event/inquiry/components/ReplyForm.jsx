@@ -46,7 +46,7 @@ export default function ReplyForm({ inqId, initialReply, onSaved }) {
         value={replyContent}
         onChange={(e) => setReplyContent(e.target.value)}
         rows={3}
-        placeholder="댓글 달듯이 답변을 입력하세요"
+        placeholder="답변을 입력하세요"
         style={{
           width: '100%',
           borderRadius: 12,

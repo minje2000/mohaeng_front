@@ -381,8 +381,8 @@ const EventList = () => {
                         {!loading && pageInfo.totalPages > 0 && (
                             <div style={{ marginTop: '70px', display: 'flex', justifyContent: 'center', gap: '8px' }}>
                                 <button disabled={pageInfo.first} onClick={() => setFilter("page", currentPage - 1)} style={pageBtnStyle(false, pageInfo.first)}>이전</button>
-                                {[...Array(pageInfo.totalPages)].map((_, i) => (
-                                    <button key={i} onClick={() => setFilter("page", i)} style={pageBtnStyle(currentPage === i, false)}>{i + 1}</button>
+                                {getVisiblePages(pageInfo.totalPages, currentPage).map((page) => (
+                                    <button key={page} onClick={() => setFilter("page", page)} style={pageBtnStyle(currentPage === page, false)}>{page + 1}</button>
                                 ))}
                                 <button disabled={pageInfo.last} onClick={() => setFilter("page", currentPage + 1)} style={pageBtnStyle(false, pageInfo.last)}>다음</button>
                             </div>
@@ -411,3 +411,22 @@ const pageBtnStyle = (isActive, isDisabled) => ({
 });
 
 export default EventList;
+function getVisiblePages(totalPages, currentPage, visibleCount = 5) {
+    const total = Number(totalPages || 0);
+    const current = Number(currentPage || 0);
+
+    if (total <= 0) return [];
+
+    const count = Math.min(visibleCount, total);
+    let start = Math.max(0, current - Math.floor(count / 2));
+    let end = start + count;
+
+    if (end > total) {
+        end = total;
+        start = Math.max(0, end - count);
+    }
+
+    return Array.from({ length: end - start }, (_, i) => start + i);
+}
+
+

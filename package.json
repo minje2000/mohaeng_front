@@ -20,12 +20,15 @@
     "recharts": "^3.7.0",
     "recoil": "0.7.7",
     "redux": "5.0.1",
+    "shx": "^0.4.0",
     "styled-components": "6.3.9",
     "web-vitals": "2.1.4"
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build && xcopy build ..\\mohaeng\\src\\main\\resources\\static /E /H /Y /I",
+    "build": "react-scripts build",
+    "copy": "shx mkdir -p ../mohaeng/src/main/resources/static && shx rm -rf ../mohaeng/src/main/resources/static/* && shx cp -r build/. ../mohaeng/src/main/resources/static",
+    "build:sts": "npm run build && npm run copy",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

@@ -14,3 +14,9 @@ export const fetchEventList = async (params) => {
     throw error;
   }
 };
+
+export const fetchRecommendEvents = async () => {
+    const response = await apiJson().get('/api/events/recommend');
+    return response.data;
+};
+

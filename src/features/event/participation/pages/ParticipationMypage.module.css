@@ -1,0 +1,248 @@
+.pageShell {
+  min-height: 100vh;
+  background: #f9fafb;
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 28px 18px 40px;
+}
+
+.pageTitle {
+  margin: 0 0 18px;
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  color: #111827;
+}
+
+.filterTabs {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.filterBtn {
+  appearance: none;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #111827;
+  border-radius: 999px;
+  padding: 10px 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 900;
+  box-shadow: 0 6px 14px rgba(17,24,39,0.06);
+}
+
+.filterBtnActive {
+  background: #111827;
+  border-color: #111827;
+  color: #fff;
+  box-shadow: 0 10px 22px rgba(17,24,39,0.18);
+}
+
+.filterCount {
+  min-width: 24px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  color: #111827;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.filterCountActive {
+  background: rgba(255,255,255,0.18);
+  color: #fff;
+}
+
+.headerBar {
+  padding: 12px 18px;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  background: #fff;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 900;
+  display: grid;
+  grid-template-columns: minmax(0, 1.9fr) 170px 110px 100px 90px 84px;
+  gap: 12px;
+  align-items: center;
+}
+
+.listWrap {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stateCard,
+.emptyCard {
+  padding: 24px 18px;
+  border-radius: 18px;
+  background: #fff;
+  color: #6b7280;
+  font-weight: 800;
+}
+
+.stateCard {
+  border: 1px solid #e5e7eb;
+}
+
+.emptyCard {
+  border: 1px dashed #d1d5db;
+  text-align: center;
+}
+
+.rowCard {
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 10px 22px rgba(17,24,39,0.06);
+  padding: 16px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.9fr) 170px 110px 100px 90px 84px;
+  gap: 12px;
+  align-items: center;
+}
+
+.colEvent,
+.colPeriod,
+.colJoin,
+.colStatus,
+.colPrice,
+.colManage {
+  min-width: 0;
+}
+
+.colPeriod,
+.colJoin,
+.colPrice {
+  font-size: 13px;
+  color: #334155;
+  font-weight: 700;
+}
+
+.colManage {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.eventCell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.eventCellThumb {
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  object-fit: cover;
+  border: 1px solid #e5e7eb;
+  background: #f3f4f6;
+  flex-shrink: 0;
+}
+
+.eventTextWrap {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.linkTitle {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  color: #111827;
+  font-size: 15px;
+  font-weight: 900;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.eventSummary {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cancelBtn,
+.deleteBtn {
+  min-width: 72px;
+  padding: 9px 14px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.cancelBtn {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.deleteBtn {
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  color: #6b7280;
+}
+
+.cancelBtn:disabled,
+.deleteBtn:disabled,
+.pageBtn:disabled,
+.pageTextBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+
+.pageBtn,
+.pageTextBtn {
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.pageTextBtn {
+  min-width: 56px;
+  padding: 0 18px;
+}
+
+.pageBtn {
+  width: 44px;
+}
+
+.pageActive {
+  background: #0f172a;
+  color: #fff;
+  border-color: #0f172a;
+}

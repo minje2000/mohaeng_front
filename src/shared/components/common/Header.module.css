@@ -1,0 +1,135 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.95); /* 살짝 투명하게 해서 세련된 느낌 */
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid #f3f4f6;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03); /* 은은한 그림자 */
+}
+
+.inner {
+  height: 90px;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+
+
+/* 1. 왼쪽 로고 */
+.logo {
+  display: flex;
+  align-items: center;
+  margin-left: -10px;
+  transition: transform 0.2s ease;
+}
+.logo:hover {
+  transform: scale(1.02);
+}
+.logoImg {
+  height: 75px; /* 비율 좋게 살짝 조절 */
+  width: auto;
+  display: block;
+}
+
+/* 2. 중앙 메인 메뉴 (지도, 달력) */
+.centerNav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 20px; /* 로고와 간격 */
+}
+.mainLink {
+  display: flex;
+  align-items: center;
+  flex-direction: column; /* ✅ 세로 배치 */
+  gap: 4px; /* 아이콘-텍스트 간격 살짝 줄이기 */
+  text-decoration: none;
+  color: #4B5563;
+  font-size: 13px; /* ✅ 아이콘 아래 텍스트라 살짝 작게 */
+  font-weight: 800;
+  padding: 10px 16px;
+  border-radius: 14px;
+  transition: all 0.2s ease;
+}
+.mainLink:hover {
+  background-color: #F3F4F6;
+  color: #111;
+}
+
+/* 3. 우측 유저 메뉴 */
+.rightNav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.iconBtn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #4B5563;
+  transition: all 0.2s ease;
+}
+.iconBtn:hover {
+  background-color: #F3F4F6;
+  color: #111;
+}
+.textLink {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  color: #4B5563;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 8px 14px;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+.textLink:hover {
+  background-color: #F3F4F6;
+  color: #111;
+}
+
+/* 💛 강조 버튼 (회원가입 등) */
+.primaryBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  color: #111;
+  font-size: 14px;
+  font-weight: 800;
+  padding: 10px 20px;
+  border-radius: 999px; /* 완전 둥글게 */
+  background-color: #FFD700;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: none;
+  cursor: pointer;
+  margin-left: 8px;
+}
+.primaryBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+}
+.centerDivider {
+  width: 1px;
+  height: 18px; 
+  /* 💡 0.06에서 0.15로 투명도를 올려서 조금 더 진하고 또렷하게 변경! */
+  background-color: rgba(0, 0, 0, 0.30); 
+  margin: 0 12px;
+  border-radius: 2px;
+}

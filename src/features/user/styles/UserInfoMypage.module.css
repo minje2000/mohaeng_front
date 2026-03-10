@@ -1,0 +1,199 @@
+/* src/features/user/styles/UserInfoMypage.module.css */
+
+.content {
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 0 24px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 30px;
+  border-bottom: 2px solid #F7B23B;
+  padding-bottom: 10px;
+}
+
+.profileBox {
+  background-color: #fff;
+  border-radius: 16px;
+  padding: 40px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.bigProfile {
+  width: 120px;
+  height: 120px;
+  background-color: #f3f4f6;
+  border-radius: 50%;
+  margin-bottom: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid #F7B23B;
+  overflow: hidden;
+}
+
+.bigProfile svg {
+  width: 70px;
+  height: 70px;
+  fill: #d1d5db;
+}
+
+.infoSection {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+.infoRow {
+  display: flex;
+  align-items: flex-start;
+  border-bottom: 1px solid #f3f4f6;
+  padding-bottom: 12px;
+}
+
+.label {
+  width: 150px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.value {
+  font-size: 16px;
+  color: #1f2937;
+  font-weight: 500;
+}
+
+.buttons {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.primary {
+  flex: 2;
+  height: 50px;
+  background-color: #F7B23B;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.2s;
+}
+
+.secondary {
+  flex: 1;
+  height: 50px;
+  background-color: #f3f4f6;
+  border: none;
+  border-radius: 8px;
+  color: #6b7280;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.primary:hover { filter: brightness(0.95); }
+.secondary:hover { background-color: #e5e7eb; }
+
+/* 안내 문구 스타일 */
+.noticeText {
+  color: #6b7280;
+  font-size: 13px;
+  margin-bottom: 20px;
+  background-color: #f9fafb;
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid #e5e7eb;
+}
+
+.profileWrapper {
+  position: relative;
+  margin-bottom: 30px;
+}
+
+.editPhotoBtn, .deletePhotoBtn {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.editPhotoBtn { background-color: #1f2937; }
+.deletePhotoBtn { background-color: #ff4d4f; } 
+
+.editInput {
+  flex: 1;
+  height: 40px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  padding: 0 10px;
+  font-size: 15px;
+}
+
+.inputWithBtn {
+  flex: 1;
+  display: flex;
+  gap: 8px;
+}
+
+.certBtn {
+  height: 40px;
+  padding: 0 12px;
+  background-color: #F7B23B;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.loading {
+  text-align: center;
+  padding: 100px;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.inputGroup {
+   flex: 1; 
+   display: flex; 
+   flex-direction: column; 
+   gap: 4px; 
+   width: 0;
+}
+
+.helperText { 
+  font-size: 12px; 
+  font-weight: 500; 
+  padding-left: 4px; 
+  margin-top: 2px; 
+}
+
+.primary:disabled {
+  background-color: #f8c670; /* 연한 회색 */
+  color: #9ca3af; /* 회색 글자 */
+  cursor: not-allowed; /* 금지 아이콘 커서 */
+  filter: none; /* 호버 효과 제거 */
+}
+
+.bigProfile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;   /* 프로필 사진처럼 꽉 채움 */
+}

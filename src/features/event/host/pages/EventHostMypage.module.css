@@ -1,0 +1,158 @@
+.container {
+  width: 100%;
+  padding: 22px 24px;
+}
+
+.pageTitle {
+  font-size: 20px;
+  font-weight: 800;
+  margin-bottom: 14px;
+}
+
+.tableWrap {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table thead th {
+  background: #f9fafb;
+  font-size: 13px;
+  color: #374151;
+  text-align: left;
+  padding: 12px 14px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.table tbody td {
+  padding: 14px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+  font-size: 14px;
+  color: #111827;
+}
+
+.table tbody tr:hover {
+  background: #f9fafb;
+}
+
+.empty {
+  text-align: center;
+  color: #6b7280;
+  padding: 28px 10px;
+}
+
+.eventCell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.eventCellThumb {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 1px solid #e5e7eb;
+  background: #f3f4f6;
+}
+
+.eventCellTitle {
+  font-weight: 700;
+  max-width: 360px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.linkTitle {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: #111827;
+}
+
+.linkTitle:hover {
+  text-decoration: underline;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.badgeOpen {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.35);
+  color: #065f46;
+}
+
+.badgeClosed {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: rgba(59, 130, 246, 0.35);
+  color: #1e40af;
+}
+
+.badgeDeleted {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #991b1b;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.pageBtn {
+  min-width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.pageBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.pageActive {
+  background: #111827;
+  color: #fff;
+  border-color: #111827;
+}
+
+.colEvent {
+  width: 46%;
+}
+.colPeriod {
+  width: 22%;
+}
+.colStatus {
+  width: 16%;
+}
+.colCreated {
+  width: 16%;
+}

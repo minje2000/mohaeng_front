@@ -717,7 +717,7 @@ function EventDetailView({ eventId, eventTitle, onBack, isAdmin }) {
                     ) : "-"}
                   </td>
                   <td style={{ padding:"10px 14px", color:"#374151" }}>{AGE_GROUP_MAP[p.pctAgeGroup] || p.pctAgeGroup || "-"}</td>
-                  <td style={{ padding:"10px 14px", color:"#374151", whiteSpace:"nowrap" }}>{p.pctDate || "-"}</td>
+                  <td style={{ padding:"10px 14px", color:"#374151", whiteSpace:"nowrap" }}>{p.pctDate ? p.pctDate.split(" ")[0] : "-"}</td>
                   <td style={{ padding:"10px 14px", color:"#6B7280" }}>{p.pctRoot || "-"}</td>
                   <td style={{ padding:"10px 14px" }}>
                     <button

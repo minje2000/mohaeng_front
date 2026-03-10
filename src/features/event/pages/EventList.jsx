@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Header from '../../../shared/components/common/Header';
 import Footer from '../../../shared/components/common/Footer';
-import { fetchEventList } from '../api/EventlistApi';
+import { fetchEventList, fetchRecommendEvents } from '../api/EventlistApi';
+
 
 const CITY_IDS = {
     "서울": 1100000000, "부산": 2600000000, "대구": 2700000000, "인천": 2800000000,
@@ -79,6 +80,17 @@ const EventList = () => {
     const [loading, setLoading] = useState(true);
     const [searchParams, setSearchParams] = useSearchParams();
     const navigate = useNavigate();
+
+    // ── AI 추천 ──
+    const [recEvents, setRecEvents] = useState([]);
+    const [recIndex, setRecIndex] = useState(0);
+    const REC_PER_PAGE = 3;
+
+    useEffect(() => {
+        fetchRecommendEvents()
+            .then(setRecEvents)
+            .catch(() => setRecEvents([]));
+    }, []);
 
     const getCityNameFromId = (id) => {
         if (!id) return "";
@@ -202,6 +214,8 @@ const EventList = () => {
                 .mohaeng-card:hover img { transform: scale(1.05); }
                 .custom-scrollbar::-webkit-scrollbar { width: 6px; }
                 .custom-scrollbar::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 10px; }
+                .rec-scroll::-webkit-scrollbar { height: 4px; }
+                .rec-scroll::-webkit-scrollbar-thumb { background: #FFE88A; border-radius: 10px; }
             `}</style>
 
             <Header />
@@ -331,6 +345,75 @@ const EventList = () => {
                             </button>
                         </div>
 
+                        {/* ── AI 추천 첫 줄 ── */}
+                        {recEvents.length > 0 && (
+                            <div style={{
+                                background: 'linear-gradient(135deg, #FFFDF0 0%, #FFF9E6 100%)',
+                                border: '2px solid #FFE88A',
+                                borderRadius: '20px',
+                                padding: '22px 24px 26px',
+                                marginBottom: '32px',
+                                boxShadow: '0 4px 16px rgba(255,215,0,0.1)',
+                            }}>
+                                {/* 라벨 */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                                    <span style={{ fontSize: '15px', fontWeight: '900', color: '#111' }}>AI 추천 Pick!</span>
+                                    <span style={{ fontSize: '11px', fontWeight: '800', color: '#92400E', backgroundColor: '#FEF3C7', padding: '2px 8px', borderRadius: '20px', border: '1px solid #FCD34D' }}>✨ 맞춤 추천</span>
+                                    <span style={{ marginLeft: 'auto', fontSize: '12px', color: '#B45309', fontWeight: '700' }}>관심·참여 기록 기반으로 추천했어요</span>
+                                </div>
+
+                                {/* 화살표 + 카드 */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    {/* 왼쪽 화살표 */}
+                                    <button
+                                        onClick={() => setRecIndex(i => Math.max(0, i - REC_PER_PAGE))}
+                                        disabled={recIndex === 0}
+                                        style={{ flexShrink: 0, width: '36px', height: '36px', borderRadius: '50%', border: 'none', backgroundColor: recIndex === 0 ? '#F3F4F6' : '#FFD700', color: recIndex === 0 ? '#D1D5DB' : '#111', fontSize: '20px', fontWeight: '900', cursor: recIndex === 0 ? 'not-allowed' : 'pointer', boxShadow: recIndex === 0 ? 'none' : '0 2px 8px rgba(255,215,0,0.4)', transition: 'all 0.2s', lineHeight: 1 }}
+                                    >‹</button>
+
+                                    {/* 카드 3개 */}
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', flex: 1 }}>
+                                        {recEvents.slice(recIndex, recIndex + REC_PER_PAGE).map(event => (
+                                            <div key={event.eventId} className="mohaeng-card"
+                                                onClick={() => navigate(`/events/${event.eventId}`)}
+                                                style={{ ...cardStyle, border: '1.5px solid #FFE88A' }}>
+                                                <div style={{ height: '120px', backgroundColor: '#F3F4F6', overflow: 'hidden', position: 'relative' }}>
+                                                    <img
+                                                        src={`http://localhost:8080/upload_files/event/${event.thumbnail}`}
+                                                        alt={event.title}
+                                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                        onError={(e) => { e.target.src = "https://dummyimage.com/400x300/f3f4f6/666666.png&text=Mohaeng"; }}
+                                                    />
+                                                    <div style={{ position: 'absolute', top: '8px', left: '8px', backgroundColor: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(4px)', padding: '3px 8px', borderRadius: '20px', fontSize: '10px', fontWeight: '900', color: '#FFD700' }}>
+                                                        {event.category?.categoryName || event.category?.name || '이벤트'}
+                                                    </div>
+                                                    {event.eventStatus && (
+                                                        <div style={{ position: 'absolute', top: '8px', right: '8px', backgroundColor: STATUS_COLOR[event.eventStatus] || '#6B7280', color: '#FFF', padding: '3px 8px', borderRadius: '20px', fontSize: '10px', fontWeight: '900' }}>
+                                                            {event.eventStatus}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div style={{ padding: '12px 14px' }}>
+                                                    <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: '900', color: '#111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{event.title}</h4>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '11px', color: '#9CA3AF', fontWeight: '700' }}>
+                                                        <span>📍 {event.region?.regionName || event.region?.name || '지역미상'}</span>
+                                                        <span>📅 {fmtDate(event.startDate)} ~ {fmtDate(event.endDate)}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* 오른쪽 화살표 */}
+                                    <button
+                                        onClick={() => setRecIndex(i => Math.min(recEvents.length - REC_PER_PAGE, i + REC_PER_PAGE))}
+                                        disabled={recIndex + REC_PER_PAGE >= recEvents.length}
+                                        style={{ flexShrink: 0, width: '36px', height: '36px', borderRadius: '50%', border: 'none', backgroundColor: recIndex + REC_PER_PAGE >= recEvents.length ? '#F3F4F6' : '#FFD700', color: recIndex + REC_PER_PAGE >= recEvents.length ? '#D1D5DB' : '#111', fontSize: '20px', fontWeight: '900', cursor: recIndex + REC_PER_PAGE >= recEvents.length ? 'not-allowed' : 'pointer', boxShadow: recIndex + REC_PER_PAGE >= recEvents.length ? 'none' : '0 2px 8px rgba(255,215,0,0.4)', transition: 'all 0.2s', lineHeight: 1 }}
+                                    >›</button>
+                                </div>
+                            </div>
+                        )}
+
                         {loading ? (
                             <div style={{ textAlign: 'center', padding: '100px 0', fontSize: '18px', fontWeight: 'bold', color: '#FFD700' }}>
                                 🌼 멋진 행사들을 불러오고 있어요...
@@ -411,6 +494,7 @@ const pageBtnStyle = (isActive, isDisabled) => ({
 });
 
 export default EventList;
+
 function getVisiblePages(totalPages, currentPage, visibleCount = 5) {
     const total = Number(totalPages || 0);
     const current = Number(currentPage || 0);
@@ -428,5 +512,3 @@ function getVisiblePages(totalPages, currentPage, visibleCount = 5) {
 
     return Array.from({ length: end - start }, (_, i) => start + i);
 }
-
-

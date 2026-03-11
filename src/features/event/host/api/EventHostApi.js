@@ -5,12 +5,9 @@ import { tokenStore } from '../../../../app/http/tokenStore';
 /**
  * 행사 생성
  * POST /api/events (multipart/form-data)
- * → multipart라서 fetch 사용 (apiJson은 Content-Type 자동 설정 안 됨)
  */
 export async function createEvent({ eventData, thumbnail, detailFiles = [], boothFiles = [] }) {
   const formData = new FormData();
-
-  // Spring @RequestPart("eventData") 에 대응 — JSON을 Blob으로 감싸야 함
   formData.append(
     'eventData',
     new Blob([JSON.stringify(eventData)], { type: 'application/json' })
@@ -23,13 +20,12 @@ export async function createEvent({ eventData, thumbnail, detailFiles = [], boot
   const res = await fetch('/api/events', {
     method: 'POST',
     headers: token ? { Authorization: `Bearer ${token}` } : {},
-    // Content-Type 은 직접 쓰면 안 됨 — FormData가 boundary 포함해서 자동 설정
     body: formData,
   });
 
   const json = await res.json().catch(() => null);
   if (!res.ok) throw new Error(json?.message || `서버 오류 (${res.status})`);
-  return json; // 생성된 eventId (Long)
+  return json;
 }
 
 /**
@@ -39,4 +35,26 @@ export async function createEvent({ eventData, thumbnail, detailFiles = [], boot
 export async function deleteEvent(eventId) {
   const res = await apiJson().put(`/api/events/${eventId}`);
   return res.data;
+}
+
+/**
+ * AI 태그 추천
+ * POST /api/events/suggest-tags
+ */
+export async function suggestTags({ title, description, thumbnail = null }) {
+  const formData = new FormData();
+  formData.append('title', title);
+  formData.append('description', description || '');
+  if (thumbnail) formData.append('thumbnail', thumbnail);
+
+  const token = tokenStore.getAccess();
+  const res = await fetch('/api/events/suggest-tags', {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formData,
+  });
+
+  const json = await res.json().catch(() => null);
+  if (!res.ok) throw new Error(json?.message || 'AI 분석에 실패했어요.');
+  return json;
 }

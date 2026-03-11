@@ -15,8 +15,12 @@ export const fetchEventList = async (params) => {
   }
 };
 
-export const fetchRecommendEvents = async () => {
-    const response = await apiJson().get('/api/events/recommend');
-    return response.data;
-};
+export async function fetchRecommendEvents() {
+  try {
+    const res = await apiJson().get('/api/events/recommend');
+    return res.data || [];
+  } catch (e) {
+    return [];
+  }
+}
 

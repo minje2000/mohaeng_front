@@ -1,7 +1,7 @@
 // src/features/event/host/pages/EventHost.jsx
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createEvent, suggestTags } from '../api/EventHostApi';
+import { createEvent, suggestTags, generateAiImage } from '../api/EventHostApi';
 import Header from '../../../../shared/components/common/Header';
 import { apiJson } from '../../../../app/http/request';
 
@@ -161,8 +161,20 @@ const HASHTAGS = [
   { id: 28, name: '자유로운' }, { id: 29, name: '집중하는' }, { id: 30, name: '친환경적인' },
 ];
 
+const FONT_COLOR_PRESETS = [
+  { value: '#FFFFFF', label: '흰색' },
+  { value: '#111111', label: '검정' },
+  { value: '#FFD700', label: '골드' },
+  { value: '#FF6B6B', label: '코랄' },
+  { value: '#4ECDC4', label: '민트' },
+  { value: '#A78BFA', label: '라벤더' },
+];
+
+// ── [변경 1] 테두리 색상 프리셋 ──────────────────────────────
+const BORDER_COLOR_PRESETS = ['#000000', '#FFFFFF', '#FFD700', '#FF6B6B', '#4ECDC4', '#A78BFA'];
+
 const INIT_BOOTH = () => ({ boothName: '', boothSize: '', boothPrice: '', boothNote: '', totalCount: '' });
-const INIT_FACI = () => ({ faciName: '', faciPrice: '', faciUnit: '', hasCount: false, totalCount: '' });
+const INIT_FACI  = () => ({ faciName: '', faciPrice: '', faciUnit: '', hasCount: false, totalCount: '' });
 
 const dayBefore = (dateStr) => {
   if (!dateStr) return undefined;
@@ -198,19 +210,19 @@ const inputBase = {
 const Input = ({ style, ...props }) => (
   <input style={{ ...inputBase, ...style }}
     onFocus={(e) => (e.target.style.borderColor = '#FFD700')}
-    onBlur={(e) => (e.target.style.borderColor = '#E5E7EB')}
+    onBlur={(e)  => (e.target.style.borderColor = '#E5E7EB')}
     {...props} />
 );
 const Textarea = ({ style, ...props }) => (
   <textarea style={{ ...inputBase, resize: 'vertical', minHeight: 100, lineHeight: 1.6, ...style }}
     onFocus={(e) => (e.target.style.borderColor = '#FFD700')}
-    onBlur={(e) => (e.target.style.borderColor = '#E5E7EB')}
+    onBlur={(e)  => (e.target.style.borderColor = '#E5E7EB')}
     {...props} />
 );
 const Select = ({ style, children, ...props }) => (
   <select style={{ ...inputBase, cursor: 'pointer', ...style }}
     onFocus={(e) => (e.target.style.borderColor = '#FFD700')}
-    onBlur={(e) => (e.target.style.borderColor = '#E5E7EB')}
+    onBlur={(e)  => (e.target.style.borderColor = '#E5E7EB')}
     {...props}>
     {children}
   </select>
@@ -232,34 +244,629 @@ const G2 = ({ children, style }) => (
 
 const Divider = () => <div style={{ height: 1, background: '#F3F4F6', margin: '18px 0' }} />;
 
-const ImageUploadBox = ({ label, required, file, onChange, style }) => {
-  const ref = useRef();
-  const preview = file ? URL.createObjectURL(file) : null;
+// ══════════════════════════════════════════════════════════════
+// 썸네일 관련 상수 & 헬퍼
+// ══════════════════════════════════════════════════════════════
+const GOOGLE_FONTS_URL =
+  'https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@700&family=Noto+Serif+KR:wght@700&family=Black+Han+Sans&family=Jua&family=Gamja+Flower&family=Do+Hyeon&family=Sunflower:wght@700&family=Gaegu:wght@700&family=Hi+Melody&family=Cute+Font&family=Nanum+Pen+Script&family=Single+Day&display=swap';
+
+const FONT_OPTIONS = [
+  { value: 'Noto Sans KR',     label: '노토 산스',      desc: '깔끔한 고딕' },
+  { value: 'Noto Serif KR',    label: '노토 세리프',    desc: '클래식 명조' },
+  { value: 'Black Han Sans',   label: '블랙 한 산스',   desc: '임팩트 굵은체' },
+  { value: 'Do Hyeon',         label: '도현체',         desc: '부드러운 둥근체' },
+  { value: 'Jua',              label: '주아체',         desc: '귀엽고 둥글둥글' },
+  { value: 'Cute Font',        label: '귀여운폰트',     desc: '동글동글 귀여운' },
+  { value: 'Sunflower',        label: '해바라기체',     desc: '가볍고 산뜻한' },
+  { value: 'Gamja Flower',     label: '감자꽃체',       desc: '손글씨 감성' },
+  { value: 'Gaegu',            label: '개구체',         desc: '낙서 느낌' },
+  { value: 'Hi Melody',        label: '하이멜로디',     desc: '소녀 감성' },
+  { value: 'Nanum Pen Script', label: '나눔펜스크립트', desc: '펜 손글씨' },
+  { value: 'Single Day',       label: '싱글데이',       desc: '캐주얼 손글씨' },
+];
+
+// ── [변경 1] outline 제거 / [변경 2] blur 추가 ────────────────
+const TEXT_EFFECTS = [
+  { value: 'none',   label: '없음' },
+  { value: 'shadow', label: '그림자' },
+  { value: 'blur',   label: '글자 주변 흐림' },
+  { value: 'glow',   label: '글로우' },
+  { value: 'bg',     label: '반투명 배경' },
+];
+
+function useGoogleFonts(url) {
+  useEffect(() => {
+    if (document.querySelector(`link[href="${url}"]`)) return;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = url;
+    document.head.appendChild(link);
+  }, [url]);
+}
+
+// ── [변경 1] borderColor, borderWidth 파라미터 추가 ──────────
+function drawTextOnCanvas(ctx, text, x, y, fontSize, font, color, effect, borderColor, borderWidth) {
+  ctx.font = `${fontSize}px "${font}", sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
+
+  // 테두리 — 효과와 완전히 독립적으로 항상 먼저 그림
+  if (borderWidth > 0) {
+    ctx.lineWidth = borderWidth;
+    ctx.strokeStyle = borderColor;
+    ctx.lineJoin = 'round';
+    ctx.strokeText(text, x, y);
+  }
+
+  if (effect === 'shadow') {
+    ctx.shadowColor = 'rgba(0,0,0,0.75)';
+    ctx.shadowBlur = 10;
+    ctx.shadowOffsetX = 3;
+    ctx.shadowOffsetY = 3;
+    ctx.fillStyle = color;
+    ctx.fillText(text, x, y);
+  } else if (effect === 'blur') {
+    // [변경 2] 글자 주변 흐림 — 넓은 그림자를 여러 겹 깔고 위에 선명하게 한 번 더
+    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+    ctx.shadowBlur = fontSize * 0.6;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+    ctx.fillStyle = color;
+    for (let i = 0; i < 3; i++) ctx.fillText(text, x, y);
+    ctx.shadowBlur = 0;
+    ctx.fillText(text, x, y);
+  } else if (effect === 'glow') {
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 24;
+    ctx.fillStyle = color;
+    ctx.fillText(text, x, y);
+    ctx.fillText(text, x, y);
+  } else if (effect === 'bg') {
+    const metrics = ctx.measureText(text);
+    const pad = fontSize * 0.28;
+    ctx.fillStyle = 'rgba(0,0,0,0.48)';
+    ctx.beginPath();
+    ctx.rect(x - metrics.width / 2 - pad, y - fontSize / 2 - pad * 0.5, metrics.width + pad * 2, fontSize + pad);
+    ctx.fill();
+    ctx.fillStyle = color;
+    ctx.fillText(text, x, y);
+  } else {
+    ctx.fillStyle = color;
+    ctx.fillText(text, x, y);
+  }
+
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
+}
+
+// ══════════════════════════════════════════════════════════════
+// ThumbnailSection 컴포넌트
+// ══════════════════════════════════════════════════════════════
+const ThumbnailSection = ({ thumbnail, setThumbnail, formTitle, formStartDate, formEndDate }) => {
+  useGoogleFonts(GOOGLE_FONTS_URL);
+
+  const fileRef        = useRef();
+  const canvasRef      = useRef();
+  const bgBtnRef       = useRef();
+  const txtBtnRef      = useRef();
+  const fontSelectRef  = useRef();
+  const dragging       = useRef(null);
+  const dragOffset     = useRef({ ox: 0, oy: 0 });
+
+  const [mode,          setMode]          = useState('upload');
+  const [bgOpen,        setBgOpen]        = useState(false);
+  const [txtOpen,       setTxtOpen]       = useState(false);
+  const [bgPanelStyle,  setBgPanelStyle]  = useState({});
+  const [txtPanelStyle, setTxtPanelStyle] = useState({});
+  const [aiGenerating,  setAiGenerating]  = useState(false);
+
+  // 배경 설정
+  const [stylePrompt, setStylePrompt] = useState('');
+  const [bgOpacity,   setBgOpacity]   = useState(1.0);
+
+  // 글자 설정
+  const [fontColor,   setFontColor]   = useState('#FFFFFF');
+  const [customColor, setCustomColor] = useState('#FFFFFF');
+  const [fontStyle,   setFontStyle]   = useState('Noto Sans KR');
+  const [fontSize,    setFontSize]    = useState(72);
+  const [textEffect,  setTextEffect]  = useState('shadow');
+
+  // ── [변경 1] 글자 테두리 state ──────────────────────────────
+  const [borderColor, setBorderColor] = useState('#000000');
+  const [borderWidth, setBorderWidth] = useState(0);
+
+  // 제목 수정 (더블클릭)
+  const [titleText,        setTitleText]        = useState('');
+  const [editingTitle,     setEditingTitle]     = useState(false);
+  const [editingTitleVal,  setEditingTitleVal]  = useState('');
+
+  // 텍스트 위치 (0~1 비율)
+  const [titlePos, setTitlePos] = useState({ x: 0.5, y: 0.13 });
+  const [datePos,  setDatePos]  = useState({ x: 0.5, y: 0.88 });
+
+  const [rawBgBase64, setRawBgBase64] = useState(null);
+
+  const preview = thumbnail ? URL.createObjectURL(thumbnail) : null;
+
+  // ── Canvas 렌더 ───────────────────────────────────────────
+  const renderCanvas = useCallback((bg, title, dr, color, size, font, effect, opacity, tPos, dPos, bColor, bWidth) => {
+    const canvas = canvasRef.current;
+    if (!canvas || !bg) return;
+    document.fonts.ready.then(() => {
+      const ctx = canvas.getContext('2d');
+      const img = new window.Image();
+      img.onload = () => {
+        canvas.width  = img.width;
+        canvas.height = img.height;
+        const W = canvas.width;
+        const H = canvas.height;
+
+        ctx.globalAlpha = opacity;
+        ctx.drawImage(img, 0, 0);
+        ctx.globalAlpha = 1.0;
+
+        drawTextOnCanvas(ctx, title || '행사 제목', W * tPos.x, H * tPos.y, size,                   font, color, effect, bColor, bWidth);
+        drawTextOnCanvas(ctx, dr    || '기간',      W * dPos.x, H * dPos.y, Math.round(size * 0.5), font, color, effect, bColor, bWidth);
+      };
+      img.src = `data:image/png;base64,${bg}`;
+    });
+  }, []);
+
+  // 설정 변경 시 자동 리렌더
+  useEffect(() => {
+    if (!rawBgBase64 || mode !== 'ai') return;
+    const dr = (formStartDate && formEndDate) ? `${formStartDate} ~ ${formEndDate}` : '';
+    const displayTitle = titleText || formTitle;
+    renderCanvas(rawBgBase64, displayTitle, dr, fontColor, fontSize, fontStyle, textEffect, bgOpacity, titlePos, datePos, borderColor, borderWidth);
+  }, [rawBgBase64, fontColor, fontSize, fontStyle, textEffect, bgOpacity, titlePos, datePos, borderColor, borderWidth, titleText, formTitle, formStartDate, formEndDate, renderCanvas, mode]);
+
+  // ── Canvas 자유 드래그 ────────────────────────────────────
+  const getRelPos = (e) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return { x: (clientX - rect.left) / rect.width, y: (clientY - rect.top) / rect.height };
+  };
+
+  const handleCanvasDown = (e) => {
+    if (!rawBgBase64) return;
+    const pos = getRelPos(e);
+    const hitTitle = Math.abs(pos.y - titlePos.y) < 0.07 && Math.abs(pos.x - titlePos.x) < 0.45;
+    const hitDate  = Math.abs(pos.y - datePos.y)  < 0.07 && Math.abs(pos.x - datePos.x) < 0.45;
+    if (hitTitle) { dragging.current = 'title'; dragOffset.current = { ox: pos.x - titlePos.x, oy: pos.y - titlePos.y }; }
+    else if (hitDate) { dragging.current = 'date'; dragOffset.current = { ox: pos.x - datePos.x, oy: pos.y - datePos.y }; }
+  };
+
+  const handleCanvasMove = (e) => {
+    if (!dragging.current) return;
+    e.preventDefault();
+    const pos = getRelPos(e);
+    const nx = Math.max(0.05, Math.min(0.95, pos.x - dragOffset.current.ox));
+    const ny = Math.max(0.04, Math.min(0.96, pos.y - dragOffset.current.oy));
+    if (dragging.current === 'title') setTitlePos({ x: nx, y: ny });
+    else                              setDatePos ({ x: nx, y: ny });
+  };
+
+  const handleCanvasUp = () => { dragging.current = null; };
+
+  // 더블클릭 → 제목 텍스트 편집 (기간은 편집 불가)
+  const handleCanvasDoubleClick = (e) => {
+    if (!rawBgBase64) return;
+    const pos = getRelPos(e);
+    const hitTitle = Math.abs(pos.y - titlePos.y) < 0.08 && Math.abs(pos.x - titlePos.x) < 0.45;
+    if (hitTitle) {
+      setEditingTitleVal(titleText || formTitle || '');
+      setEditingTitle(true);
+    }
+  };
+
+  // 가운데 정렬
+  const handleCenterAlign = () => {
+    setTitlePos((p) => ({ ...p, x: 0.5 }));
+    setDatePos ((p) => ({ ...p, x: 0.5 }));
+  };
+
+  // ── 패널 열기 (오른쪽 fixed 배치) ───────────────────────────
+  const openPanel = (type) => {
+    const ref = type === 'bg' ? bgBtnRef : txtBtnRef;
+    if (ref.current) {
+      const rect  = ref.current.getBoundingClientRect();
+      const w     = type === 'txt' ? 420 : 300;
+      const style = { position: 'fixed', top: rect.top, left: rect.right + 8, zIndex: 9999, width: w };
+      if (type === 'bg') { setBgPanelStyle(style);  setBgOpen(true);  setTxtOpen(false); }
+      else               { setTxtPanelStyle(style); setTxtOpen(true); setBgOpen(false); }
+    }
+  };
+
+  // ── AI 생성 ───────────────────────────────────────────────
+  const handleAiGenerate = async () => {
+    if (!formTitle)                     { alert('먼저 행사 제목을 입력해주세요!'); return; }
+    if (!formStartDate || !formEndDate) { alert('먼저 행사 시작일과 종료일을 입력해주세요!'); return; }
+
+    const dateRange    = `${formStartDate} ~ ${formEndDate}`;
+    const textAreaHint = [
+      `title area: centered around x=${Math.round(titlePos.x * 100)}%, y=${Math.round(titlePos.y * 100)}%`,
+      `date area:  centered around x=${Math.round(datePos.x  * 100)}%, y=${Math.round(datePos.y  * 100)}%`,
+    ].join(' / ');
+
+    setAiGenerating(true);
+    try {
+      const displayTitle = titleText || formTitle;
+      const base64 = await generateAiImage({ title: formTitle, dateRange, fontColor, fontSize, fontStyle, stylePrompt: stylePrompt || null, textAreaHint });
+      setRawBgBase64(base64);
+      renderCanvas(base64, displayTitle, dateRange, fontColor, fontSize, fontStyle, textEffect, bgOpacity, titlePos, datePos, borderColor, borderWidth);
+    } catch (e) {
+      alert(e.message || 'AI 이미지 생성에 실패했어요.');
+    } finally {
+      setAiGenerating(false);
+    }
+  };
+
+  // rawBgBase64 변경 시 thumbnail 자동 저장
+  useEffect(() => {
+    if (!rawBgBase64 || mode !== 'ai') return;
+    setTimeout(() => {
+      canvasRef.current?.toBlob((blob) => {
+        if (blob) setThumbnail(new File([blob], `thumb_${Date.now()}.png`, { type: 'image/png' }));
+      }, 'image/png');
+    }, 300);
+  }, [rawBgBase64]); // eslint-disable-line
+
+  // 글자 설정 변경 시 thumbnail 갱신
+  useEffect(() => {
+    if (!rawBgBase64 || mode !== 'ai') return;
+    setTimeout(() => {
+      canvasRef.current?.toBlob((blob) => {
+        if (blob) setThumbnail(new File([blob], `thumb_${Date.now()}.png`, { type: 'image/png' }));
+      }, 'image/png');
+    }, 150);
+  }, [fontColor, fontSize, fontStyle, textEffect, bgOpacity, titlePos, datePos, borderColor, borderWidth, titleText]); // eslint-disable-line
+
+  // ── 공통 스타일 ───────────────────────────────────────────
+  const selectSt = {
+    width: '100%', boxSizing: 'border-box', padding: '7px 10px', borderRadius: 8,
+    border: '1.5px solid #E9D5FF', fontSize: 12, outline: 'none',
+    background: '#fff', cursor: 'pointer', fontFamily: 'inherit',
+  };
+
+  const panelBase = {
+    background: '#FAF5FF', border: '1.5px solid #E9D5FF', borderRadius: 14,
+    padding: 16, boxShadow: '0 8px 32px rgba(99,60,180,0.18)',
+    display: 'flex', flexDirection: 'column', gap: 14,
+    maxHeight: '80vh', overflowY: 'auto',
+  };
+
   return (
-    <div>
-      <Label required={required}>{label}</Label>
-      <div onClick={() => ref.current.click()}
-        style={{ width: '100%', height: 150, borderRadius: 12, border: `2px dashed ${preview ? '#FFD700' : '#E5E7EB'}`, background: preview ? 'transparent' : '#FFFBEB', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative', transition: 'all 0.2s', ...style }}
-        onMouseEnter={(e) => { if (!preview) e.currentTarget.style.borderColor = '#FFD700'; }}
-        onMouseLeave={(e) => { if (!preview) e.currentTarget.style.borderColor = '#E5E7EB'; }}>
-        {preview ? (
-          <img src={preview} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        ) : (
-          <div style={{ textAlign: 'center', color: '#D97706' }}>
-            <div style={{ fontSize: 32, marginBottom: 6 }}>🖼️</div>
-            <div style={{ fontSize: 12, fontWeight: 700 }}>여기를 눌러 이미지를 선택하세요</div>
-          </div>
-        )}
-        {preview && (
-          <button onClick={(e) => { e.stopPropagation(); onChange(null); }}
-            style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.55)', color: '#fff', border: 'none', borderRadius: '50%', width: 24, height: 24, cursor: 'pointer', fontSize: 11, fontWeight: 900 }}>✕</button>
-        )}
+    <div style={{ width: 240, flexShrink: 0, position: 'relative' }}>
+      <Label required>행사 썸네일</Label>
+
+      {/* 모드 탭 */}
+      <div style={{ display: 'flex', borderRadius: 10, border: '1.5px solid #E5E7EB', overflow: 'hidden', marginBottom: 10 }}>
+        {[{ key: 'upload', label: '📁 직접 업로드' }, { key: 'ai', label: '✨ AI 생성' }].map(({ key, label }) => (
+          <button key={key} onClick={() => setMode(key)}
+            style={{ flex: 1, padding: '8px 0', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 12,
+              background: mode === key ? '#FFD700' : '#fff', color: mode === key ? '#111' : '#9CA3AF' }}>
+            {label}
+          </button>
+        ))}
       </div>
-      <input ref={ref} type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => onChange(e.target.files[0] || null)} />
+
+      {/* ── 직접 업로드 ── */}
+      {mode === 'upload' && (
+        <>
+          <div onClick={() => fileRef.current.click()}
+            style={{ width: '100%', height: 220, borderRadius: 12,
+              border: `2px dashed ${preview ? '#FFD700' : '#E5E7EB'}`,
+              background: preview ? 'transparent' : '#FFFBEB', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              overflow: 'hidden', position: 'relative' }}>
+            {preview
+              ? <img src={preview} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              : <div style={{ textAlign: 'center', color: '#D97706' }}>
+                  <div style={{ fontSize: 36, marginBottom: 8 }}>🖼️</div>
+                  <div style={{ fontSize: 12, fontWeight: 700 }}>클릭하여 이미지 선택</div>
+                </div>}
+            {preview && (
+              <button onClick={(e) => { e.stopPropagation(); setThumbnail(null); }}
+                style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.55)', color: '#fff',
+                  border: 'none', borderRadius: '50%', width: 24, height: 24, cursor: 'pointer', fontSize: 11, fontWeight: 900 }}>✕</button>
+            )}
+          </div>
+          <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }}
+            onChange={(e) => setThumbnail(e.target.files[0] || null)} />
+          <div style={{ marginTop: 8, fontSize: 11, color: '#9CA3AF', textAlign: 'center' }}>직접 준비한 썸네일을 업로드해요</div>
+        </>
+      )}
+
+      {/* ── AI 생성 ── */}
+      {mode === 'ai' && (
+        <div>
+          {/* Canvas 미리보기 */}
+          <div style={{ width: '100%', borderRadius: 12, overflow: 'hidden',
+            border: '2px dashed #D8B4FE',
+            background: rawBgBase64 ? 'transparent' : 'linear-gradient(135deg,#FAF5FF,#EDE9FE)',
+            minHeight: 220, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            position: 'relative' }}>
+            {rawBgBase64
+              ? <canvas ref={canvasRef}
+                  style={{ width: '100%', height: 'auto', display: 'block', cursor: 'grab' }}
+                  onMouseDown={handleCanvasDown} onMouseMove={handleCanvasMove}
+                  onMouseUp={handleCanvasUp} onMouseLeave={handleCanvasUp}
+                  onTouchStart={handleCanvasDown} onTouchMove={handleCanvasMove} onTouchEnd={handleCanvasUp}
+                  onDoubleClick={handleCanvasDoubleClick}
+                />
+              : <div style={{ textAlign: 'center', color: '#8B5CF6', padding: 20 }}>
+                  <div style={{ fontSize: 36, marginBottom: 8 }}>🤖</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, lineHeight: 1.5 }}>AI가 제목과 날짜를<br />분석해 자동 생성해요</div>
+                </div>}
+            {aiGenerating && (
+              <div style={{ position: 'absolute', inset: 0, background: 'rgba(139,92,246,0.85)',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                <div style={{ fontSize: 28 }}>🎨</div>
+                <div style={{ color: '#fff', fontSize: 12, fontWeight: 800 }}>그리는 중...</div>
+                <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10 }}>약 10~20초 소요</div>
+              </div>
+            )}
+            {/* 제목 더블클릭 편집 오버레이 */}
+            {editingTitle && (
+              <input
+                autoFocus
+                value={editingTitleVal}
+                onChange={(e) => setEditingTitleVal(e.target.value)}
+                onBlur={() => { setTitleText(editingTitleVal); setEditingTitle(false); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') { setTitleText(editingTitleVal); setEditingTitle(false); } if (e.key === 'Escape') setEditingTitle(false); }}
+                style={{
+                  position: 'absolute',
+                  left: `${titlePos.x * 100}%`,
+                  top:  `${titlePos.y * 100}%`,
+                  transform: 'translate(-50%, -50%)',
+                  width: '84%', textAlign: 'center',
+                  background: 'rgba(255,255,255,0.93)',
+                  border: '2px solid #7C3AED', borderRadius: 8,
+                  padding: '5px 10px', fontSize: 13, fontWeight: 800,
+                  outline: 'none', zIndex: 10,
+                  boxShadow: '0 2px 12px rgba(99,60,180,0.25)',
+                  fontFamily: `"${fontStyle}", sans-serif`,
+                }}
+              />
+            )}
+          </div>
+
+          {rawBgBase64 && (
+            <div style={{ marginTop: 5, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ fontSize: 10, color: '#8B5CF6', fontWeight: 600 }}>
+                ✦ 드래그로 이동 · 더블클릭으로 제목 수정
+              </div>
+              <button onClick={handleCenterAlign}
+                style={{ padding: '3px 9px', borderRadius: 6, border: '1.5px solid #E9D5FF',
+                  background: '#FAF5FF', color: '#7C3AED', fontWeight: 800, fontSize: 10, cursor: 'pointer' }}>
+                ⊞ 가운데
+              </button>
+            </div>
+          )}
+
+          {/* 배경 설정 / 글자 설정 버튼 */}
+          <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+            <button ref={bgBtnRef} onClick={() => openPanel('bg')}
+              style={{ flex: 1, padding: '7px 10px', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 11,
+                border: '1.5px solid #FDE68A', background: bgOpen ? '#FEF3C7' : '#FFFBEB',
+                color: '#92400E', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+              🖼️ 배경 설정
+            </button>
+            <button ref={txtBtnRef} onClick={() => openPanel('txt')}
+              style={{ flex: 1, padding: '7px 10px', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 11,
+                border: '1.5px solid #E9D5FF', background: txtOpen ? '#EDE9FE' : '#FAF5FF',
+                color: '#7C3AED', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+              🔤 글자 설정
+            </button>
+          </div>
+
+          <div style={{ marginTop: 8, padding: '8px 10px', borderRadius: 8, background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
+            <div style={{ fontSize: 10, color: '#16A34A', fontWeight: 700, lineHeight: 1.6 }}>
+              ✅ 글자 위치 먼저 정한 후 배경 생성하면<br />글자 자리를 피해서 배경을 만들어줘요!
+            </div>
+          </div>
+
+          <button onClick={handleAiGenerate} disabled={aiGenerating}
+            style={{ width: '100%', marginTop: 8, padding: '10px', borderRadius: 10, border: 'none',
+              background: aiGenerating ? '#E5E7EB' : 'linear-gradient(135deg,#6366F1,#8B5CF6)',
+              color: aiGenerating ? '#9CA3AF' : '#fff', fontWeight: 900, fontSize: 13,
+              cursor: aiGenerating ? 'not-allowed' : 'pointer',
+              boxShadow: aiGenerating ? 'none' : '0 4px 14px rgba(99,102,241,0.35)' }}>
+            {aiGenerating ? '🎨 그리는 중...' : rawBgBase64 ? '🔄 다시 생성하기' : '✨ AI로 생성하기'}
+          </button>
+        </div>
+      )}
+
+      {/* 오버레이 */}
+      {(bgOpen || txtOpen) && (
+        <div onClick={() => { setBgOpen(false); setTxtOpen(false); }}
+          style={{ position: 'fixed', inset: 0, zIndex: 9998 }} />
+      )}
+
+      {/* ══════════════════════════════════
+          🖼️ 배경 설정 패널
+      ══════════════════════════════════ */}
+      {bgOpen && mode === 'ai' && (
+        <div style={{ ...panelBase, ...bgPanelStyle }}>
+          <div style={{ fontSize: 13, fontWeight: 900, color: '#92400E' }}>🖼️ 배경 설정</div>
+
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 800, color: '#92400E', marginBottom: 5 }}>분위기 / 스타일 프롬프트</div>
+            <textarea
+              placeholder="예: 벚꽃 날리는 봄날, 밤하늘의 별빛 가득한 여름 축제..."
+              value={stylePrompt} onChange={(e) => setStylePrompt(e.target.value)}
+              style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', borderRadius: 8,
+                border: '1.5px solid #FDE68A', fontSize: 12, minHeight: 72, resize: 'none',
+                outline: 'none', fontFamily: 'inherit', background: '#fff', lineHeight: 1.5 }} />
+            <div style={{ fontSize: 10, color: '#9CA3AF', marginTop: 3 }}>비워두면 제목에서 자동 유추해요</div>
+          </div>
+
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 800, color: '#92400E', marginBottom: 5 }}>
+              배경 투명도 — {Math.round(bgOpacity * 100)}%
+            </div>
+            <input type="range" min={0} max={1} step={0.05} value={bgOpacity}
+              onChange={(e) => setBgOpacity(Number(e.target.value))}
+              style={{ width: '100%', accentColor: '#F59E0B' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#9CA3AF', marginTop: 2 }}>
+              <span>투명</span><span>원본</span>
+            </div>
+          </div>
+
+          <button onClick={() => setBgOpen(false)}
+            style={{ width: '100%', padding: '7px', borderRadius: 8, border: 'none',
+              background: '#FEF3C7', color: '#92400E', fontWeight: 800, fontSize: 12, cursor: 'pointer' }}>
+            닫기
+          </button>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════
+          🔤 글자 설정 패널
+      ══════════════════════════════════ */}
+      {txtOpen && mode === 'ai' && (
+        <div style={{ ...panelBase, ...txtPanelStyle }}>
+          <div style={{ fontSize: 13, fontWeight: 900, color: '#7C3AED' }}>🔤 글자 설정</div>
+
+          {/* ── 글꼴 (전체 너비) + 스크롤 후 선택 시 맨 위 유지 ── */}
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 800, color: '#7C3AED', marginBottom: 5 }}>글꼴</div>
+            <select
+              ref={fontSelectRef}
+              value={fontStyle}
+              onChange={(e) => {
+                setFontStyle(e.target.value);
+                setTimeout(() => { if (fontSelectRef.current) fontSelectRef.current.scrollTop = 0; }, 0);
+              }}
+              size={4}
+              style={{ ...selectSt, height: 'auto', padding: 0, overflowY: 'auto' }}>
+              {FONT_OPTIONS.map(({ value, label, desc }) => (
+                <option key={value} value={value}
+                  style={{ padding: '5px 10px', fontFamily: `"${value}", sans-serif` }}>
+                  {label} — {desc}
+                </option>
+              ))}
+            </select>
+            <div style={{ marginTop: 6, padding: '5px 10px', borderRadius: 8, background: '#EDE9FE',
+              fontFamily: `"${fontStyle}", sans-serif`, fontSize: 14, color: '#5B21B6',
+              textAlign: 'center', fontWeight: 700 }}>
+              가나다 ABC 123
+            </div>
+          </div>
+
+          {/* ── 2열 그리드: 색상 + 크기 ── */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            {/* 글자 색상 */}
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 800, color: '#7C3AED', marginBottom: 5 }}>글자 색상</div>
+              <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center' }}>
+                {FONT_COLOR_PRESETS.map(({ value, label }) => (
+                  <button key={value} onClick={() => { setFontColor(value); setCustomColor(value); }} title={label}
+                    style={{ width: 24, height: 24, borderRadius: '50%', outline: 'none',
+                      border: fontColor === value ? '3px solid #7C3AED' : '2px solid #E5E7EB',
+                      background: value, cursor: 'pointer',
+                      boxShadow: value === '#FFFFFF' ? 'inset 0 0 0 1px #ddd' : 'none' }} />
+                ))}
+                <label style={{ cursor: 'pointer' }}>
+                  <input type="color" value={customColor}
+                    onChange={(e) => { setCustomColor(e.target.value); setFontColor(e.target.value); }}
+                    style={{ width: 24, height: 24, border: '2px solid #E5E7EB', padding: 0, borderRadius: '50%', cursor: 'pointer' }} />
+                </label>
+              </div>
+              <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 5 }}>
+                <div style={{ width: 12, height: 12, borderRadius: 3, background: fontColor, border: '1px solid #E5E7EB' }} />
+                <span style={{ fontSize: 10, color: '#9CA3AF', fontFamily: 'monospace' }}>{fontColor}</span>
+              </div>
+            </div>
+
+            {/* 글자 크기 */}
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 800, color: '#7C3AED', marginBottom: 5 }}>제목 크기</div>
+              <input type="number" min={20} max={200} value={fontSize}
+                onChange={(e) => setFontSize(Math.max(20, Math.min(200, Number(e.target.value))))}
+                style={{ width: '100%', boxSizing: 'border-box', padding: '6px 8px', borderRadius: 8,
+                  border: '1.5px solid #E9D5FF', fontSize: 13, fontWeight: 800,
+                  textAlign: 'center', outline: 'none', background: '#fff', marginBottom: 5 }} />
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 3 }}>
+                {[48, 64, 80, 96].map(v => (
+                  <button key={v} onClick={() => setFontSize(v)}
+                    style={{ padding: '3px 0', borderRadius: 5, cursor: 'pointer', outline: 'none',
+                      border: fontSize === v ? '2px solid #7C3AED' : '1.5px solid #E5E7EB',
+                      background: fontSize === v ? '#EDE9FE' : '#fff',
+                      fontSize: 10, fontWeight: 700, color: fontSize === v ? '#7C3AED' : '#9CA3AF' }}>
+                    {v}
+                  </button>
+                ))}
+              </div>
+              <div style={{ fontSize: 9, color: '#9CA3AF', marginTop: 3 }}>날짜는 50% 자동</div>
+            </div>
+          </div>
+
+          {/* ── 2열 그리드: 효과 + 테두리 ── */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            {/* 텍스트 효과 */}
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 800, color: '#7C3AED', marginBottom: 5 }}>텍스트 효과</div>
+              <select value={textEffect} onChange={(e) => setTextEffect(e.target.value)} style={selectSt}>
+                {TEXT_EFFECTS.map(({ value, label }) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* 글자 테두리 */}
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 800, color: '#7C3AED', marginBottom: 5 }}>글자 테두리</div>
+              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 6 }}>
+                {[0, 1, 2, 4, 6].map(v => (
+                  <button key={v} onClick={() => setBorderWidth(v)}
+                    style={{ padding: '3px 6px', borderRadius: 5, cursor: 'pointer', outline: 'none',
+                      border: borderWidth === v ? '2px solid #7C3AED' : '1.5px solid #E5E7EB',
+                      background: borderWidth === v ? '#EDE9FE' : '#fff',
+                      fontSize: 10, fontWeight: 700,
+                      color: borderWidth === v ? '#7C3AED' : '#9CA3AF' }}>
+                    {v === 0 ? '없음' : `${v}`}
+                  </button>
+                ))}
+              </div>
+              {borderWidth > 0 && (
+                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                  {BORDER_COLOR_PRESETS.map(c => (
+                    <button key={c} onClick={() => setBorderColor(c)}
+                      style={{ width: 20, height: 20, borderRadius: '50%', background: c, cursor: 'pointer', outline: 'none',
+                        border: borderColor === c ? '3px solid #7C3AED' : '2px solid #E5E7EB',
+                        boxShadow: c === '#FFFFFF' ? 'inset 0 0 0 1px #ddd' : 'none' }} />
+                  ))}
+                  <label style={{ cursor: 'pointer' }}>
+                    <input type="color" value={borderColor} onChange={(e) => setBorderColor(e.target.value)}
+                      style={{ width: 20, height: 20, border: '2px solid #E5E7EB', padding: 0, borderRadius: '50%', cursor: 'pointer' }} />
+                  </label>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <button onClick={() => setTxtOpen(false)}
+            style={{ width: '100%', padding: '7px', borderRadius: 8, border: 'none',
+              background: '#EDE9FE', color: '#7C3AED', fontWeight: 800, fontSize: 12, cursor: 'pointer' }}>
+            닫기
+          </button>
+        </div>
+      )}
     </div>
   );
 };
 
+// ── 멀티 이미지 업로드 ────────────────────────────────────────
 const MultiImageUpload = ({ label, files, onChange }) => {
   const ref = useRef();
   return (
@@ -276,7 +883,8 @@ const MultiImageUpload = ({ label, files, onChange }) => {
         <div onClick={() => ref.current.click()}
           style={{ width: 76, height: 76, borderRadius: 10, border: '2px dashed #FFD700', background: '#FFFBEB', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#D97706', fontSize: 22, fontWeight: 700, flexShrink: 0 }}>+</div>
       </div>
-      <input ref={ref} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={(e) => { onChange([...files, ...Array.from(e.target.files)]); e.target.value = ''; }} />
+      <input ref={ref} type="file" accept="image/*" multiple style={{ display: 'none' }}
+        onChange={(e) => { onChange([...files, ...Array.from(e.target.files)]); e.target.value = ''; }} />
     </div>
   );
 };
@@ -344,19 +952,24 @@ const checkStyle = { accentColor: '#FFD700', width: 16, height: 16, cursor: 'poi
 
 export default function EventHost() {
   const navigate = useNavigate();
-  const [saving, setSaving] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [saving,    setSaving]    = useState(false);
+  const [loading,   setLoading]   = useState(true);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiSuggestedFields, setAiSuggestedFields] = useState({
     simpleExplain: false, category: false, topics: false, hashtags: false,
   });
-
   const today = new Date().toISOString().split('T')[0];
-  const [thumbnail, setThumbnail] = useState(null);
-  const [detailFiles, setDetailFiles] = useState([]);
-  const [boothFiles, setBoothFiles] = useState([]);
+  const [thumbnail,       setThumbnail]       = useState(null);
+  const [detailFiles,     setDetailFiles]     = useState([]);
+  const [boothFiles,      setBoothFiles]      = useState([]);
+  const [selectedTopics,  setSelectedTopics]  = useState([]);
+  const [selectedHashtags,setSelectedHashtags]= useState([]);
+  const [hasBooth,    setHasBooth]    = useState(false);
+  const [hasFacility, setHasFacility] = useState(false);
+  const [booths,  setBooths]  = useState([INIT_BOOTH()]);
+  const [facis,   setFacis]   = useState([INIT_FACI()]);
+  const [hostInfo,setHostInfo]= useState({ name: '', email: '', phone: '', profileImg: '' });
 
-  const [selectedTopics, setSelectedTopics] = useState([]);
   const toggleTopic = (id) => {
     setAiSuggestedFields((p) => ({ ...p, topics: false }));
     setSelectedTopics((prev) => {
@@ -365,8 +978,6 @@ export default function EventHost() {
       return [...prev, id];
     });
   };
-
-  const [selectedHashtags, setSelectedHashtags] = useState([]);
   const toggleHashtag = (id) => {
     setAiSuggestedFields((p) => ({ ...p, hashtags: false }));
     setSelectedHashtags((prev) => {
@@ -375,15 +986,8 @@ export default function EventHost() {
       return [...prev, id];
     });
   };
-
-  const [hasBooth, setHasBooth] = useState(false);
-  const [hasFacility, setHasFacility] = useState(false);
-  const [booths, setBooths] = useState([INIT_BOOTH()]);
-  const [facis, setFacis] = useState([INIT_FACI()]);
   const updateBooth = (i, f, v) => setBooths((p) => p.map((b, idx) => (idx === i ? { ...b, [f]: v } : b)));
-  const updateFaci = (i, f, v) => setFacis((p) => p.map((x, idx) => (idx === i ? { ...x, [f]: v } : x)));
-
-  const [hostInfo, setHostInfo] = useState({ name: '', email: '', phone: '', profileImg: '' });
+  const updateFaci  = (i, f, v) => setFacis ((p) => p.map((x, idx) => (idx === i ? { ...x, [f]: v } : x)));
 
   useEffect(() => {
     apiJson().get('/api/user/me').then((res) => {
@@ -412,52 +1016,36 @@ export default function EventHost() {
         setF('roadAddress', data.roadAddress);
         setF('lotNumberAdr', data.jibunAddress);
         setF('detailAddressExtra', '');
-        const sidoKey = data.sido.substring(0, 2);
+        const sidoKey   = data.sido.substring(0, 2);
         const subRegions = REGION_DATA[sidoKey] || [];
-        const matched = subRegions.find((r) => data.sigungu.includes(r.name) || r.name.includes(data.sigungu.split(' ')[0]));
+        const matched   = subRegions.find((r) => data.sigungu.includes(r.name) || r.name.includes(data.sigungu.split(' ')[0]));
         setF('regionId', matched ? matched.id : CITY_IDS[sidoKey]);
       },
     }).open();
   };
 
-  const minEndDate = form.startDate || today;
-  const minEndRecruit = form.startRecruit || today;
-  const maxEndRecruit = dayBefore(form.startDate) || '';
+  const minEndDate       = form.startDate || today;
+  const minEndRecruit    = form.startRecruit || today;
+  const maxEndRecruit    = dayBefore(form.startDate) || '';
   const minBoothEndRecruit = form.boothStartRecruit || '';
-  const minEndTime = form.startDate === form.endDate ? form.startTime || '' : '';
-  const boothMaxDate = dayBefore(form.startRecruit);
+  const minEndTime       = form.startDate === form.endDate ? form.startTime || '' : '';
+  const boothMaxDate     = dayBefore(form.startRecruit);
   const boothStartIsPast = form.boothStartRecruit && form.boothStartRecruit < today;
-  const boothEndIsPast = form.boothEndRecruit && form.boothEndRecruit < today;
-
+  const boothEndIsPast   = form.boothEndRecruit   && form.boothEndRecruit   < today;
   const handleBoothToggle = (v) => { setHasBooth(v); if (!v) setHasFacility(false); };
 
-  // ── AI 분석 호출 ──────────────────────────────────────────────
   const handleAiSuggest = async () => {
-    if (!form.title.trim()) { alert('먼저 행사 제목을 입력해주세요.'); return; }
+    if (!form.title.trim())       { alert('먼저 행사 제목을 입력해주세요.'); return; }
     if (!form.description.trim()) { alert('먼저 상세 설명을 입력해주세요.'); return; }
     setAiLoading(true);
     try {
       const result = await suggestTags({ title: form.title, description: form.description, thumbnail });
-      if (result.simpleExplain) {
-        setF('simpleExplain', result.simpleExplain);
-        setAiSuggestedFields((p) => ({ ...p, simpleExplain: true }));
-      }
-      if (result.categoryId) {
-        setF('categoryId', String(result.categoryId));
-        setAiSuggestedFields((p) => ({ ...p, category: true }));
-      }
-      if (result.topicIds && result.topicIds.length > 0) {
-        setSelectedTopics(result.topicIds.slice(0, 5));
-        setAiSuggestedFields((p) => ({ ...p, topics: true }));
-      }
-      if (result.hashtagNames && result.hashtagNames.length > 0) {
-        const matchedIds = result.hashtagNames
-          .map((name) => HASHTAGS.find((h) => h.name === name)?.id)
-          .filter(Boolean).slice(0, 5);
-        if (matchedIds.length > 0) {
-          setSelectedHashtags(matchedIds);
-          setAiSuggestedFields((p) => ({ ...p, hashtags: true }));
-        }
+      if (result.simpleExplain) { setF('simpleExplain', result.simpleExplain); setAiSuggestedFields((p) => ({ ...p, simpleExplain: true })); }
+      if (result.categoryId)    { setF('categoryId', String(result.categoryId)); setAiSuggestedFields((p) => ({ ...p, category: true })); }
+      if (result.topicIds?.length > 0) { setSelectedTopics(result.topicIds.slice(0, 5)); setAiSuggestedFields((p) => ({ ...p, topics: true })); }
+      if (result.hashtagNames?.length > 0) {
+        const matchedIds = result.hashtagNames.map((name) => HASHTAGS.find((h) => h.name === name)?.id).filter(Boolean).slice(0, 5);
+        if (matchedIds.length > 0) { setSelectedHashtags(matchedIds); setAiSuggestedFields((p) => ({ ...p, hashtags: true })); }
       }
     } catch (e) {
       alert(e.message || 'AI 분석에 실패했어요. 다시 시도해주세요.');
@@ -467,16 +1055,16 @@ export default function EventHost() {
   };
 
   const validate = () => {
-    if (!thumbnail) { alert('썸네일 이미지를 등록해주세요.'); return false; }
-    if (!form.title.trim()) { alert('행사 제목을 입력해주세요.'); return false; }
-    if (!form.simpleExplain.trim()) { alert('한줄 설명을 입력해주세요.'); return false; }
-    if (!form.startDate) { alert('행사 시작일을 선택해주세요.'); return false; }
-    if (!form.endDate) { alert('행사 종료일을 선택해주세요.'); return false; }
-    if (!form.startRecruit) { alert('모집 시작일을 선택해주세요.'); return false; }
-    if (!form.endRecruit) { alert('모집 종료일을 선택해주세요.'); return false; }
-    if (!form.roadAddress) { alert('주소 찾기를 통해 주소를 입력해주세요.'); return false; }
+    if (!thumbnail)                  { alert('썸네일 이미지를 등록해주세요.'); return false; }
+    if (!form.title.trim())          { alert('행사 제목을 입력해주세요.'); return false; }
+    if (!form.simpleExplain.trim())  { alert('한줄 설명을 입력해주세요.'); return false; }
+    if (!form.startDate)             { alert('행사 시작일을 선택해주세요.'); return false; }
+    if (!form.endDate)               { alert('행사 종료일을 선택해주세요.'); return false; }
+    if (!form.startRecruit)          { alert('모집 시작일을 선택해주세요.'); return false; }
+    if (!form.endRecruit)            { alert('모집 종료일을 선택해주세요.'); return false; }
+    if (!form.roadAddress)           { alert('주소 찾기를 통해 주소를 입력해주세요.'); return false; }
     if (!form.detailAddressExtra.trim()) { alert('상세 주소를 입력해주세요.'); return false; }
-    if (!form.categoryId) { alert('카테고리를 선택해주세요.'); return false; }
+    if (!form.categoryId)            { alert('카테고리를 선택해주세요.'); return false; }
     if (selectedTopics.length === 0) { alert('주제(Topic)를 1개 이상 선택해주세요.'); return false; }
     if (!form.isFree && !form.price) { alert('참가비를 입력해주세요.'); return false; }
     if (!form.noLimit && !form.capacity) { alert('모집 인원을 입력하거나 제한없음을 선택해주세요.'); return false; }
@@ -487,15 +1075,15 @@ export default function EventHost() {
       }
       for (let i = 0; i < booths.length; i++) {
         if (!booths[i].boothName.trim()) { alert(`부스 ${i + 1}의 부스명을 입력해주세요.`); return false; }
-        if (booths[i].boothPrice === '') { alert(`부스 ${i + 1}의 금액을 입력해주세요.`); return false; }
-        if (!booths[i].totalCount) { alert(`부스 ${i + 1}의 수량을 입력해주세요.`); return false; }
+        if (booths[i].boothPrice === '')  { alert(`부스 ${i + 1}의 금액을 입력해주세요.`); return false; }
+        if (!booths[i].totalCount)        { alert(`부스 ${i + 1}의 수량을 입력해주세요.`); return false; }
       }
     }
     if (hasFacility) {
       for (let i = 0; i < facis.length; i++) {
-        if (!facis[i].faciName.trim()) { alert(`부대시설 ${i + 1}의 시설명을 입력해주세요.`); return false; }
-        if (facis[i].faciPrice === '') { alert(`부대시설 ${i + 1}의 금액을 입력해주세요.`); return false; }
-        if (!facis[i].faciUnit.trim()) { alert(`부대시설 ${i + 1}의 단위를 입력해주세요.`); return false; }
+        if (!facis[i].faciName.trim())  { alert(`부대시설 ${i + 1}의 시설명을 입력해주세요.`); return false; }
+        if (facis[i].faciPrice === '')   { alert(`부대시설 ${i + 1}의 금액을 입력해주세요.`); return false; }
+        if (!facis[i].faciUnit.trim())   { alert(`부대시설 ${i + 1}의 단위를 입력해주세요.`); return false; }
       }
     }
     return true;
@@ -508,19 +1096,19 @@ export default function EventHost() {
       const eventInfo = {
         ...form,
         detailAdr: `${form.roadAddress} ${form.detailAddressExtra}`.trim(),
-        price: form.isFree ? 0 : Number(form.price),
-        capacity: form.noLimit ? null : Number(form.capacity),
-        category: { categoryId: Number(form.categoryId) },
-        region: { regionId: Number(form.regionId) },
-        topicIds: selectedTopics.join(','),
-        hashtagIds: selectedHashtags.join(','),
+        price:     form.isFree ? 0 : Number(form.price),
+        capacity:  form.noLimit ? null : Number(form.capacity),
+        category:  { categoryId: Number(form.categoryId) },
+        region:    { regionId:   Number(form.regionId) },
+        topicIds:  selectedTopics.join(','),
+        hashtagIds:selectedHashtags.join(','),
         hasBooth, hasFacility,
       };
       delete eventInfo.categoryId; delete eventInfo.regionId;
       const eventData = {
         eventInfo,
-        booths: hasBooth ? booths.map((b) => ({ ...b, boothPrice: Number(b.boothPrice), totalCount: Number(b.totalCount) })) : [],
-        facilities: hasFacility ? facis.map((f) => ({ ...f, faciPrice: Number(f.faciPrice), totalCount: f.hasCount ? Number(f.totalCount) : null })) : [],
+        booths:     hasBooth    ? booths.map((b) => ({ ...b, boothPrice: Number(b.boothPrice), totalCount: Number(b.totalCount) })) : [],
+        facilities: hasFacility ? facis.map((f)  => ({ ...f, faciPrice:  Number(f.faciPrice),  totalCount: f.hasCount ? Number(f.totalCount) : null })) : [],
       };
       const newId = await createEvent({ eventData, thumbnail, detailFiles, boothFiles });
       alert('행사가 등록되었습니다!');
@@ -545,12 +1133,16 @@ export default function EventHost() {
           </p>
         </div>
 
-        {/* SECTION 1 — 행사 기본 정보 */}
+        {/* SECTION 1 */}
         <SectionCard step="1" title="행사 기본 정보" icon="📋">
           <div style={{ display: 'flex', gap: 20, marginBottom: 18 }}>
-            <div style={{ width: 170, flexShrink: 0 }}>
-              <ImageUploadBox label="썸네일 이미지" required file={thumbnail} onChange={setThumbnail} style={{ height: 170 }} />
-            </div>
+            <ThumbnailSection
+              thumbnail={thumbnail}
+              setThumbnail={setThumbnail}
+              formTitle={form.title}
+              formStartDate={form.startDate}
+              formEndDate={form.endDate}
+            />
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
                 <Label required>제목</Label>
@@ -606,7 +1198,7 @@ export default function EventHost() {
                     setF('startRecruit', e.target.value);
                     if (form.endRecruit && e.target.value > form.endRecruit) setF('endRecruit', '');
                     if (form.boothStartRecruit && e.target.value <= form.boothStartRecruit) setF('boothStartRecruit', '');
-                    if (form.boothEndRecruit && e.target.value <= form.boothEndRecruit) setF('boothEndRecruit', '');
+                    if (form.boothEndRecruit   && e.target.value <= form.boothEndRecruit)   setF('boothEndRecruit', '');
                   }} />
               </div>
               <div>
@@ -640,7 +1232,7 @@ export default function EventHost() {
           </div>
         </SectionCard>
 
-        {/* SECTION 2 — 상세 설명 */}
+        {/* SECTION 2 */}
         <SectionCard step="2" title="상세 설명 / 준비물 / 유의사항" icon="📝">
           <div style={{ marginBottom: 16 }}>
             <Label>상세설명 / 준비물 / 유의사항</Label>
@@ -651,9 +1243,7 @@ export default function EventHost() {
 
         {/* AI 분석 버튼 */}
         <div style={{ marginBottom: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-          <button
-            onClick={handleAiSuggest}
-            disabled={aiLoading}
+          <button onClick={handleAiSuggest} disabled={aiLoading}
             style={{
               padding: '14px 44px', borderRadius: 50,
               background: aiLoading ? '#E5E7EB' : 'linear-gradient(135deg,#6366F1,#8B5CF6)',
@@ -669,9 +1259,8 @@ export default function EventHost() {
           </span>
         </div>
 
-        {/* SECTION 3 — 추가 정보 */}
+        {/* SECTION 3 */}
         <SectionCard step="3" title="추가 정보" icon="📌">
-          {/* 한줄 설명 */}
           <div style={{ marginBottom: 18 }}>
             <Label required>
               한 줄 설명
@@ -684,42 +1273,29 @@ export default function EventHost() {
               style={aiSuggestedFields.simpleExplain ? { borderColor: '#8B5CF6', background: '#FAF5FF' } : {}}
             />
           </div>
-
           <Divider />
-
           <G2 style={{ marginBottom: 18 }}>
             <div>
               <Label required>
                 카테고리
                 {aiSuggestedFields.category && <AiBadge />}
               </Label>
-              <Select
-                value={form.categoryId}
+              <Select value={form.categoryId}
                 onChange={(e) => { setF('categoryId', e.target.value); setAiSuggestedFields((p) => ({ ...p, category: false })); }}
                 style={aiSuggestedFields.category ? { borderColor: '#8B5CF6', background: '#FAF5FF' } : {}}>
                 <option value="">선택</option>
                 {CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </Select>
             </div>
-            <TopicSelector
-              label="주제 (Topic)" required hint="(최대 5가지)"
-              items={TOPICS} selected={selectedTopics} onToggle={toggleTopic}
-              aiSuggested={aiSuggestedFields.topics}
-            />
+            <TopicSelector label="주제 (Topic)" required hint="(최대 5가지)"
+              items={TOPICS} selected={selectedTopics} onToggle={toggleTopic} aiSuggested={aiSuggestedFields.topics} />
           </G2>
-
           <Divider />
-
           <div style={{ marginBottom: 18 }}>
-            <HashtagSelector
-              label="해시태그" hint="(분위기/감성 태그, 최대 5가지)"
-              items={HASHTAGS} selected={selectedHashtags} onToggle={toggleHashtag}
-              aiSuggested={aiSuggestedFields.hashtags}
-            />
+            <HashtagSelector label="해시태그" hint="(분위기/감성 태그, 최대 5가지)"
+              items={HASHTAGS} selected={selectedHashtags} onToggle={toggleHashtag} aiSuggested={aiSuggestedFields.hashtags} />
           </div>
-
           <Divider />
-
           <G2>
             <div>
               <Label required>유료 / 무료</Label>
@@ -732,7 +1308,7 @@ export default function EventHost() {
                 ))}
               </div>
               {!form.isFree && <Input type="number" min={0} placeholder="참가비 금액 (원)" value={form.price} onChange={(e) => setF('price', e.target.value)} />}
-              {form.isFree && <div style={{ padding: '9px 13px', background: '#F0FDF4', borderRadius: 10, fontSize: 13, color: '#16A34A', fontWeight: 700 }}>0 원</div>}
+              {form.isFree  && <div style={{ padding: '9px 13px', background: '#F0FDF4', borderRadius: 10, fontSize: 13, color: '#16A34A', fontWeight: 700 }}>0 원</div>}
             </div>
             <div>
               <Label required>모집 정원</Label>
@@ -741,12 +1317,12 @@ export default function EventHost() {
                 제한 없음
               </label>
               {!form.noLimit && <Input type="number" min={1} placeholder="모집 인원 수" value={form.capacity} onChange={(e) => setF('capacity', e.target.value)} />}
-              {form.noLimit && <div style={{ padding: '9px 13px', background: '#F0FDF4', borderRadius: 10, fontSize: 13, color: '#16A34A', fontWeight: 700 }}>제한 없음</div>}
+              {form.noLimit  && <div style={{ padding: '9px 13px', background: '#F0FDF4', borderRadius: 10, fontSize: 13, color: '#16A34A', fontWeight: 700 }}>제한 없음</div>}
             </div>
           </G2>
         </SectionCard>
 
-        {/* SECTION 4 — 주최자 정보 */}
+        {/* SECTION 4 */}
         <SectionCard step="4" title="주최자 정보" icon="🏢">
           <div style={{ padding: '14px 16px', background: '#F9FAFB', borderRadius: 12, border: '1px solid #E5E7EB' }}>
             {hostInfo.profileImg && (
@@ -760,8 +1336,8 @@ export default function EventHost() {
               로그인한 계정 정보로 자동 설정됩니다. 수정이 필요하면 마이페이지에서 변경해주세요.
             </div>
             <G2>
-              <div><Label>주최자/기업 명</Label><Input value={hostInfo.name || '(이름 없음)'} readOnly style={{ background: '#F3F4F6', color: '#6B7280', cursor: 'not-allowed' }} /></div>
-              <div><Label>전화번호</Label><Input value={hostInfo.phone || '(전화번호 없음)'} readOnly style={{ background: '#F3F4F6', color: '#6B7280', cursor: 'not-allowed' }} /></div>
+              <div><Label>주최자/기업 명</Label><Input value={hostInfo.name  || '(이름 없음)'}     readOnly style={{ background: '#F3F4F6', color: '#6B7280', cursor: 'not-allowed' }} /></div>
+              <div><Label>전화번호</Label>      <Input value={hostInfo.phone || '(전화번호 없음)'} readOnly style={{ background: '#F3F4F6', color: '#6B7280', cursor: 'not-allowed' }} /></div>
             </G2>
             <div style={{ marginTop: 12 }}>
               <Label>이메일</Label>
@@ -770,7 +1346,7 @@ export default function EventHost() {
           </div>
         </SectionCard>
 
-        {/* SECTION 5 — 부스 & 부대시설 */}
+        {/* SECTION 5 */}
         <SectionCard step="5" title="부스 & 부대시설" icon="🏪">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#F9FAFB', borderRadius: 12, marginBottom: hasBooth ? 16 : 0 }}>
             <div>

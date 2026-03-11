@@ -58,3 +58,25 @@ export async function suggestTags({ title, description, thumbnail = null }) {
   if (!res.ok) throw new Error(json?.message || 'AI 분석에 실패했어요.');
   return json;
 }
+
+/**
+ * AI 이미지 생성 (썸네일용)
+ * POST /api/ai/image/generate
+ */
+export async function generateAiImage({ title, dateRange, fontColor, fontSize, fontStyle, stylePrompt }) {
+  const res = await fetch('http://localhost:8000/ai/image/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      title,
+      date_range: dateRange,
+      font_color: fontColor   || '#FFFFFF',
+      font_size:  fontSize    || 72,
+      font_style: fontStyle   || 'malgun',
+      style_prompt: stylePrompt || null,
+    }),
+  });
+  const json = await res.json().catch(() => null);
+  if (!res.ok) throw new Error(json?.error || 'AI 이미지 생성에 실패했어요.');
+  return json.image_base64;
+}

@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import Header from '../../../shared/components/common/Header';
 import Footer from '../../../shared/components/common/Footer';
 import { fetchEventList, fetchRecommendEvents } from '../api/EventlistApi';
+import AiChatWidget from '../../../shared/components/ai/AiChatWidget';
 
 
 const CITY_IDS = {
@@ -474,7 +475,8 @@ const EventList = () => {
                 </div>
             </main>
             <Footer />
-        </div>
+          <AiChatWidget pageType="board" />
+</div>
     );
 };
 

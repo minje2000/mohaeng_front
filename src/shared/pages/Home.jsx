@@ -6,6 +6,7 @@ import { apiJson } from '../../app/http/request';
 import NotificationBell from "../../features/notification/components/NotificationBell";
 import { useAuth } from '../../app/providers/AuthProvider';
 import { tokenStore } from '../../app/http/tokenStore';
+import AiChatWidget from '../components/ai/AiChatWidget';
 
 const REGION_CENTER = {
     서울: { slug: "seoul", id: 1100000000 },
@@ -439,7 +440,8 @@ export default function Home() {
               lineHeight: "1.4",
             }}
           />
-        </div>
+          <AiChatWidget pageType="map" />
+</div>
       </section>
     </main>
   );

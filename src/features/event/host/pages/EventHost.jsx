@@ -1,7 +1,7 @@
 // src/features/event/host/pages/EventHost.jsx
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createEvent } from '../api/EventHostApi';
+import { createEvent, suggestTags } from '../api/EventHostApi';
 import Header from '../../../../shared/components/common/Header';
 import { apiJson } from '../../../../app/http/request';
 
@@ -173,7 +173,16 @@ const dayBefore = (dateStr) => {
 
 const PHOTO_BASE = 'http://localhost:8080/upload_files/photo';
 
-// ─── 공통 UI ──────────────────────────────────────────────────
+// ── AI 추천 뱃지 ─────────────────────────────────────────────
+const AiBadge = () => (
+  <span style={{
+    display: 'inline-block', marginLeft: 6, padding: '1px 6px',
+    background: 'linear-gradient(135deg,#6366F1,#8B5CF6)', color: '#fff',
+    borderRadius: 8, fontSize: 10, fontWeight: 800, verticalAlign: 'middle',
+  }}>✨ AI추천!</span>
+);
+
+// ── 공통 UI ──────────────────────────────────────────────────
 const Label = ({ children, required }) => (
   <label style={{ display: 'block', fontSize: 13, fontWeight: 800, color: '#374151', marginBottom: 5 }}>
     {children}
@@ -238,8 +247,7 @@ const ImageUploadBox = ({ label, required, file, onChange, style }) => {
         ) : (
           <div style={{ textAlign: 'center', color: '#D97706' }}>
             <div style={{ fontSize: 32, marginBottom: 6 }}>🖼️</div>
-            <div style={{ fontSize: 12, fontWeight: 700 }}>'여기'를 눌러</div>
-            <div style={{ fontSize: 12, fontWeight: 700 }}>이미지를 선택하세요</div>
+            <div style={{ fontSize: 12, fontWeight: 700 }}>여기를 눌러 이미지를 선택하세요</div>
           </div>
         )}
         {preview && (
@@ -273,9 +281,12 @@ const MultiImageUpload = ({ label, files, onChange }) => {
   );
 };
 
-const TopicSelector = ({ label, required, hint, items, selected, onToggle, badgeColor = '#FFD700', badgeTextColor = '#111' }) => (
+const TopicSelector = ({ label, required, hint, items, selected, onToggle, aiSuggested }) => (
   <div>
-    <Label required={required}>{label} <span style={{ fontSize: 11, color: '#9CA3AF', fontWeight: 600 }}>{hint}</span></Label>
+    <Label required={required}>
+      {label} <span style={{ fontSize: 11, color: '#9CA3AF', fontWeight: 600 }}>{hint}</span>
+      {aiSuggested && <AiBadge />}
+    </Label>
     <Select value="" onChange={(e) => { if (e.target.value) onToggle(Number(e.target.value)); }}>
       <option value="">{label} 추가</option>
       {items.map((t) => (<option key={t.id} value={t.id} disabled={selected.includes(t.id)}>{selected.includes(t.id) ? '✓ ' : ''}{t.name}</option>))}
@@ -285,7 +296,7 @@ const TopicSelector = ({ label, required, hint, items, selected, onToggle, badge
         {selected.map((id) => {
           const t = items.find((h) => h.id === id);
           return (
-            <span key={id} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 20, background: badgeColor, color: badgeTextColor, fontSize: 12, fontWeight: 800 }}>
+            <span key={id} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 20, background: '#FFD700', color: '#111', fontSize: 12, fontWeight: 800 }}>
               #{t?.name}
               <button onClick={() => onToggle(id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 900, color: '#555', padding: 0, lineHeight: 1 }}>✕</button>
             </span>
@@ -296,9 +307,12 @@ const TopicSelector = ({ label, required, hint, items, selected, onToggle, badge
   </div>
 );
 
-const HashtagSelector = ({ label, hint, items, selected, onToggle, badgeColor = '#E0F2FE', badgeTextColor = '#0369A1' }) => (
+const HashtagSelector = ({ label, hint, items, selected, onToggle, aiSuggested }) => (
   <div>
-    <Label>{label} <span style={{ fontSize: 11, color: '#9CA3AF', fontWeight: 600 }}>{hint}</span></Label>
+    <Label>
+      {label} <span style={{ fontSize: 11, color: '#9CA3AF', fontWeight: 600 }}>{hint}</span>
+      {aiSuggested && <AiBadge />}
+    </Label>
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px 8px', padding: '14px 16px', borderRadius: 12, border: '1.5px solid #E5E7EB', background: '#FAFAFA' }}>
       {items.map((t) => {
         const checked = selected.includes(t.id);
@@ -315,7 +329,7 @@ const HashtagSelector = ({ label, hint, items, selected, onToggle, badgeColor = 
         {selected.map((id) => {
           const t = items.find((h) => h.id === id);
           return (
-            <span key={id} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 20, background: badgeColor, color: badgeTextColor, fontSize: 12, fontWeight: 800 }}>
+            <span key={id} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 20, background: '#E0F2FE', color: '#0369A1', fontSize: 12, fontWeight: 800 }}>
               #{t?.name}
               <button onClick={() => onToggle(id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 900, color: '#0369A1', padding: 0, lineHeight: 1 }}>✕</button>
             </span>
@@ -328,19 +342,23 @@ const HashtagSelector = ({ label, hint, items, selected, onToggle, badgeColor = 
 
 const checkStyle = { accentColor: '#FFD700', width: 16, height: 16, cursor: 'pointer' };
 
-// ─── 메인 ──────────────────────────────────────────────────────
 export default function EventHost() {
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
-  const today = new Date().toISOString().split('T')[0];
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiSuggestedFields, setAiSuggestedFields] = useState({
+    simpleExplain: false, category: false, topics: false, hashtags: false,
+  });
 
+  const today = new Date().toISOString().split('T')[0];
   const [thumbnail, setThumbnail] = useState(null);
   const [detailFiles, setDetailFiles] = useState([]);
   const [boothFiles, setBoothFiles] = useState([]);
 
   const [selectedTopics, setSelectedTopics] = useState([]);
   const toggleTopic = (id) => {
+    setAiSuggestedFields((p) => ({ ...p, topics: false }));
     setSelectedTopics((prev) => {
       if (prev.includes(id)) return prev.filter((x) => x !== id);
       if (prev.length >= 5) { alert('주제는 최대 5개까지 선택할 수 있어요.'); return prev; }
@@ -350,6 +368,7 @@ export default function EventHost() {
 
   const [selectedHashtags, setSelectedHashtags] = useState([]);
   const toggleHashtag = (id) => {
+    setAiSuggestedFields((p) => ({ ...p, hashtags: false }));
     setSelectedHashtags((prev) => {
       if (prev.includes(id)) return prev.filter((x) => x !== id);
       if (prev.length >= 5) { alert('해시태그는 최대 5개까지 선택할 수 있어요.'); return prev; }
@@ -367,28 +386,12 @@ export default function EventHost() {
   const [hostInfo, setHostInfo] = useState({ name: '', email: '', phone: '', profileImg: '' });
 
   useEffect(() => {
-    apiJson()
-      .get('/api/user/me')
-      .then((res) => {
-        const d = res.data?.data || res.data;
-        if (!d || (!d.name && !d.email)) {
-          alert('로그인이 필요한 서비스입니다.');
-          navigate('/login');
-          return;
-        }
-        setHostInfo({
-          name: d.name || '',
-          email: d.email || '',
-          phone: d.phone || '',
-          profileImg: d.profileImg || '',
-        });
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.warn('주최자 정보 로딩 실패:', err);
-        alert('로그인이 필요한 서비스입니다.');
-        navigate('/login');
-      });
+    apiJson().get('/api/user/me').then((res) => {
+      const d = res.data?.data || res.data;
+      if (!d || (!d.name && !d.email)) { alert('로그인이 필요한 서비스입니다.'); navigate('/login'); return; }
+      setHostInfo({ name: d.name || '', email: d.email || '', phone: d.phone || '', profileImg: d.profileImg || '' });
+      setLoading(false);
+    }).catch(() => { alert('로그인이 필요한 서비스입니다.'); navigate('/login'); });
   }, [navigate]);
 
   const [form, setForm] = useState({
@@ -402,10 +405,7 @@ export default function EventHost() {
   const setF = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
   const openAddressSearch = () => {
-    if (!window.daum?.Postcode) {
-      alert('주소 검색 스크립트가 로드되지 않았습니다.\nindex.html <head>에 아래를 추가해주세요:\n<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>');
-      return;
-    }
+    if (!window.daum?.Postcode) { alert('주소 검색 스크립트가 로드되지 않았습니다.'); return; }
     new window.daum.Postcode({
       oncomplete: (data) => {
         setF('zipCode', data.zonecode);
@@ -422,21 +422,48 @@ export default function EventHost() {
 
   const minEndDate = form.startDate || today;
   const minEndRecruit = form.startRecruit || today;
-  // ✅ 수정 1: 참여 모집 종료일 max = 행사 시작일 하루 전
   const maxEndRecruit = dayBefore(form.startDate) || '';
   const minBoothEndRecruit = form.boothStartRecruit || '';
   const minEndTime = form.startDate === form.endDate ? form.startTime || '' : '';
-
-  // 부스 모집 max = 참여 모집 시작일 - 1일
   const boothMaxDate = dayBefore(form.startRecruit);
-
-  // ✅ 수정 2: 부스 날짜가 오늘 이전인지 여부 (경고용, 차단 아님)
   const boothStartIsPast = form.boothStartRecruit && form.boothStartRecruit < today;
   const boothEndIsPast = form.boothEndRecruit && form.boothEndRecruit < today;
 
-  const handleBoothToggle = (v) => {
-    setHasBooth(v);
-    if (!v) setHasFacility(false);
+  const handleBoothToggle = (v) => { setHasBooth(v); if (!v) setHasFacility(false); };
+
+  // ── AI 분석 호출 ──────────────────────────────────────────────
+  const handleAiSuggest = async () => {
+    if (!form.title.trim()) { alert('먼저 행사 제목을 입력해주세요.'); return; }
+    if (!form.description.trim()) { alert('먼저 상세 설명을 입력해주세요.'); return; }
+    setAiLoading(true);
+    try {
+      const result = await suggestTags({ title: form.title, description: form.description, thumbnail });
+      if (result.simpleExplain) {
+        setF('simpleExplain', result.simpleExplain);
+        setAiSuggestedFields((p) => ({ ...p, simpleExplain: true }));
+      }
+      if (result.categoryId) {
+        setF('categoryId', String(result.categoryId));
+        setAiSuggestedFields((p) => ({ ...p, category: true }));
+      }
+      if (result.topicIds && result.topicIds.length > 0) {
+        setSelectedTopics(result.topicIds.slice(0, 5));
+        setAiSuggestedFields((p) => ({ ...p, topics: true }));
+      }
+      if (result.hashtagNames && result.hashtagNames.length > 0) {
+        const matchedIds = result.hashtagNames
+          .map((name) => HASHTAGS.find((h) => h.name === name)?.id)
+          .filter(Boolean).slice(0, 5);
+        if (matchedIds.length > 0) {
+          setSelectedHashtags(matchedIds);
+          setAiSuggestedFields((p) => ({ ...p, hashtags: true }));
+        }
+      }
+    } catch (e) {
+      alert(e.message || 'AI 분석에 실패했어요. 다시 시도해주세요.');
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   const validate = () => {
@@ -487,12 +514,9 @@ export default function EventHost() {
         region: { regionId: Number(form.regionId) },
         topicIds: selectedTopics.join(','),
         hashtagIds: selectedHashtags.join(','),
-        hasBooth,
-        hasFacility,
+        hasBooth, hasFacility,
       };
-      delete eventInfo.categoryId;
-      delete eventInfo.regionId;
-
+      delete eventInfo.categoryId; delete eventInfo.regionId;
       const eventData = {
         eventInfo,
         booths: hasBooth ? booths.map((b) => ({ ...b, boothPrice: Number(b.boothPrice), totalCount: Number(b.totalCount) })) : [],
@@ -532,10 +556,6 @@ export default function EventHost() {
                 <Label required>제목</Label>
                 <Input placeholder="행사 제목을 입력하세요" value={form.title} onChange={(e) => setF('title', e.target.value)} />
               </div>
-              <div>
-                <Label required>한 줄 설명</Label>
-                <Input placeholder="행사를 한 줄로 소개해주세요" value={form.simpleExplain} onChange={(e) => setF('simpleExplain', e.target.value)} />
-              </div>
               <G2>
                 <div>
                   <Label required>행사 시작일</Label>
@@ -543,7 +563,6 @@ export default function EventHost() {
                     onChange={(e) => {
                       setF('startDate', e.target.value);
                       if (form.endDate && e.target.value > form.endDate) setF('endDate', '');
-                      // 행사 시작일 변경 시 모집 종료일이 새 max를 초과하면 초기화
                       const newMax = dayBefore(e.target.value);
                       if (newMax && form.endRecruit && form.endRecruit > newMax) setF('endRecruit', '');
                     }} />
@@ -576,7 +595,6 @@ export default function EventHost() {
             <div style={{ fontSize: 13, fontWeight: 800, color: '#92400E', marginBottom: 4 }}>📅 행사 참여 모집 기간</div>
             {form.startDate && (
               <div style={{ fontSize: 11, color: '#B45309', marginBottom: 10 }}>
-                {/* ✅ 수정 1: "하루 전까지" 안내 문구 */}
                 모집 종료일은 행사 시작일 하루 전({dayBefore(form.startDate)})까지 가능해요.
               </div>
             )}
@@ -622,24 +640,87 @@ export default function EventHost() {
           </div>
         </SectionCard>
 
-        {/* SECTION 2 — 추가 정보 */}
-        <SectionCard step="2" title="추가 정보" icon="📌">
+        {/* SECTION 2 — 상세 설명 */}
+        <SectionCard step="2" title="상세 설명 / 준비물 / 유의사항" icon="📝">
+          <div style={{ marginBottom: 16 }}>
+            <Label>상세설명 / 준비물 / 유의사항</Label>
+            <Textarea rows={6} placeholder="행사 상세 설명, 준비물, 유의사항 등을 자유롭게 작성해주세요." value={form.description} onChange={(e) => setF('description', e.target.value)} />
+          </div>
+          <MultiImageUpload label="상세 이미지 (여러 장 가능)" files={detailFiles} onChange={setDetailFiles} />
+        </SectionCard>
+
+        {/* AI 분석 버튼 */}
+        <div style={{ marginBottom: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+          <button
+            onClick={handleAiSuggest}
+            disabled={aiLoading}
+            style={{
+              padding: '14px 44px', borderRadius: 50,
+              background: aiLoading ? '#E5E7EB' : 'linear-gradient(135deg,#6366F1,#8B5CF6)',
+              border: 'none', color: aiLoading ? '#9CA3AF' : '#fff',
+              fontWeight: 900, fontSize: 15, cursor: aiLoading ? 'not-allowed' : 'pointer',
+              boxShadow: aiLoading ? 'none' : '0 4px 20px rgba(99,102,241,0.4)',
+              display: 'flex', alignItems: 'center', gap: 10, transition: 'all 0.2s',
+            }}>
+            {aiLoading ? '✨ AI가 분석 중이에요...' : '✨ AI로 추가 정보 자동 입력하기'}
+          </button>
+          <span style={{ fontSize: 12, color: '#9CA3AF', fontWeight: 600 }}>
+            제목과 상세설명을 입력하면 AI가 카테고리/주제/해시태그를 자동으로 추천해줘요
+          </span>
+        </div>
+
+        {/* SECTION 3 — 추가 정보 */}
+        <SectionCard step="3" title="추가 정보" icon="📌">
+          {/* 한줄 설명 */}
+          <div style={{ marginBottom: 18 }}>
+            <Label required>
+              한 줄 설명
+              {aiSuggestedFields.simpleExplain && <AiBadge />}
+            </Label>
+            <Input
+              placeholder="행사를 한 줄로 소개해주세요"
+              value={form.simpleExplain}
+              onChange={(e) => { setF('simpleExplain', e.target.value); setAiSuggestedFields((p) => ({ ...p, simpleExplain: false })); }}
+              style={aiSuggestedFields.simpleExplain ? { borderColor: '#8B5CF6', background: '#FAF5FF' } : {}}
+            />
+          </div>
+
+          <Divider />
+
           <G2 style={{ marginBottom: 18 }}>
             <div>
-              <Label required>카테고리</Label>
-              <Select value={form.categoryId} onChange={(e) => setF('categoryId', e.target.value)}>
+              <Label required>
+                카테고리
+                {aiSuggestedFields.category && <AiBadge />}
+              </Label>
+              <Select
+                value={form.categoryId}
+                onChange={(e) => { setF('categoryId', e.target.value); setAiSuggestedFields((p) => ({ ...p, category: false })); }}
+                style={aiSuggestedFields.category ? { borderColor: '#8B5CF6', background: '#FAF5FF' } : {}}>
                 <option value="">선택</option>
                 {CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </Select>
             </div>
-            <TopicSelector label="주제 (Topic)" required hint="(최대 5가지)" items={TOPICS} selected={selectedTopics} onToggle={toggleTopic} />
+            <TopicSelector
+              label="주제 (Topic)" required hint="(최대 5가지)"
+              items={TOPICS} selected={selectedTopics} onToggle={toggleTopic}
+              aiSuggested={aiSuggestedFields.topics}
+            />
           </G2>
+
           <Divider />
+
           <div style={{ marginBottom: 18 }}>
-            <HashtagSelector label="해시태그" hint="(분위기/감성 태그, 최대 5가지)" items={HASHTAGS} selected={selectedHashtags} onToggle={toggleHashtag} />
+            <HashtagSelector
+              label="해시태그" hint="(분위기/감성 태그, 최대 5가지)"
+              items={HASHTAGS} selected={selectedHashtags} onToggle={toggleHashtag}
+              aiSuggested={aiSuggestedFields.hashtags}
+            />
           </div>
+
           <Divider />
-          <G2 style={{ marginBottom: 18 }}>
+
+          <G2>
             <div>
               <Label required>유료 / 무료</Label>
               <div style={{ display: 'flex', gap: 16, marginBottom: 8 }}>
@@ -665,46 +746,28 @@ export default function EventHost() {
           </G2>
         </SectionCard>
 
-        {/* SECTION 3 — 주최자 정보 */}
-        <SectionCard step="3" title="주최자 정보" icon="🏢">
-          <div style={{ padding: '14px 16px', background: '#F9FAFB', borderRadius: 12, border: '1px solid #E5E7EB', marginBottom: 4 }}>
+        {/* SECTION 4 — 주최자 정보 */}
+        <SectionCard step="4" title="주최자 정보" icon="🏢">
+          <div style={{ padding: '14px 16px', background: '#F9FAFB', borderRadius: 12, border: '1px solid #E5E7EB' }}>
             {hostInfo.profileImg && (
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
-                <img
-                  src={`${PHOTO_BASE}/${hostInfo.profileImg}`}
-                  alt="프로필 사진"
+                <img src={`${PHOTO_BASE}/${hostInfo.profileImg}`} alt="프로필"
                   style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover', border: '2px solid #E5E7EB' }}
-                  onError={(e) => { e.target.style.display = 'none'; }}
-                />
+                  onError={(e) => { e.target.style.display = 'none'; }} />
               </div>
             )}
             <div style={{ fontSize: 12, color: '#9CA3AF', fontWeight: 700, marginBottom: 12 }}>
               로그인한 계정 정보로 자동 설정됩니다. 수정이 필요하면 마이페이지에서 변경해주세요.
             </div>
             <G2>
-              <div>
-                <Label>주최자/기업 명</Label>
-                <Input value={hostInfo.name || '(이름 정보 없음)'} readOnly style={{ background: '#F3F4F6', color: '#6B7280', cursor: 'not-allowed' }} />
-              </div>
-              <div>
-                <Label>전화번호</Label>
-                <Input value={hostInfo.phone || '(전화번호 없음)'} readOnly style={{ background: '#F3F4F6', color: '#6B7280', cursor: 'not-allowed' }} />
-              </div>
+              <div><Label>주최자/기업 명</Label><Input value={hostInfo.name || '(이름 없음)'} readOnly style={{ background: '#F3F4F6', color: '#6B7280', cursor: 'not-allowed' }} /></div>
+              <div><Label>전화번호</Label><Input value={hostInfo.phone || '(전화번호 없음)'} readOnly style={{ background: '#F3F4F6', color: '#6B7280', cursor: 'not-allowed' }} /></div>
             </G2>
             <div style={{ marginTop: 12 }}>
               <Label>이메일</Label>
               <Input value={hostInfo.email || '(이메일 없음)'} readOnly style={{ background: '#F3F4F6', color: '#6B7280', cursor: 'not-allowed' }} />
             </div>
           </div>
-        </SectionCard>
-
-        {/* SECTION 4 — 상세설명 */}
-        <SectionCard step="4" title="상세 설명 / 준비물 / 유의사항" icon="📝">
-          <div style={{ marginBottom: 16 }}>
-            <Label>상세설명 / 준비물 / 유의사항</Label>
-            <Textarea rows={6} placeholder="행사 상세 설명, 준비물, 유의사항 등을 자유롭게 작성해주세요." value={form.description} onChange={(e) => setF('description', e.target.value)} />
-          </div>
-          <MultiImageUpload label="상세 이미지 (여러 장 가능)" files={detailFiles} onChange={setDetailFiles} />
         </SectionCard>
 
         {/* SECTION 5 — 부스 & 부대시설 */}
@@ -715,8 +778,7 @@ export default function EventHost() {
               <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>행사에서 부스를 모집하나요?</div>
             </div>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>
-              <input type="checkbox" checked={hasBooth} onChange={(e) => handleBoothToggle(e.target.checked)} style={checkStyle} />
-              운영
+              <input type="checkbox" checked={hasBooth} onChange={(e) => handleBoothToggle(e.target.checked)} style={checkStyle} />운영
             </label>
           </div>
 
@@ -724,43 +786,21 @@ export default function EventHost() {
             <>
               <div style={{ padding: '14px 16px', background: '#FFFBEB', borderRadius: 12, border: '1px solid #FDE68A', marginBottom: 16 }}>
                 <div style={{ fontSize: 13, fontWeight: 800, color: '#92400E', marginBottom: 4 }}>📅 부스 모집 기간</div>
-                {form.startRecruit ? (
-                  <div style={{ fontSize: 11, color: '#B45309', marginBottom: 10 }}>
-                    ⚠️ 부스 모집 기간은 행사 참여 모집 <strong>시작일({form.startRecruit}) 이전</strong>이어야 해요.
-                  </div>
-                ) : (
-                  <div style={{ fontSize: 11, color: '#B45309', marginBottom: 10 }}>
-                    ⚠️ 먼저 위에서 행사 참여 모집 시작일을 설정해주세요.
-                  </div>
-                )}
+                {form.startRecruit
+                  ? <div style={{ fontSize: 11, color: '#B45309', marginBottom: 10 }}>⚠️ 부스 모집 기간은 참여 모집 <strong>시작일({form.startRecruit}) 이전</strong>이어야 해요.</div>
+                  : <div style={{ fontSize: 11, color: '#B45309', marginBottom: 10 }}>⚠️ 먼저 행사 참여 모집 시작일을 설정해주세요.</div>}
                 <G2>
                   <div>
                     <Label>부스 모집 시작일</Label>
-                    <Input type="date" value={form.boothStartRecruit}
-                      max={boothMaxDate}
-                      onChange={(e) => {
-                        setF('boothStartRecruit', e.target.value);
-                        if (form.boothEndRecruit && e.target.value > form.boothEndRecruit) setF('boothEndRecruit', '');
-                      }} />
-                    {/* ✅ 수정 2: 부스 시작일이 오늘 이전이면 경고 */}
-                    {boothStartIsPast && (
-                      <div style={{ marginTop: 5, fontSize: 11, color: '#DC2626', fontWeight: 700 }}>
-                        ⚠️ 부스 모집 시작일이 오늘 이전입니다. 참여자를 모집할 수 없게 됩니다.
-                      </div>
-                    )}
+                    <Input type="date" value={form.boothStartRecruit} max={boothMaxDate}
+                      onChange={(e) => { setF('boothStartRecruit', e.target.value); if (form.boothEndRecruit && e.target.value > form.boothEndRecruit) setF('boothEndRecruit', ''); }} />
+                    {boothStartIsPast && <div style={{ marginTop: 5, fontSize: 11, color: '#DC2626', fontWeight: 700 }}>⚠️ 오늘 이전 날짜입니다.</div>}
                   </div>
                   <div>
                     <Label>부스 모집 종료일</Label>
-                    <Input type="date" value={form.boothEndRecruit}
-                      min={minBoothEndRecruit}
-                      max={boothMaxDate}
+                    <Input type="date" value={form.boothEndRecruit} min={minBoothEndRecruit} max={boothMaxDate}
                       onChange={(e) => setF('boothEndRecruit', e.target.value)} />
-                    {/* ✅ 수정 2: 부스 종료일이 오늘 이전이면 경고 */}
-                    {boothEndIsPast && (
-                      <div style={{ marginTop: 5, fontSize: 11, color: '#DC2626', fontWeight: 700 }}>
-                        ⚠️ 부스 모집 종료일이 오늘 이전입니다. 참여자를 모집할 수 없게 됩니다.
-                      </div>
-                    )}
+                    {boothEndIsPast && <div style={{ marginTop: 5, fontSize: 11, color: '#DC2626', fontWeight: 700 }}>⚠️ 오늘 이전 날짜입니다.</div>}
                   </div>
                 </G2>
               </div>
@@ -769,10 +809,7 @@ export default function EventHost() {
                 <div key={i} style={{ padding: '16px', background: '#F9FAFB', borderRadius: 12, border: '1px solid #E5E7EB', marginBottom: 10 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                     <span style={{ fontSize: 12, fontWeight: 900, color: '#9CA3AF' }}>BOOTH {i + 1}</span>
-                    {booths.length > 1 && (
-                      <button onClick={() => setBooths((p) => p.filter((_, idx) => idx !== i))}
-                        style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', fontSize: 12, fontWeight: 800 }}>✕ 삭제</button>
-                    )}
+                    {booths.length > 1 && <button onClick={() => setBooths((p) => p.filter((_, idx) => idx !== i))} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', fontSize: 12, fontWeight: 800 }}>✕ 삭제</button>}
                   </div>
                   <G2>
                     <div><Label required>부스명</Label><Input placeholder="부스명" value={b.boothName} onChange={(e) => updateBooth(i, 'boothName', e.target.value)} /></div>
@@ -780,16 +817,10 @@ export default function EventHost() {
                     <div><Label required>금액 (원)</Label><Input type="number" min={0} placeholder="0 = 무료" value={b.boothPrice} onChange={(e) => updateBooth(i, 'boothPrice', e.target.value)} /></div>
                     <div><Label required>수량</Label><Input type="number" min={1} placeholder="총 부스 수량" value={b.totalCount} onChange={(e) => updateBooth(i, 'totalCount', e.target.value)} /></div>
                   </G2>
-                  <div style={{ marginTop: 10 }}>
-                    <Label>비고</Label>
-                    <Input placeholder="부스 관련 추가 안내 (선택)" value={b.boothNote} onChange={(e) => updateBooth(i, 'boothNote', e.target.value)} />
-                  </div>
+                  <div style={{ marginTop: 10 }}><Label>비고</Label><Input placeholder="부스 관련 추가 안내 (선택)" value={b.boothNote} onChange={(e) => updateBooth(i, 'boothNote', e.target.value)} /></div>
                 </div>
               ))}
-              <button onClick={() => setBooths((p) => [...p, INIT_BOOTH()])}
-                style={{ width: '100%', padding: '10px', borderRadius: 12, marginBottom: 16, border: '2px dashed #FFD700', background: '#FFFBEB', color: '#D97706', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}>
-                + 부스 추가
-              </button>
+              <button onClick={() => setBooths((p) => [...p, INIT_BOOTH()])} style={{ width: '100%', padding: '10px', borderRadius: 12, marginBottom: 16, border: '2px dashed #FFD700', background: '#FFFBEB', color: '#D97706', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}>+ 부스 추가</button>
 
               <MultiImageUpload label="부스 관련 이미지" files={boothFiles} onChange={setBoothFiles} />
               <Divider />
@@ -800,8 +831,7 @@ export default function EventHost() {
                   <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>전기/수도/책상/의자</div>
                 </div>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>
-                  <input type="checkbox" checked={hasFacility} onChange={(e) => setHasFacility(e.target.checked)} style={checkStyle} />
-                  운영
+                  <input type="checkbox" checked={hasFacility} onChange={(e) => setHasFacility(e.target.checked)} style={checkStyle} />운영
                 </label>
               </div>
 
@@ -811,10 +841,7 @@ export default function EventHost() {
                     <div key={i} style={{ padding: '16px', background: '#F9FAFB', borderRadius: 12, border: '1px solid #E5E7EB', marginBottom: 10 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                         <span style={{ fontSize: 12, fontWeight: 900, color: '#9CA3AF' }}>시설 {i + 1}</span>
-                        {facis.length > 1 && (
-                          <button onClick={() => setFacis((p) => p.filter((_, idx) => idx !== i))}
-                            style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', fontSize: 12, fontWeight: 800 }}>✕ 삭제</button>
-                        )}
+                        {facis.length > 1 && <button onClick={() => setFacis((p) => p.filter((_, idx) => idx !== i))} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', fontSize: 12, fontWeight: 800 }}>✕ 삭제</button>}
                       </div>
                       <G2>
                         <div><Label required>시설명</Label><Input placeholder="예: 전기, 인터넷, 의자" value={f.faciName} onChange={(e) => updateFaci(i, 'faciName', e.target.value)} /></div>
@@ -822,18 +849,14 @@ export default function EventHost() {
                         <div><Label required>금액 (원)</Label><Input type="number" min={0} placeholder="0 = 무료" value={f.faciPrice} onChange={(e) => updateFaci(i, 'faciPrice', e.target.value)} /></div>
                         <div>
                           <label style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, fontWeight: 700, color: '#374151', cursor: 'pointer', marginTop: 22 }}>
-                            <input type="checkbox" checked={f.hasCount} onChange={(e) => updateFaci(i, 'hasCount', e.target.checked)} style={checkStyle} />
-                            수량 관리
+                            <input type="checkbox" checked={f.hasCount} onChange={(e) => updateFaci(i, 'hasCount', e.target.checked)} style={checkStyle} />수량 관리
                           </label>
                           {f.hasCount && <Input type="number" min={1} placeholder="총 수량" value={f.totalCount} onChange={(e) => updateFaci(i, 'totalCount', e.target.value)} style={{ marginTop: 6 }} />}
                         </div>
                       </G2>
                     </div>
                   ))}
-                  <button onClick={() => setFacis((p) => [...p, INIT_FACI()])}
-                    style={{ width: '100%', padding: '10px', borderRadius: 12, border: '2px dashed #FFD700', background: '#FFFBEB', color: '#D97706', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}>
-                    + 시설 추가
-                  </button>
+                  <button onClick={() => setFacis((p) => [...p, INIT_FACI()])} style={{ width: '100%', padding: '10px', borderRadius: 12, border: '2px dashed #FFD700', background: '#FFFBEB', color: '#D97706', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}>+ 시설 추가</button>
                 </>
               )}
             </>
@@ -842,10 +865,7 @@ export default function EventHost() {
 
         {/* 하단 버튼 */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, paddingTop: 8 }}>
-          <button onClick={() => navigate(-1)}
-            style={{ padding: '12px 28px', borderRadius: 13, border: '1.5px solid #E5E7EB', background: '#fff', color: '#6B7280', fontWeight: 800, fontSize: 15, cursor: 'pointer' }}>
-            취소
-          </button>
+          <button onClick={() => navigate(-1)} style={{ padding: '12px 28px', borderRadius: 13, border: '1.5px solid #E5E7EB', background: '#fff', color: '#6B7280', fontWeight: 800, fontSize: 15, cursor: 'pointer' }}>취소</button>
           <button onClick={handleSubmit} disabled={saving}
             style={{ padding: '12px 40px', borderRadius: 13, background: saving ? '#E5E7EB' : 'linear-gradient(135deg,#FFD700,#FFC200)', border: 'none', color: saving ? '#9CA3AF' : '#111', fontWeight: 900, fontSize: 15, cursor: saving ? 'not-allowed' : 'pointer', boxShadow: saving ? 'none' : '0 4px 14px rgba(255,215,0,0.45)' }}>
             {saving ? '등록 중...' : '행사 등록하기'}

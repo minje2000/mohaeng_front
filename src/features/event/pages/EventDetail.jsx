@@ -200,6 +200,7 @@ function AiCourseSection({ ev }) {
           transport,
           festival_start_time: ev.startTime || null,
           festival_end_time:   ev.endTime   || null,
+          festival_date:       ev.startDate || null,  // ex) "2025-04-15"
         }),
       });
       if (!res.ok) throw new Error('코스 생성에 실패했어요. 잠시 후 다시 시도해주세요.');

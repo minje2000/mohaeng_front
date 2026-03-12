@@ -14,28 +14,25 @@ const Step3CorporateForm = ({ onBack }) => {
     formData,
     handleChange,
     handleIdCheck,
-    handleBNumCheck,
     handleSubmit,
     isIdAvailable,
     isLoading,
     isPasswordValid,
-    isBNumAvailable,
-    bNumMessage,
     err,
   } = useSignupForm({
     email: '',
     userPwd: '',
     name: '',
-    businessNum: '',
+    businessFile: null,
     agreement: false, 
   });
 
   // 본인인증 전용 훅
-    const {
-      phone, verifiedCode, smsMessage, isSendSms, 
-      verificationMessage, isVerified, 
-      handlePhoneChange, handleCodeChange, sendSms, verifyCode
-    } = usePhoneVerification();
+  const {
+    phone, verifiedCode, smsMessage, isSendSms, 
+    verificationMessage, isVerified, 
+    handlePhoneChange, handleCodeChange, sendSms, verifyCode
+  } = usePhoneVerification();
 
   return (
     <div className={styles.formContainer}>
@@ -109,29 +106,21 @@ const Step3CorporateForm = ({ onBack }) => {
           />
         </div>
         <div className={styles.inputRow}>
-          <label className={styles.label}>사업자 <br/>등록 번호</label>
+          <label className={styles.label}>사업자 <br/>등록증</label>
           <div className={styles.inputGroup}>
-            <div className={styles.inputWithBtn}>
-              <input
-                className={styles.input}
-                type="text"
-                name="businessNum"
-                value={formData.businessNum}
-                onChange={handleChange}
-                onInput={(e) => {e.target.value = e.target.value.replace(/[^0-9]/g, '');}}
-                placeholder="-없이 숫자만 입력"
-                maxLength={10}
-                required
-              />
-              <button type="button" className={styles.actionBtn} onClick={handleBNumCheck}>
-                조회
-              </button>
+            <input
+              className={styles.fileInput}
+              type="file"
+              name="businessFile"
+              accept="image/*,application/pdf"
+              onChange={handleChange}
+            />
+
+            <div className={formData.businessFile ? styles.fileSelectedText : styles.helperText}>
+              {formData.businessFile 
+                ? `업로드 완료` 
+                : '사업자등록증 파일을 업로드해주세요.'}
             </div>
-            {isBNumAvailable !== null && (
-              <div className={styles.helperText} style={{ color: isBNumAvailable ? 'green' : 'crimson' }}>
-                {bNumMessage}
-              </div>
-            )}
           </div>
         </div>
         <div className={styles.inputRow}>

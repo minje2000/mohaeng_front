@@ -348,7 +348,7 @@ function AiCourseSection({ ev }) {
               <div style={{ width: 40, height: 40, border: `3px solid ${YELLOW_BORDER}`, borderTopColor: YELLOW, borderRadius: '50%', animation: 'ai-spin 0.9s linear infinite' }} />
               <div style={{ fontSize: 14, fontWeight: 800, color: YELLOW_DARK }}>코스를 구성하는 중...</div>
               <div style={{ fontSize: 12, color: '#9CA3AF', textAlign: 'center', lineHeight: 1.6 }}>
-                주변 맛집 · 카페를 분석하고<br />최적의 동선을 짜고 있어요 🌼
+                주변 맛집 · 카페를 분석하고<br />최적의 동선을 짜고 있어요 {transport === '도보' ? '🚶' : '🚗'}
               </div>
               <style>{`@keyframes ai-spin { to { transform: rotate(360deg); } }`}</style>
             </div>

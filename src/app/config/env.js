@@ -13,5 +13,6 @@ export function getApiBaseUrl() {
 
 
 //   return (vite || cra || 'http://localhost:8080').replace(/\/$/, '');
-  return (cra || 'http://localhost:8080').replace(/\/$/, '');
+  // return (cra || 'http://localhost:8080').replace(/\/$/, '');
+  return (cra || '').replace(/\/$/, '');
 }

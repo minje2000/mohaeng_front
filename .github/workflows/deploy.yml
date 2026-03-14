@@ -69,4 +69,4 @@ jobs:
           docker compose pull react
 
           # 컨테이너 재시작
-          docker compose up -d react
+          docker compose up -d react --no-deps

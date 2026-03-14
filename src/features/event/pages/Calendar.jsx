@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import AiChatWidget from '../../../shared/components/ai/AiChatWidget';
 
 // ─────────────────────────────────────────────────────────────
 // 아이콘 — Home.jsx 완전 동일
@@ -640,7 +641,8 @@ export default function Calendar() {
             </div>
           </div>
         </main>
-      </div>
+        <AiChatWidget pageType="calendar" />
+</div>
     </>
   );
 }

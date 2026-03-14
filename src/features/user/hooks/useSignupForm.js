@@ -11,9 +11,6 @@ export const useSignupForm = (initialValues) => {
 
   // 중복 확인 상태 (null: 확인전, true: 사용가능, false: 중복/사용불가)
   const [isIdAvailable, setIsIdAvailable] = useState(null);
-  // 사업자 등록번호 조회 상태
-  const [isBNumAvailable, setisBNumAvailable] = useState(null);
-  const [bNumMessage, setbNumMessage] = useState('');
 
   // 실시간 비밀번호 유효성 검사
   const isPasswordValid = useMemo(() => {
@@ -21,17 +18,20 @@ export const useSignupForm = (initialValues) => {
   }, [formData.userPwd]);
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value, type, checked, files } = e.target;
 
     // 이메일이 변경되면 중복 확인 상태 초기화
     if (name === 'email') {
       setIsIdAvailable(null);
     }
 
-    // 사업자 등록번호가 변경되면 상태 초기화
-    if (name === 'businessNum') {
-      setisBNumAvailable(null);
-      setbNumMessage('');
+    // 사업자 등록증
+    if (type === 'file') {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: files[0],
+      }));
+      return;
     }
 
     setFormData((prev) => ({
@@ -66,29 +66,6 @@ export const useSignupForm = (initialValues) => {
       alert('중복 확인 중 오류가 발생했습니다.');
     }
   };
-
-  // 사업자 등록 번호 조회 핸들러
-  const handleBNumCheck = async () => {
-    if (!formData.businessNum) {
-      alert('사업자 등록번호를 입력해주세요.');
-      return;
-    }
-
-    try {
-      const res = await userApi.checkBusinessNum(formData.businessNum);
-      
-      if (res.success === true) {
-        setisBNumAvailable(true);
-        setbNumMessage(res.data);
-      } else {
-        setisBNumAvailable(false);
-        setbNumMessage(res.data);
-      }
-    } catch (error) {
-      console.error('사업자 등록번호 조회 실패:', error);
-      alert('사업자 등록번호 조회 중 오류가 발생했습니다.');
-    }
-  }
   
 
   const handleSubmit = async (e, userType, navigate, phone, isVerified) => {
@@ -108,14 +85,14 @@ export const useSignupForm = (initialValues) => {
     }
 
     // 본인 인증 검사
-    if (!isVerified){
-      alert('본인 인증 확인이 필요합니다.');
-      return;
-    }
+    // if (!isVerified){
+    //   alert('본인 인증 확인이 필요합니다.');
+    //   return;
+    // }
 
     // 사업자 등록번호 검사
-    if(userType === 'COMPANY' && !isBNumAvailable) {
-      alert('사업자 등록번호 확인이 필요합니다.');
+    if(userType === 'COMPANY' && !formData.businessFile) {
+      alert('사업자 등록증 파일을 업로드해주세요.');
       return;
     }
 
@@ -165,14 +142,11 @@ export const useSignupForm = (initialValues) => {
     formData, 
     handleChange, 
     handleIdCheck,
-    handleBNumCheck,
     handleSubmit, 
     handleReset, 
     isIdAvailable,
     isLoading, 
     isPasswordValid,
-    isBNumAvailable,
-    bNumMessage,
     err 
   };
 };

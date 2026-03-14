@@ -48,6 +48,8 @@ import UserStats from '../../features/admin/userstats/pages/UserStats';
 
 import AdminReportPage from "../../features/event/report/pages/AdminReportPage";
 
+import AdminEventModerationPage from '../../features/event/moderation/pages/AdminEventModerationPage';
+
 export const router = createBrowserRouter([
   {
     element: <MainLayout />,
@@ -90,6 +92,9 @@ export const router = createBrowserRouter([
                   { path: 'analysis', element: <EventStats /> },
                   { path: 'reports', element: <AdminReportPage /> },
                   { path: 'dormantmanage',   element: <DormantManage /> },
+
+                  { path: 'moderation', element: <AdminEventModerationPage /> },
+
                 ],
               },
             ],
@@ -124,4 +129,6 @@ export const router = createBrowserRouter([
   { path: '/oauthSuccess',       element: <OAuthSuccess /> },
   { path: '/oauthFailure',       element: <OAuthFailure /> },
   { path: '/socialSignup',       element: <SocialSignup /> },
+
+  { path: '/popup/events/:eventId', element: <EventDetail /> },
 ]);

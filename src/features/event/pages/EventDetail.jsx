@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import { fetchEventDetail } from '../api/EventDetailAPI';
 import { apiJson } from '../../../app/http/request';
@@ -45,7 +45,6 @@ const diffDays = (target) => {
   return Math.ceil((t - today) / (1000 * 60 * 60 * 24));
 };
 
-// ✅ 날짜 범위 생성 헬퍼
 const getDatesInRange = (startDate, endDate) => {
   if (!startDate || !endDate) return [];
   const dates = [];
@@ -139,6 +138,356 @@ const SirenIcon = () => (
   </svg>
 );
 
+// ══════════════════════════════════════════════════════════════
+// 🗺️ AI 여행 코스 추천 컴포넌트
+// ══════════════════════════════════════════════════════════════
+// 숙소·조식 제외 카테고리만
+const CATEGORY_STYLE = {
+  축제: { bg: '#FFFBEB', color: '#B45309', dot: 'linear-gradient(135deg,#FDE68A,#F59E0B)', icon: '🎪' },
+  맛집: { bg: '#FEE2E2', color: '#DC2626', dot: 'linear-gradient(135deg,#FCA5A5,#EF4444)', icon: '🍽️' },
+  카페: { bg: '#ECFDF5', color: '#059669', dot: 'linear-gradient(135deg,#6EE7B7,#059669)', icon: '☕' },
+  관광: { bg: '#FEF9C3', color: '#A16207', dot: 'linear-gradient(135deg,#FEF08A,#EAB308)', icon: '🗺️' },
+};
+// 숙소·조식은 렌더링에서 제외
+const EXCLUDED_CATEGORIES = ['숙소', '조식'];
+
+function AiCourseSection({ ev }) {
+  const [open,      setOpen]      = useState(false);
+  const [companion, setCompanion] = useState('연인'); // 연인 | 가족 | 혼자
+  const [transport, setTransport] = useState('자가용');
+  const [loading,   setLoading]   = useState(false);
+  const [course,    setCourse]    = useState(null);
+  const [error,     setError]     = useState('');
+
+  // 행사 시간 파싱
+  const festivalTime = ev?.startTime
+    ? `${ev.startTime}${ev.endTime ? ` ~ ${ev.endTime}` : ''}`
+    : null;
+
+  const handleGenerate = useCallback(async () => {
+    if (!ev?.lotNumberAdr && !ev?.detailAdr) {
+      setError('행사 주소 정보가 없어 코스를 생성할 수 없어요.');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    setCourse(null);
+
+    try {
+      const coords = await new Promise((resolve, reject) => {
+        if (!window.kakao?.maps) return reject(new Error('카카오맵 SDK를 찾을 수 없어요.'));
+        window.kakao.maps.load(() => {
+          const geocoder = new window.kakao.maps.services.Geocoder();
+          geocoder.addressSearch(ev.lotNumberAdr || ev.detailAdr, (result, status) => {
+            if (status === window.kakao.maps.services.Status.OK) {
+              resolve({ lat: parseFloat(result[0].y), lng: parseFloat(result[0].x) });
+            } else {
+              reject(new Error('주소를 좌표로 변환하지 못했어요.'));
+            }
+          });
+        });
+      });
+
+      const res = await fetch('http://localhost:8080/api/ai/nearby/course', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          festival_name: ev.title,
+          latitude:      coords.lat,
+          longitude:     coords.lng,
+          trip_type:     '당일치기',
+          companion,
+          transport,
+          festival_start_time: ev.startTime || null,
+          festival_end_time:   ev.endTime   || null,
+          festival_date:       ev.startDate || null,  // ex) "2025-04-15"
+        }),
+      });
+      if (!res.ok) throw new Error('코스 생성에 실패했어요. 잠시 후 다시 시도해주세요.');
+      const data = await res.json();
+      setCourse(data);
+    } catch (e) {
+      setError(e.message || '코스 생성 중 오류가 발생했어요.');
+    } finally {
+      setLoading(false);
+    }
+  }, [ev, companion, transport]);
+
+  const handleReset = () => { setCourse(null); setError(''); };
+
+  // 카카오맵 검색 URL 생성
+  const getKakaoUrl = (item) => {
+    if (item.kakao_url) return item.kakao_url;
+    if (item.place_name) return `https://map.kakao.com/link/search/${encodeURIComponent(item.place_name)}`;
+    return null;
+  };
+
+  // 숙소·조식 제외 필터
+  const filteredCourse = course?.course?.filter(
+    item => !EXCLUDED_CATEGORIES.includes(item.category)
+  ) ?? [];
+
+  // 노란 개나리 테마 색상
+  const YELLOW = '#EAB308';
+  const YELLOW_DARK = '#A16207';
+  const YELLOW_BG = '#FFFBEB';
+  const YELLOW_BORDER = '#FDE68A';
+
+  return (
+    <div style={{ borderTop: '1px solid #F3F4F6', padding: '20px 26px' }}>
+
+      {/* ── 배너 버튼 ── */}
+      <div
+        onClick={() => setOpen(o => !o)}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '16px 20px', borderRadius: 16, cursor: 'pointer', gap: 12,
+          background: 'linear-gradient(135deg, #F59E0B 0%, #EAB308 60%, #CA8A04 100%)',
+          boxShadow: '0 4px 20px rgba(234,179,8,0.4)',
+          transition: 'transform 0.18s, box-shadow 0.18s',
+        }}
+        onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(234,179,8,0.55)'; }}
+        onMouseOut={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(234,179,8,0.4)'; }}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.8)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            AI Travel Planner
+          </div>
+          <div style={{ fontSize: 16, fontWeight: 900, color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,0.15)', letterSpacing: '-0.01em' }}>
+            AI 맞춤 여행 코스 추천
+          </div>
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)', fontWeight: 500, lineHeight: 1.5 }}>
+            주변 맛집 · 카페를 조합한 당일치기 일정을 자동 생성해요
+          </div>
+        </div>
+        <div style={{
+          width: 30, height: 30, borderRadius: '50%',
+          background: 'rgba(255,255,255,0.25)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 13, color: '#fff', fontWeight: 900, flexShrink: 0,
+          transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.25s',
+        }}>▼</div>
+      </div>
+
+      {/* ── 패널 ── */}
+      {open && (
+        <div style={{
+          marginTop: 14, borderRadius: 16,
+          border: `1.5px solid ${YELLOW_BORDER}`,
+          background: YELLOW_BG, overflow: 'hidden',
+        }}>
+
+          {/* 옵션 + 생성 버튼 */}
+          {!course && !loading && (
+            <>
+              {/* 행사 시간 안내 */}
+              {festivalTime && (
+                <div style={{
+                  margin: '14px 18px 0', padding: '9px 12px',
+                  background: '#FEF3C7', borderRadius: 10, border: `1px solid ${YELLOW_BORDER}`,
+                  fontSize: 12, color: YELLOW_DARK, fontWeight: 700,
+                  display: 'flex', alignItems: 'center', gap: 6,
+                }}>
+                  🕐 행사 시간 <strong>{festivalTime}</strong> 을 반영해서 코스를 짜드려요
+                </div>
+              )}
+
+              <div style={{
+                display: 'grid', gridTemplateColumns: '1fr 1fr',
+                gap: 10, padding: '14px 18px 0',
+              }}>
+                {[
+                  { label: '👥 동행', val: companion, set: setCompanion,
+                    opts: [['연인','💑 연인'],['가족','👨‍👩‍👧 가족'],['혼자','🧍 혼자']] },
+                  { label: '🚗 이동 수단', val: transport, set: setTransport,
+                    opts: [['자가용','🚗 자가용'],['도보','🚶 도보']] },
+                ].map(({ label, val, set, opts }) => (
+                  <div key={label}>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: YELLOW_DARK, marginBottom: 6 }}>{label}</div>
+                    <select value={val} onChange={e => set(e.target.value)}
+                      style={{
+                        width: '100%', padding: '8px 10px', borderRadius: 10,
+                        border: `1.5px solid ${YELLOW_BORDER}`, fontSize: 12, fontWeight: 700,
+                        outline: 'none', cursor: 'pointer', background: '#fff', color: '#374151',
+                      }}>
+                      {opts.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                    </select>
+                  </div>
+                ))}
+              </div>
+
+              {error && (
+                <div style={{ margin: '10px 18px 0', padding: '9px 12px', background: '#FEE2E2', borderRadius: 10, fontSize: 12, color: '#DC2626', fontWeight: 700 }}>
+                  ⚠️ {error}
+                </div>
+              )}
+
+              <div style={{ padding: '14px 18px 18px' }}>
+                <button onClick={handleGenerate}
+                  style={{
+                    width: '100%', padding: '13px', borderRadius: 12, border: 'none',
+                    cursor: 'pointer', fontSize: 14, fontWeight: 900,
+                    background: `linear-gradient(135deg, #F59E0B, ${YELLOW})`,
+                    color: '#fff', boxShadow: '0 4px 14px rgba(234,179,8,0.45)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    transition: 'filter 0.15s, transform 0.15s', textShadow: '0 1px 3px rgba(0,0,0,0.15)',
+                  }}
+                  onMouseOver={e => { e.currentTarget.style.filter = 'brightness(1.07)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                  onMouseOut={e => { e.currentTarget.style.filter = 'none'; e.currentTarget.style.transform = 'none'; }}
+                >
+                  <span style={{ fontSize: 18 }}>🗺️</span>
+                  오늘 코스 짜기
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* 로딩 */}
+          {loading && (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '48px 20px' }}>
+              <div style={{ width: 40, height: 40, border: `3px solid ${YELLOW_BORDER}`, borderTopColor: YELLOW, borderRadius: '50%', animation: 'ai-spin 0.9s linear infinite' }} />
+              <div style={{ fontSize: 14, fontWeight: 800, color: YELLOW_DARK }}>코스를 구성하는 중...</div>
+              <div style={{ fontSize: 12, color: '#9CA3AF', textAlign: 'center', lineHeight: 1.6 }}>
+                주변 맛집 · 카페를 분석하고<br />최적의 동선을 짜고 있어요 {transport === '도보' ? '🚶' : '🚗'}
+              </div>
+              <style>{`@keyframes ai-spin { to { transform: rotate(360deg); } }`}</style>
+            </div>
+          )}
+
+          {/* 코스 결과 */}
+          {course && !loading && (
+            <>
+              {/* 요약 헤더 */}
+              <div style={{
+                padding: '14px 20px',
+                background: `linear-gradient(135deg, #F59E0B, ${YELLOW})`,
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+              }}>
+                <div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)', fontWeight: 700, marginBottom: 4 }}>
+                    당일치기 · {course.companion} · {transport}
+                    {festivalTime && <span style={{ marginLeft: 8 }}>· 행사 {festivalTime}</span>}
+                  </div>
+                  <div style={{ fontSize: 14, fontWeight: 900, color: '#fff', lineHeight: 1.5, textShadow: '0 1px 3px rgba(0,0,0,0.15)' }}>
+                    {course.summary}
+                  </div>
+                </div>
+                <button onClick={handleReset}
+                  style={{
+                    padding: '6px 12px', borderRadius: 8, border: '1.5px solid rgba(255,255,255,0.5)',
+                    background: 'rgba(255,255,255,0.2)', color: '#fff',
+                    fontSize: 11, fontWeight: 800, cursor: 'pointer', flexShrink: 0,
+                  }}
+                  onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.32)'}
+                  onMouseOut={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+                >🔄 다시 생성</button>
+              </div>
+
+              {/* 타임라인 */}
+              <div style={{ padding: '20px 20px 8px' }}>
+                {filteredCourse.map((item, idx) => {
+                  const cat    = CATEGORY_STYLE[item.category] || CATEGORY_STYLE['관광'];
+                  const isLast = idx === filteredCourse.length - 1;
+                  const kakaoUrl = getKakaoUrl(item);
+                  return (
+                    <div key={idx} style={{ display: 'flex', gap: 14, position: 'relative' }}>
+                      {/* 세로 연결선 */}
+                      {!isLast && (
+                        <div style={{
+                          position: 'absolute', left: 19, top: 44, width: 2,
+                          bottom: -4, background: `linear-gradient(180deg,${YELLOW_BORDER},#FEF9C3)`, zIndex: 0,
+                        }} />
+                      )}
+
+                      {/* 시간 + 아이콘 */}
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, flexShrink: 0, zIndex: 1 }}>
+                        <div style={{ fontSize: 10, fontWeight: 800, color: YELLOW_DARK, whiteSpace: 'nowrap' }}>
+                          {item.time}
+                        </div>
+                        <div style={{
+                          width: 40, height: 40, borderRadius: '50%', background: cat.dot,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 18, boxShadow: '0 2px 8px rgba(234,179,8,0.3)',
+                        }}>
+                          {cat.icon}
+                        </div>
+                      </div>
+
+                      {/* 카드 — 클릭 시 카카오맵 이동 */}
+                      <div
+                        onClick={() => kakaoUrl && window.open(kakaoUrl, '_blank')}
+                        style={{
+                          flex: 1, background: '#fff', borderRadius: 14,
+                          border: `1.5px solid ${YELLOW_BORDER}`, padding: '12px 14px',
+                          marginBottom: isLast ? 16 : 20,
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                          cursor: kakaoUrl ? 'pointer' : 'default',
+                          transition: 'box-shadow 0.15s, transform 0.12s',
+                        }}
+                        onMouseOver={e => { if (kakaoUrl) { e.currentTarget.style.boxShadow = '0 4px 16px rgba(234,179,8,0.25)'; e.currentTarget.style.transform = 'translateY(-1px)'; } }}
+                        onMouseOut={e => { e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.04)'; e.currentTarget.style.transform = 'none'; }}
+                      >
+                        {/* 장소명 + 뱃지 + 지도 링크 */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+                          <div style={{ fontSize: 14, fontWeight: 900, color: '#111' }}>{item.place_name}</div>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 8px', borderRadius: 20, background: cat.bg, color: cat.color, fontSize: 10, fontWeight: 800 }}>
+                            {item.category}
+                          </span>
+                          {kakaoUrl && (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', background: '#FAE100', color: '#3C1E1E', borderRadius: 8, fontSize: 10, fontWeight: 800 }}>
+                              지도 보기 →
+                            </span>
+                          )}
+                        </div>
+
+                        {/* 설명 */}
+                        <div style={{ fontSize: 12, color: '#6B7280', lineHeight: 1.75 }}>{item.description}</div>
+
+                        {/* 꿀팁 */}
+                        {item.tip && (
+                          <div style={{ marginTop: 8, padding: '7px 10px', background: '#FFFBEB', borderRadius: 8, borderLeft: `3px solid ${YELLOW}`, fontSize: 11, color: YELLOW_DARK, fontWeight: 700, lineHeight: 1.55 }}>
+                            💡 {item.tip}
+                          </div>
+                        )}
+
+                        {/* 주소 */}
+                        {item.address && (
+                          <div style={{ marginTop: 6, fontSize: 11, color: '#9CA3AF', display: 'flex', alignItems: 'center', gap: 4 }}>
+                            📍 {item.address}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* 하단 다시생성 */}
+              <div style={{ padding: '0 18px 18px' }}>
+                <button onClick={handleReset}
+                  style={{
+                    width: '100%', padding: '11px', borderRadius: 12,
+                    border: `1.5px solid ${YELLOW_BORDER}`, background: '#FEF3C7',
+                    color: YELLOW_DARK, fontSize: 13, fontWeight: 800, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  }}
+                  onMouseOver={e => e.currentTarget.style.background = '#FDE68A'}
+                  onMouseOut={e => e.currentTarget.style.background = '#FEF3C7'}
+                >
+                  🔄 다른 옵션으로 다시 생성하기
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
+// EventDetail 메인 컴포넌트
+// ══════════════════════════════════════════════════════════════
 export default function EventDetail() {
   const { eventId } = useParams();
   const location = useLocation();
@@ -154,8 +503,6 @@ export default function EventDetail() {
   useWishlistSyncOnEventDetail({ eventId: Number(eventId), liked, setLiked });
   const [reportOpen, setReportOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
-
-  // ✅ 날짜 선택 상태 (잔여 인원 표시용)
   const [selectedDate, setSelectedDate] = useState('');
 
   useEffect(() => {
@@ -197,8 +544,6 @@ export default function EventDetail() {
 
   const allBoothsFull = statusKey === '부스모집중' && booths?.length > 0 && booths.every((b) => b.remainCount != null && b.remainCount <= 0);
 
-  // ✅ 날짜별 정원제 — 모든 날짜가 다 마감됐을 때만 전체 마감
-  // (capacity가 없거나 dailyParticipantCounts가 없으면 마감 아님)
   const participationFull = (() => {
     if (statusKey !== '참여모집중') return false;
     if (ev.capacity == null) return false;
@@ -224,7 +569,6 @@ export default function EventDetail() {
     }
   })();
 
-  // ✅ 날짜별 잔여 인원 계산
   const availableDates  = getDatesInRange(ev.startDate, ev.endDate);
   const dailyCounts     = ev.dailyParticipantCounts ?? {};
   const capacity        = ev.capacity ?? null;
@@ -235,14 +579,7 @@ export default function EventDetail() {
     return capacity - used;
   };
 
-  // 선택된 날짜의 잔여
   const selectedRemain = selectedDate ? getRemain(selectedDate) : null;
-
-  const handleShare = () => {
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(window.location.href).then(() => alert('링크가 복사되었어요!'));
-    }
-  };
 
   return (
     <>
@@ -256,7 +593,6 @@ export default function EventDetail() {
         .ed-hero { display:flex; gap:22px; padding:26px 26px 0; }
         .ed-thumb { width:150px; height:150px; border-radius:14px; object-fit:cover; flex-shrink:0; background:#F3F4F6; }
         .ed-hero-right { flex:1; min-width:0; }
-        .ed-badge-row { display:flex; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
         .ed-badge { display:inline-flex; align-items:center; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:800; white-space:nowrap; }
         .ed-title { font-size:21px; font-weight:900; color:#111; margin:0 0 14px; line-height:1.35; word-break:keep-all; }
         .ed-tbl { width:100%; border-collapse:collapse; }
@@ -299,7 +635,6 @@ export default function EventDetail() {
         .ed-tab-content { padding:24px; min-height:200px; }
         .ed-tab-content img { max-width:100%; border-radius:10px; margin-bottom:12px; display:block; }
         .ed-empty { text-align:center; padding:32px 0; color:#D1D5DB; font-size:13px; }
-        .ed-date-select { width:100%; padding:8px 12px; borderRadius:10px; border:1.5px solid #E5E7EB; fontSize:13px; fontWeight:700; outline:none; cursor:pointer; background:#fff; }
       `}</style>
 
       <div className="ed-page">
@@ -315,6 +650,7 @@ export default function EventDetail() {
 
         <div className="ed-wrap">
           <div className="ed-card">
+
             {/* ── 히어로 ── */}
             <div className="ed-hero">
               <div style={{ position: 'relative', flexShrink: 0, width: 150, height: 150 }}>
@@ -385,7 +721,6 @@ export default function EventDetail() {
                   </tbody>
                 </table>
 
-                {/* ✅ 날짜별 잔여 인원 선택 섹션 — 참여모집중 + 정원 있을 때만 노출 */}
                 {statusKey === '참여모집중' && capacity != null && availableDates.length > 0 && (
                   <div style={{ marginTop: 14, padding: '12px 14px', background: '#FFF7ED', borderRadius: 12, border: '1px solid #FDE68A' }}>
                     <div style={{ fontSize: 11, fontWeight: 800, color: '#92400E', marginBottom: 8 }}>
@@ -407,13 +742,11 @@ export default function EventDetail() {
                         );
                       })}
                     </select>
-
-                    {/* 선택된 날짜 잔여 인원 강조 표시 */}
                     {selectedDate && (() => {
-                      const remain  = getRemain(selectedDate);
+                      const remain = getRemain(selectedDate);
                       if (remain === null) return null;
-                      const isFull  = remain <= 0;
-                      const isLow   = remain > 0 && remain <= Math.ceil(capacity * 0.3);
+                      const isFull = remain <= 0;
+                      const isLow  = remain > 0 && remain <= Math.ceil(capacity * 0.3);
                       return (
                         <div style={{
                           marginTop: 8, padding: '8px 12px', borderRadius: 10, fontSize: 13, fontWeight: 900,
@@ -435,6 +768,7 @@ export default function EventDetail() {
               </div>
             </div>
 
+            {/* 주제 / 해시태그 */}
             {(topics.length > 0 || hashtags.length > 0) && (
               <div style={{ padding: '14px 26px', borderTop: '1px solid #F3F4F6', marginTop: 22, display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {topics.length > 0 && (
@@ -462,12 +796,9 @@ export default function EventDetail() {
                 <div className="ed-host">
                   <div className="ed-avatar">
                     {hostPhoto ? (
-                      <img
-                        src={`${PHOTO_BASE}/${hostPhoto}`}
-                        alt="주최자"
+                      <img src={`${PHOTO_BASE}/${hostPhoto}`} alt="주최자"
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.textContent = '🏢'; }}
-                      />
+                        onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.textContent = '🏢'; }} />
                     ) : '🏢'}
                   </div>
                   <div>
@@ -488,30 +819,20 @@ export default function EventDetail() {
 
                   if (canClick) {
                     return (
-                      <button
-                        className="ed-main-btn active"
+                      <button className="ed-main-btn active"
                         style={{ background: alreadyDone ? '#E5E7EB' : statusUI.btnColor, color: alreadyDone ? '#9CA3AF' : statusUI.btnTextColor, cursor: 'pointer' }}
                         onClick={() => {
-                          if (alreadyDone) {
-                            alert(isParticipation ? '이미 참여 신청한 행사입니다.' : '이미 신청한 부스입니다.');
-                            return;
-                          }
+                          if (alreadyDone) { alert(isParticipation ? '이미 참여 신청한 행사입니다.' : '이미 신청한 부스입니다.'); return; }
                           navigate(statusUI.btnTo, { state: { hostId } });
-                        }}
-                      >
-                        {alreadyDone
-                          ? (isParticipation ? '✓ 이미 참여 신청됨' : '✓ 이미 부스 신청됨')
-                          : statusUI.btnLabel}
+                        }}>
+                        {alreadyDone ? (isParticipation ? '✓ 이미 참여 신청됨' : '✓ 이미 부스 신청됨') : statusUI.btnLabel}
                       </button>
                     );
                   }
-
                   return (
                     <button className="ed-main-btn inactive" disabled
                       style={{ background: isFull ? '#E5E7EB' : statusUI.btnColor, color: isFull ? '#9CA3AF' : statusUI.btnTextColor }}>
-                      {allBoothsFull ? '부스 전체 매진'
-                        : participationFull ? `정원 마감 (${ev.capacity}명 완료)`
-                        : statusUI.btnLabel}
+                      {allBoothsFull ? '부스 전체 매진' : participationFull ? `정원 마감 (${ev.capacity}명 완료)` : statusUI.btnLabel}
                     </button>
                   );
                 })()}
@@ -584,14 +905,17 @@ export default function EventDetail() {
                 <HeartIcon filled={liked} />{liked ? '관심 등록됨' : '관심 행사'}
               </button>
               <button className="ed-icon-btn" onClick={() => setShareOpen(true)} title="공유하기">
-  <ShareIcon />공유
-</button>
+                <ShareIcon />공유
+              </button>
               <button className="ed-icon-btn" title="신고하기" onClick={(e) => { e.stopPropagation(); setReportOpen(true); }}>
                 <SirenIcon />신고
               </button>
             </div>
             <ReportModal open={reportOpen} onClose={() => setReportOpen(false)} eventId={Number(eventId)} />
             <ShareModal open={shareOpen} onClose={() => setShareOpen(false)} ev={ev} />
+
+            {/* ══ ✨ AI 여행 코스 추천 ══ */}
+            <AiCourseSection ev={ev} />
 
             {/* ── 탭 ── */}
             <div className="ed-tabs">

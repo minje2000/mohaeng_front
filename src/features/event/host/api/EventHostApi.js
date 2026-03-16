@@ -61,10 +61,10 @@ export async function suggestTags({ title, description, thumbnail = null }) {
 
 /**
  * AI 이미지 생성 (썸네일용)
- * POST /api/ai/image/generate
+ * POST /ai/image/generate
  */
 export async function generateAiImage({ title, dateRange, fontColor, fontSize, fontStyle, stylePrompt }) {
-  const res = await fetch('http://localhost:8000/ai/image/generate', {
+  const res = await fetch('/ai/image/generate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

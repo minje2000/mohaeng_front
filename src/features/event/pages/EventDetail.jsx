@@ -205,7 +205,7 @@ function AiCourseSection({ ev }) {
         });
       });
 
-      const res = await fetch('http://localhost:8080/api/ai/nearby/course', {
+      const res = await fetch('/api/ai/nearby/course', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

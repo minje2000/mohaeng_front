@@ -1,6 +1,6 @@
 // src/app/router/routes.jsx
 import React from 'react';
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 
 import MainLayout from '../layouts/MainLayout';
 import UserInfoMypage, { UserInfoIndex } from '../../features/user/pages/UserInfoMypage';
@@ -49,6 +49,10 @@ import UserStats from '../../features/admin/userstats/pages/UserStats';
 import AdminReportPage from "../../features/event/report/pages/AdminReportPage";
 
 import AdminEventModerationPage from '../../features/event/moderation/pages/AdminEventModerationPage';
+import AdminAiContactPage from '../../features/admin/aicontacts/pages/AdminAiContactPage';
+import AdminAiLogPage from '../../features/admin/ailogs/pages/AdminAiLogPage';
+import AdminAiFaqPage from '../../features/admin/aifaq/pages/AdminAiFaqPage';
+import AdminAiPage from '../../features/admin/ai/pages/AdminAiPage';
 
 export const router = createBrowserRouter([
   {
@@ -94,6 +98,15 @@ export const router = createBrowserRouter([
                   { path: 'dormantmanage',   element: <DormantManage /> },
 
                   { path: 'moderation', element: <AdminEventModerationPage /> },
+                  {
+                    path: 'ai',
+                    element: <AdminAiPage />,
+                    children: [
+                      { path: 'faq', element: <AdminAiFaqPage /> },
+                      { path: 'contacts', element: <AdminAiContactPage /> },
+                      { path: 'logs', element: <AdminAiLogPage /> },
+                    ],
+                  },
 
                 ],
               },
@@ -129,6 +142,10 @@ export const router = createBrowserRouter([
   { path: '/oauthSuccess',       element: <OAuthSuccess /> },
   { path: '/oauthFailure',       element: <OAuthFailure /> },
   { path: '/socialSignup',       element: <SocialSignup /> },
+
+  { path: '/admin/ai-faqs', element: <Navigate to='/admin/ai/faq' replace /> },
+  { path: '/admin/ai-contacts', element: <Navigate to='/admin/ai/contacts' replace /> },
+  { path: '/admin/ai-logs', element: <Navigate to='/admin/ai/logs' replace /> },
 
   { path: '/popup/events/:eventId', element: <EventDetail /> },
 ]);

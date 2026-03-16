@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { tokenStore } from '../../../../app/http/tokenStore';
 import UseMyCreatedEvents from '../hooks/UseMyCreatedEvents';
 import { MypageEventApi } from '../api/MypageEventApi';
+import eventThumbUrl from '../../../../shared/utils/eventThumbUrl';
 
 function formatDateRange(startDate, endDate) {
   if (!startDate && !endDate) return '-';
@@ -47,15 +48,6 @@ function getStatusUI(ev) {
   return { key: '예정', label: '행사 예정' };
 }
 
-const BACKEND = 'http://localhost:8080';
-
-function buildThumbSrc(thumbnail) {
-  if (!thumbnail) return '/images/moheng.png';
-  const t = String(thumbnail);
-  if (t.startsWith('http')) return t;
-  if (t.startsWith('/upload_files/')) return `${BACKEND}${t}`;
-  return `${BACKEND}/upload_files/event/${t}`;
-}
 
 function statusPillStyle(statusKey) {
   const base = {
@@ -218,7 +210,7 @@ export default function EventHostMypage() {
                 <div key={ev.eventId} style={{ border: '1px solid #E5E7EB', borderRadius: 18, background: '#fff', boxShadow: '0 10px 22px rgba(17,24,39,0.06)', padding: 16, display: 'grid', gridTemplateColumns: 'minmax(290px, 1.5fr) 180px 140px 120px 96px', gap: 12, alignItems: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
                     <img
-                      src={buildThumbSrc(ev.thumbnail)}
+                      src={eventThumbUrl(ev.thumbnail)}
                       alt="thumb"
                       style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 16, border: '1px solid #E5E7EB', cursor: 'pointer', flex: '0 0 auto', background: '#F3F4F6' }}
                       onClick={() => onGoDetail(ev.eventId)}

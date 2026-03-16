@@ -6,14 +6,13 @@ import {
   removeWishlist,
   toggleWishlistNotification,
 } from '../api/wishlistApi';
+import eventThumbUrl from '../../../../shared/utils/eventThumbUrl';
 
-const UPLOAD_BASE = 'http://localhost:8080/upload_files/event';
 const PLACEHOLDER = 'https://dummyimage.com/80x80/f3f4f6/666666.png&text=Mohaeng';
 
 function toImgUrl(v) {
   if (!v || typeof v !== 'string') return null;
-  if (v.startsWith('http')) return v;
-  return `${UPLOAD_BASE}/${v}`;
+  return eventThumbUrl(v);
 }
 
 function getTitle(item) {

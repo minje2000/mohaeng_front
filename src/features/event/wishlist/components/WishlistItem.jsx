@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
 import NotificationToggle from "./NotificationToggle";
+import eventThumbUrl from '../../../../shared/utils/eventThumbUrl';
 
 //  EventDetail.jsx에서 쓰는 경로와 동일하게 맞춤
-const UPLOAD_BASE = "http://localhost:8080/upload_files/event";
 const PLACEHOLDER =
   "https://dummyimage.com/80x80/f3f4f6/666666.png&text=Mohaeng";
 
-const imgUrl = (fileName) => (fileName ? `${UPLOAD_BASE}/${fileName}` : PLACEHOLDER);
+const imgUrl = (fileName) => eventThumbUrl(fileName) || PLACEHOLDER;
 
 export default function WishlistItem({
   item,

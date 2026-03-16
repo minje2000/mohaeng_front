@@ -1,7 +1,7 @@
 // src/features/admin/eventstats/api/EventStatsAPI.js
 import { apiJson } from '../../../../app/http/request';
 
-const BASE = '/api/admin/eventstats';
+const BASE = '/api/mypage/eventstats';
 
 export const EventStatsApi = {
   // 행사 목록 (페이징 + 필터링)

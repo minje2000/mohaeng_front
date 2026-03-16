@@ -113,7 +113,7 @@ export default function ParticipationMypage() {
 
   const handleEventClick = (pct) => {
     if (!pct.eventId) return;
-    const status = (pct.eventStatus ?? '').toString();
+    const status = (pct.eventStatus ?? '').toString().toUpperCase().replace('_', '');
     if (status === 'REPORTDELETED') {
       alert('이 행사에 대한 신고가 접수되어 삭제 처리 되었습니다.');
       return;
@@ -203,7 +203,7 @@ export default function ParticipationMypage() {
           ) : paged.map((pct) => {
             const displayStatus = isPast(pct.pctDate) ? '참여완료' : '참여예정';
             const isProcessing = processingId === pct.pctId;
-            const eventStatus = (pct.eventStatus ?? '').toString().toUpperCase();
+            const eventStatus = (pct.eventStatus ?? '').toString().toUpperCase().replace('_', '');
             const isDeleted = eventStatus === 'DELETED' || eventStatus === 'REPORTDELETED';
 
             return (

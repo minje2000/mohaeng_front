@@ -6,14 +6,13 @@ import {
   removeWishlist,
   toggleWishlistNotification,
 } from '../api/wishlistApi';
+import eventThumbUrl from '../../../../shared/utils/eventThumbUrl';
 
-const UPLOAD_BASE = 'http://localhost:8080/upload_files/event';
 const PLACEHOLDER = 'https://dummyimage.com/80x80/f3f4f6/666666.png&text=Mohaeng';
 
 function toImgUrl(v) {
   if (!v || typeof v !== 'string') return null;
-  if (v.startsWith('http')) return v;
-  return `${UPLOAD_BASE}/${v}`;
+  return eventThumbUrl(v);
 }
 
 function getTitle(item) {
@@ -126,18 +125,18 @@ export default function WishMyPage() {
   }, []);
 
   const handleRowClick = (item) => {
-    if (!item?.eventId) return;
-    const status = (item?.eventStatus ?? '').toString();
-    if (status === 'REPORTDELETED') {
-      alert('이 행사에 대한 신고가 접수되어 삭제 처리 되었습니다.');
-      return;
-    }
-    if (status === 'DELETED') {
-      alert('주최자에 의하여 행사가 삭제되었습니다.');
-      return;
-    }
-    navigate(`/events/${item.eventId}`);
-  };
+  if (!item?.eventId) return;
+  const status = (item?.eventStatus ?? '').toString().toUpperCase().replace('_', '');
+  if (status === 'REPORTDELETED') {
+    alert('이 행사에 대한 신고가 접수되어 삭제 처리 되었습니다.');
+    return;
+  }
+  if (status === 'DELETED') {
+    alert('주최자에 의하여 행사가 삭제되었습니다.');
+    return;
+  }
+  navigate(`/events/${item.eventId}`);
+};
 
   const handleRemove = async (wishId) => {
     if (!wishId) return;
@@ -199,7 +198,9 @@ export default function WishMyPage() {
             const title = getTitle(item);
             const summary = getSimpleExplain(item);
             const period = getPeriod(item);
-            const isDeleted = ['DELETED', 'REPORTDELETED'].includes((item?.eventStatus ?? '').toString());
+            const isDeleted = ['DELETED', 'REPORTDELETED'].includes(
+  (item?.eventStatus ?? '').toString().toUpperCase().replace('_', '')
+);
             const notiEnabled = getNotiEnabled(item);
             const isRemoving = removingId === item.wishId;
             const isToggling = togglingId === item.wishId;

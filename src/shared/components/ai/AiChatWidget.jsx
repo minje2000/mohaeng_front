@@ -1,4 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { tokenStore } from '../../../app/http/tokenStore';
 import { fetchEventDetail } from '../../../features/event/api/EventDetailAPI';
@@ -11,24 +12,24 @@ const LOCATION_PATTERNS = [
 
 const QUICK_QUESTIONS = {
   map: [
-    '서울에서 이번 주 행사 추천해줘',
-    '전주 근처 행사 찾아줘',
-    '무료 행사 위주로 추천해줘',
+    '강남 근처에서 열리는 행사 알려줘',
+    '홍대 주변 행사 찾아줘',
+    '서울에서 열리는 행사 추천해줘',
   ],
   calendar: [
     '이번 주 행사 알려줘',
-    '주말 행사 추천해줘',
+    '이번 주말 행사 추천해줘',
     '이번 달 신청 가능한 행사 알려줘',
   ],
   board: [
     '지금 신청 가능한 행사 추천해줘',
-    '강남 근처 행사 알려줘',
-    '네트워킹 행사 찾아줘',
+    '요즘 인기 있는 행사 뭐 있어?',
+    '무료로 참여할 수 있는 행사 있어?',
   ],
   mypage: [
-    '내 관심 행사 기반으로 추천해줘',
-    '참여하기 좋은 행사 추천해줘',
-    '환불 규정 알려줘',
+    '내 행사 참여 내역 확인해줘',
+    '행사 취소하면 환불 규정 어떻게 돼?',
+    '문의는 어디서 남길 수 있어?',
   ],
 };
 
@@ -112,6 +113,29 @@ function normalizePeriod(startDate, endDate, period) {
   return [start, end].filter(Boolean).join(' ~ ');
 }
 
+function cleanRegionText(value) {
+  if (value === undefined || value === null) return '';
+  if (typeof value === 'string') return value.trim();
+  if (typeof value === 'object') {
+    const parent = String(
+      value.parentName || value.parentRegionName || ''
+    ).trim();
+    const region = String(value.regionName || value.name || '').trim();
+    if (region && parent && region.startsWith(parent)) return region;
+    return [parent, region].filter(Boolean).join(' ');
+  }
+  return String(value).trim();
+}
+
+function buildRegionText(...values) {
+  const normalized = [];
+  values.forEach((value) => {
+    const text = cleanRegionText(value);
+    if (text && !normalized.includes(text)) normalized.push(text);
+  });
+  return normalized[0] || '';
+}
+
 function extractLocationKeywords(question) {
   const source = String(question || '');
   const found = [];
@@ -184,18 +208,13 @@ function normalizeSingleEvent(item, index) {
     item?.imageUrl,
     ''
   );
-  const region = pickFirst(
-    source?.region?.regionName,
-    source?.region?.name,
-    source?.regionName,
+  const region = buildRegionText(
     source?.region,
+    source?.regionName,
     source?.lotNumberAdr,
-    item?.region?.regionName,
-    item?.region?.name,
-    item?.regionName,
     item?.region,
-    item?.lotNumberAdr,
-    ''
+    item?.regionName,
+    item?.lotNumberAdr
   );
 
   const startDate = pickFirst(
@@ -282,14 +301,11 @@ async function enrichEvents(events) {
           thumbnail: eventThumbUrl(
             pickFirst(info?.thumbnail, event.thumbnail, '/images/moheng.png')
           ),
-          region: String(
-            pickFirst(
-              info?.region?.regionName,
-              info?.region?.name,
-              event.region,
-              info?.lotNumberAdr,
-              ''
-            )
+          region: buildRegionText(
+            info?.region,
+            info?.regionName,
+            event.region,
+            info?.lotNumberAdr
           ),
           startDate: String(startDate || ''),
           endDate: String(endDate || ''),
@@ -428,7 +444,7 @@ export default function AiChatWidget({ pageType = 'board' }) {
     }
   };
 
-  return (
+  const floatingUi = (
     <>
       <button
         type="button"
@@ -438,7 +454,7 @@ export default function AiChatWidget({ pageType = 'board' }) {
           position: 'fixed',
           right: 28,
           bottom: 28,
-          zIndex: 1400,
+          zIndex: 2147483000,
           width: 64,
           height: 64,
           border: 'none',
@@ -459,10 +475,11 @@ export default function AiChatWidget({ pageType = 'board' }) {
           style={{
             position: 'fixed',
             right: 20,
+            top: 20,
             bottom: 100,
-            zIndex: 1400,
+            zIndex: 2147483001,
             width: 'min(420px, calc(100vw - 20px))',
-            height: 'min(700px, calc(100vh - 120px))',
+            maxHeight: 'calc(100vh - 40px)',
             background: 'rgba(255,255,255,0.98)',
             border: '1px solid rgba(255, 216, 77, 0.7)',
             borderRadius: 28,
@@ -681,6 +698,11 @@ export default function AiChatWidget({ pageType = 'board' }) {
                                     color: '#4B5563',
                                     lineHeight: 1.45,
                                     marginBottom: 8,
+
+                                    display: '-webkit-box',
+                                    WebkitLineClamp: 2,
+                                    WebkitBoxOrient: 'vertical',
+                                    overflow: 'hidden',
                                   }}
                                 >
                                   {event.description}
@@ -688,21 +710,19 @@ export default function AiChatWidget({ pageType = 'board' }) {
                               ) : null}
                               <div
                                 style={{
-                                  display: 'flex',
-                                  flexWrap: 'wrap',
-                                  gap: 8,
                                   fontSize: 11,
                                   fontWeight: 800,
                                   color: '#6B7280',
                                   marginBottom: 10,
                                 }}
                               >
-                                {event.region ? (
-                                  <span>지역 {event.region}</span>
-                                ) : null}
-                                {event.period ? (
-                                  <span>기간 {event.period}</span>
-                                ) : null}
+                                {event.region && (
+                                  <div style={{ marginBottom: 2 }}>
+                                    지역 {event.region}
+                                  </div>
+                                )}
+
+                                {event.period && <div>기간 {event.period}</div>}
                               </div>
                               <div
                                 style={{
@@ -835,4 +855,7 @@ export default function AiChatWidget({ pageType = 'board' }) {
       )}
     </>
   );
+
+  if (typeof document === 'undefined') return floatingUi;
+  return createPortal(floatingUi, document.body);
 }

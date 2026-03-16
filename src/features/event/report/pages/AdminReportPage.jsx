@@ -9,8 +9,8 @@ import {
 } from "../api/adminReportApi";
 import AdminReportDetailModal from "../components/AdminReportDetailModal";
 import { reasonLabel } from "../utils/reasonLabel";
+import eventThumbUrl from "../../../../shared/utils/eventThumbUrl";
 
-const UPLOAD_BASE = "http://localhost:8080/upload_files/event";
 const PLACEHOLDER = "https://dummyimage.com/80x80/f3f4f6/666666.png&text=Mohaeng";
 
 function formatDate(value) {
@@ -41,8 +41,7 @@ function statusWeight(v) {
 function toImgUrl(v) {
   if (!v) return null;
   if (typeof v !== "string") return null;
-  if (v.startsWith("http")) return v;
-  return `${UPLOAD_BASE}/${v}`;
+  return eventThumbUrl(v);
 }
 
 // 페이지 버튼 숫자 구성(너무 많으면 ... 처리)

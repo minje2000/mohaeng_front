@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { tokenStore } from '../../../../app/http/tokenStore';
 import UseMyCreatedEvents from '../hooks/UseMyCreatedEvents';
 import { MypageEventApi } from '../api/MypageEventApi';
+import eventThumbUrl from '../../../../shared/utils/eventThumbUrl';
 
 function formatDateRange(startDate, endDate) {
   if (!startDate && !endDate) return '-';
@@ -411,7 +412,7 @@ export default function EventHostMypage() {
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
                     <img
-                      src={buildThumbSrc(ev.thumbnail)}
+                      src={eventThumbUrl(ev.thumbnail)}
                       alt="thumb"
                       style={{
                         width: 64,

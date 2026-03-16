@@ -49,18 +49,18 @@ export default function ReviewMyPage() {
   }, [page]);
 
   const onClickItem = (item) => {
-    if (!item?.eventId) return;
-    const status = (item?.eventStatus ?? '').toString();
-    if (status === 'REPORTDELETED') {
-      alert('이 행사에 대한 신고가 접수되어 삭제 처리 되었습니다.');
-      return;
-    }
-    if (status === 'DELETED') {
-      alert('주최자에 의하여 행사가 삭제되었습니다.');
-      return;
-    }
-    navigate(`/events/${item.eventId}?tab=review`);
-  };
+  if (!item?.eventId) return;
+  const status = (item?.eventStatus ?? '').toString().toUpperCase().replace('_', '');
+  if (status === 'REPORTDELETED') {
+    alert('이 행사에 대한 신고가 접수되어 삭제 처리 되었습니다.');
+    return;
+  }
+  if (status === 'DELETED') {
+    alert('주최자에 의하여 행사가 삭제되었습니다.');
+    return;
+  }
+  navigate(`/events/${item.eventId}?tab=review`);
+};
 
   const pageNumbers = useMemo(() => getPageNumbers(page, totalPages), [page, totalPages]);
 

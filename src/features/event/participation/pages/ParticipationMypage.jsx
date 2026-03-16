@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { apiJson } from '../../../../app/http/request';
 import styles from './ParticipationMypage.module.css';
 import RefundPolicy from '../../../payment/pages/RefundPolicy';
+import eventThumbUrl from '../../../../shared/utils/eventThumbUrl';
 
-const THUMBNAIL_BASE = 'http://localhost:8080/upload_files/event/';
 const PAGE_SIZE = 5;
 
 const fmtDate = (d) => (d ? String(d).slice(0, 10).replaceAll('-', '.') : '-');
@@ -211,7 +211,7 @@ export default function ParticipationMypage() {
                 <div className={styles.colEvent}>
                   <div className={styles.eventCell}>
                     <img
-                      src={pct.thumbnail ? `${THUMBNAIL_BASE}${pct.thumbnail}` : '/images/moheng.png'}
+                      src={eventThumbUrl(pct.thumbnail)}
                       alt=""
                       className={styles.eventCellThumb}
                       onClick={() => handleEventClick(pct)}

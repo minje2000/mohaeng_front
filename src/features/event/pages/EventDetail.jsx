@@ -9,6 +9,7 @@ import ReportButton from "../report/components/ReportButton";
 import ReportModal from "../report/components/ReportModal";
 import KakaoMap from '../../../shared/components/common/KakaoMap';
 import ShareModal from '../../../shared/components/Modal/ShareModal';
+import { eventImageUrl, photoImageUrl } from '../../../shared/utils/uploadFileUrl';
 
 const TOPIC_MAP = {
   1:'IT', 2:'비즈니스/창업', 3:'마케팅/브랜딩', 4:'디자인/아트',
@@ -57,10 +58,8 @@ const getDatesInRange = (startDate, endDate) => {
   return dates;
 };
 
-const UPLOAD_BASE = 'http://localhost:8080/upload_files/event';
-const PHOTO_BASE  = 'http://localhost:8080/upload_files/photo';
 const PLACEHOLDER = 'https://dummyimage.com/400x300/f3f4f6/666666.png&text=Mohaeng';
-const imgUrl = (path) => (path ? `${UPLOAD_BASE}/${path}` : PLACEHOLDER);
+const imgUrl = (path) => eventImageUrl(path, PLACEHOLDER);
 
 const getStatusUI = (ev) => {
   if (!ev) return null;
@@ -796,7 +795,7 @@ export default function EventDetail() {
                 <div className="ed-host">
                   <div className="ed-avatar">
                     {hostPhoto ? (
-                      <img src={`${PHOTO_BASE}/${hostPhoto}`} alt="주최자"
+                      <img src={photoImageUrl(hostPhoto)} alt="주최자"
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.textContent = '🏢'; }} />
                     ) : '🏢'}

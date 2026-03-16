@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createEvent, suggestTags, generateAiImage } from '../api/EventHostApi';
 import Header from '../../../../shared/components/common/Header';
+import { photoImageUrl } from '../../../../shared/utils/uploadFileUrl';
 import { apiJson } from '../../../../app/http/request';
 
 const CITY_IDS = {
@@ -183,7 +184,6 @@ const dayBefore = (dateStr) => {
   return d.toISOString().split('T')[0];
 };
 
-const PHOTO_BASE = 'http://localhost:8080/upload_files/photo';
 
 // ── AI 추천 뱃지 ─────────────────────────────────────────────
 const AiBadge = () => (
@@ -1327,7 +1327,7 @@ export default function EventHost() {
           <div style={{ padding: '14px 16px', background: '#F9FAFB', borderRadius: 12, border: '1px solid #E5E7EB' }}>
             {hostInfo.profileImg && (
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
-                <img src={`${PHOTO_BASE}/${hostInfo.profileImg}`} alt="프로필"
+                <img src={photoImageUrl(hostInfo.profileImg)} alt="프로필"
                   style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover', border: '2px solid #E5E7EB' }}
                   onError={(e) => { e.target.style.display = 'none'; }} />
               </div>

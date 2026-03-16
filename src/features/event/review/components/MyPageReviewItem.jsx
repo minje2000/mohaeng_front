@@ -1,7 +1,7 @@
 import React from 'react';
+import eventThumbUrl from '../../../../shared/utils/eventThumbUrl';
 import StarsDecimal from './StarsDecimal';
 
-const UPLOAD_BASE = 'http://localhost:8080/upload_files/event/';
 
 function formatDate(dt) {
   return dt ? String(dt).slice(0, 10).replaceAll('-', '.') : '-';
@@ -9,8 +9,7 @@ function formatDate(dt) {
 
 function toImgUrl(v) {
   if (!v || typeof v !== 'string') return null;
-  if (v.startsWith('http')) return v;
-  return `${UPLOAD_BASE}${v}`;
+  return eventThumbUrl(v);
 }
 
 function pickContent(item) {

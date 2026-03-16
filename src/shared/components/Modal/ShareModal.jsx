@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import eventThumbUrl from '../../utils/eventThumbUrl';
 
 // index.html에 이미 kakao.min.js가 로드되어 있으므로 동적 로딩 불필요
 // 앱 키는 index.html의 maps SDK appkey와 동일하게 사용
@@ -76,7 +77,7 @@ export default function ShareModal({ open, onClose, ev }) {
       title: ev.title || '행사 정보',
       description: ev.simpleExplain || '모행에서 발견한 행사예요!',
       imageUrl: ev.thumbnail
-        ? `http://localhost:8080/upload_files/event/${ev.thumbnail}`
+        ? eventThumbUrl(ev.thumbnail)
         : 'https://dummyimage.com/400x300/f3f4f6/666666.png&text=Mohaeng',
       link: { mobileWebUrl: window.location.href, webUrl: window.location.href },
     };
@@ -182,7 +183,7 @@ export default function ShareModal({ open, onClose, ev }) {
         }}>
           {ev.thumbnail && (
             <img
-              src={`http://localhost:8080/upload_files/event/${ev.thumbnail}`}
+              src={eventThumbUrl(ev.thumbnail)}
               alt=""
               style={{ width:46, height:46, borderRadius:10, objectFit:'cover', flexShrink:0 }}
               onError={(e) => { e.target.style.display='none'; }}

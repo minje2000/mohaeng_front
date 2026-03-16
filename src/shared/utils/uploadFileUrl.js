@@ -1,6 +1,6 @@
-import { getApiBaseUrl } from '../../app/config/env';
+import { getS3BaseUrl } from '../../app/config/env';
 
-const BACKEND = getApiBaseUrl() || 'http://localhost:8080';
+const S3_BASE = getS3BaseUrl();
 
 const DIR_ALIASES = {
   event: 'event',
@@ -31,29 +31,24 @@ export function buildUploadFileUrl(value, dir, placeholder = null) {
     return raw;
   }
 
-  let normalized = raw.replace(/\\/g, '/');
-  const targetDir = canonicalDir(dir);
-
-  if (normalized.startsWith('/upload_files/')) {
-    return `${BACKEND}${normalized}`;
-  }
+  let normalized = raw.replace(/\\/g, '/').replace(/^\/+/, '');
 
   if (normalized.startsWith('upload_files/')) {
-    return `${BACKEND}/${normalized}`;
+    normalized = normalized.substring('upload_files/'.length);
   }
 
-  normalized = normalized.replace(/^\/+/, '');
   const firstSlash = normalized.indexOf('/');
   if (firstSlash > 0) {
     const firstSegment = canonicalDir(normalized.slice(0, firstSlash));
     const remainder = normalized.slice(firstSlash + 1);
     if (firstSegment && remainder) {
-      return `${BACKEND}/upload_files/${firstSegment}/${remainder}`;
+      return `${S3_BASE}/${firstSegment}/${remainder}`;
     }
   }
 
-  if (!targetDir) return `${BACKEND}/${normalized}`;
-  return `${BACKEND}/upload_files/${targetDir}/${normalized}`;
+  const targetDir = canonicalDir(dir);
+  if (!targetDir) return `${S3_BASE}/${normalized}`;
+  return `${S3_BASE}/${targetDir}/${normalized}`;
 }
 
 export const eventImageUrl = (value, placeholder = '/images/moheng.png') =>

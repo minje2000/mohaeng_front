@@ -6,11 +6,6 @@ function formatDate(value) {
   return String(value).slice(0, 10);
 }
 
-function formatDateTime(value) {
-  if (!value) return "-";
-  return String(value).replace("T", " ").slice(0, 16);
-}
-
 function formatRiskScore(value) {
   if (value === null || value === undefined || value === "") return "-";
   const n = Number(value);
@@ -26,14 +21,21 @@ export default function AdminEventModerationTable({
   return (
     <div style={tableWrapStyle}>
       <table style={tableStyle}>
+        <colgroup>
+          <col style={{ width: "34%" }} />
+          <col style={{ width: "16%" }} />
+          <col style={{ width: "16%" }} />
+          <col style={{ width: "12%" }} />
+          <col style={{ width: "12%" }} />
+          <col style={{ width: "10%" }} />
+        </colgroup>
+
         <thead>
           <tr>
             <th style={thStyle}>행사명</th>
-            <th style={thStyle}>행사 기간</th>
             <th style={thStyle}>행사 상태</th>
             <th style={thStyle}>검수 상태</th>
             <th style={thStyle}>위험점수</th>
-            <th style={thStyle}>AI 검사 시각</th>
             <th style={thStyle}>등록일</th>
             <th style={thStyle}>관리</th>
           </tr>
@@ -42,22 +44,21 @@ export default function AdminEventModerationTable({
         <tbody>
           {loading ? (
             <tr>
-              <td style={tdStyle} colSpan={8}>
+              <td style={tdStyle} colSpan={6}>
                 불러오는 중...
               </td>
             </tr>
           ) : items.length === 0 ? (
             <tr>
-              <td style={tdStyle} colSpan={8}>
+              <td style={tdStyle} colSpan={6}>
                 검수 대상 행사가 없습니다.
               </td>
             </tr>
           ) : (
             items.map((item) => (
               <tr key={item.eventId}>
-                <td style={tdStyle}>{item.title || "-"}</td>
-                <td style={tdStyle}>
-                  {formatDate(item.startDate)} ~ {formatDate(item.endDate)}
+                <td style={{ ...tdStyle, ...titleTdStyle }} title={item.title || "-"}>
+                  {item.title || "-"}
                 </td>
                 <td style={tdStyle}>{item.eventStatus || "-"}</td>
                 <td style={tdStyle}>
@@ -66,8 +67,7 @@ export default function AdminEventModerationTable({
                   />
                 </td>
                 <td style={tdStyle}>{formatRiskScore(item.aiRiskScore)}</td>
-                <td style={tdStyle}>{formatDateTime(item.aiCheckedAt)}</td>
-                <td style={tdStyle}>{formatDateTime(item.createdAt)}</td>
+                <td style={tdStyle}>{formatDate(item.createdAt)}</td>
                 <td style={tdStyle}>
                   <button
                     type="button"
@@ -87,7 +87,6 @@ export default function AdminEventModerationTable({
 }
 
 const tableWrapStyle = {
-  overflowX: "auto",
   background: "#FFFFFF",
   border: "1px solid #E5E7EB",
   borderRadius: 18,
@@ -97,7 +96,7 @@ const tableWrapStyle = {
 const tableStyle = {
   width: "100%",
   borderCollapse: "collapse",
-  minWidth: 1100,
+  tableLayout: "fixed",
 };
 
 const thStyle = {
@@ -119,6 +118,12 @@ const tdStyle = {
   fontWeight: 600,
   textAlign: "center",
   verticalAlign: "middle",
+};
+
+const titleTdStyle = {
+  whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
 };
 
 const detailBtnStyle = {

@@ -58,6 +58,24 @@ const getDatesInRange = (startDate, endDate) => {
   return dates;
 };
 
+const normalizeModerationStatus = (value) => {
+  if (!value) return '';
+  return String(value).trim();
+};
+
+const isModerationBlocked = (ev) => {
+  const moderationStatus = normalizeModerationStatus(ev?.moderationStatus);
+  return moderationStatus === '승인대기' || moderationStatus === '반려';
+};
+
+const getDisabledActionStyle = (disabled) => ({
+  opacity: disabled ? 0.45 : 1,
+  cursor: disabled ? 'not-allowed' : 'pointer',
+  pointerEvents: disabled ? 'none' : 'auto',
+});
+
+const UPLOAD_BASE = 'http://localhost:8080/upload_files/event';
+const PHOTO_BASE  = 'http://localhost:8080/upload_files/photo';
 const PLACEHOLDER = 'https://dummyimage.com/400x300/f3f4f6/666666.png&text=Mohaeng';
 const imgUrl = (path) => eventImageUrl(path, PLACEHOLDER);
 
@@ -187,7 +205,7 @@ function AiCourseSection({ ev }) {
         });
       });
 
-      const res = await fetch('http://localhost:8080/api/ai/nearby/course', {
+      const res = await fetch('/api/ai/nearby/course', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -199,7 +217,7 @@ function AiCourseSection({ ev }) {
           transport,
           festival_start_time: ev.startTime || null,
           festival_end_time:   ev.endTime   || null,
-          festival_date:       ev.startDate || null,  // ex) "2025-04-15"
+          festival_date:       ev.startDate || null,
         }),
       });
       if (!res.ok) throw new Error('코스 생성에 실패했어요. 잠시 후 다시 시도해주세요.');
@@ -214,19 +232,16 @@ function AiCourseSection({ ev }) {
 
   const handleReset = () => { setCourse(null); setError(''); };
 
-  // 카카오맵 검색 URL 생성
   const getKakaoUrl = (item) => {
     if (item.kakao_url) return item.kakao_url;
     if (item.place_name) return `https://map.kakao.com/link/search/${encodeURIComponent(item.place_name)}`;
     return null;
   };
 
-  // 숙소·조식 제외 필터
   const filteredCourse = course?.course?.filter(
     item => !EXCLUDED_CATEGORIES.includes(item.category)
   ) ?? [];
 
-  // 노란 개나리 테마 색상
   const YELLOW = '#EAB308';
   const YELLOW_DARK = '#A16207';
   const YELLOW_BG = '#FFFBEB';
@@ -234,8 +249,6 @@ function AiCourseSection({ ev }) {
 
   return (
     <div style={{ borderTop: '1px solid #F3F4F6', padding: '20px 26px' }}>
-
-      {/* ── 배너 버튼 ── */}
       <div
         onClick={() => setOpen(o => !o)}
         style={{
@@ -268,18 +281,14 @@ function AiCourseSection({ ev }) {
         }}>▼</div>
       </div>
 
-      {/* ── 패널 ── */}
       {open && (
         <div style={{
           marginTop: 14, borderRadius: 16,
           border: `1.5px solid ${YELLOW_BORDER}`,
           background: YELLOW_BG, overflow: 'hidden',
         }}>
-
-          {/* 옵션 + 생성 버튼 */}
           {!course && !loading && (
             <>
-              {/* 행사 시간 안내 */}
               {festivalTime && (
                 <div style={{
                   margin: '14px 18px 0', padding: '9px 12px',
@@ -341,7 +350,6 @@ function AiCourseSection({ ev }) {
             </>
           )}
 
-          {/* 로딩 */}
           {loading && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '48px 20px' }}>
               <div style={{ width: 40, height: 40, border: `3px solid ${YELLOW_BORDER}`, borderTopColor: YELLOW, borderRadius: '50%', animation: 'ai-spin 0.9s linear infinite' }} />
@@ -353,10 +361,8 @@ function AiCourseSection({ ev }) {
             </div>
           )}
 
-          {/* 코스 결과 */}
           {course && !loading && (
             <>
-              {/* 요약 헤더 */}
               <div style={{
                 padding: '14px 20px',
                 background: `linear-gradient(135deg, #F59E0B, ${YELLOW})`,
@@ -382,7 +388,6 @@ function AiCourseSection({ ev }) {
                 >🔄 다시 생성</button>
               </div>
 
-              {/* 타임라인 */}
               <div style={{ padding: '20px 20px 8px' }}>
                 {filteredCourse.map((item, idx) => {
                   const cat    = CATEGORY_STYLE[item.category] || CATEGORY_STYLE['관광'];
@@ -390,7 +395,6 @@ function AiCourseSection({ ev }) {
                   const kakaoUrl = getKakaoUrl(item);
                   return (
                     <div key={idx} style={{ display: 'flex', gap: 14, position: 'relative' }}>
-                      {/* 세로 연결선 */}
                       {!isLast && (
                         <div style={{
                           position: 'absolute', left: 19, top: 44, width: 2,
@@ -398,7 +402,6 @@ function AiCourseSection({ ev }) {
                         }} />
                       )}
 
-                      {/* 시간 + 아이콘 */}
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, flexShrink: 0, zIndex: 1 }}>
                         <div style={{ fontSize: 10, fontWeight: 800, color: YELLOW_DARK, whiteSpace: 'nowrap' }}>
                           {item.time}
@@ -412,7 +415,6 @@ function AiCourseSection({ ev }) {
                         </div>
                       </div>
 
-                      {/* 카드 — 클릭 시 카카오맵 이동 */}
                       <div
                         onClick={() => kakaoUrl && window.open(kakaoUrl, '_blank')}
                         style={{
@@ -426,7 +428,6 @@ function AiCourseSection({ ev }) {
                         onMouseOver={e => { if (kakaoUrl) { e.currentTarget.style.boxShadow = '0 4px 16px rgba(234,179,8,0.25)'; e.currentTarget.style.transform = 'translateY(-1px)'; } }}
                         onMouseOut={e => { e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.04)'; e.currentTarget.style.transform = 'none'; }}
                       >
-                        {/* 장소명 + 뱃지 + 지도 링크 */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
                           <div style={{ fontSize: 14, fontWeight: 900, color: '#111' }}>{item.place_name}</div>
                           <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 8px', borderRadius: 20, background: cat.bg, color: cat.color, fontSize: 10, fontWeight: 800 }}>
@@ -439,17 +440,14 @@ function AiCourseSection({ ev }) {
                           )}
                         </div>
 
-                        {/* 설명 */}
                         <div style={{ fontSize: 12, color: '#6B7280', lineHeight: 1.75 }}>{item.description}</div>
 
-                        {/* 꿀팁 */}
                         {item.tip && (
                           <div style={{ marginTop: 8, padding: '7px 10px', background: '#FFFBEB', borderRadius: 8, borderLeft: `3px solid ${YELLOW}`, fontSize: 11, color: YELLOW_DARK, fontWeight: 700, lineHeight: 1.55 }}>
                             💡 {item.tip}
                           </div>
                         )}
 
-                        {/* 주소 */}
                         {item.address && (
                           <div style={{ marginTop: 6, fontSize: 11, color: '#9CA3AF', display: 'flex', alignItems: 'center', gap: 4 }}>
                             📍 {item.address}
@@ -461,7 +459,6 @@ function AiCourseSection({ ev }) {
                 })}
               </div>
 
-              {/* 하단 다시생성 */}
               <div style={{ padding: '0 18px 18px' }}>
                 <button onClick={handleReset}
                   style={{
@@ -535,6 +532,9 @@ export default function EventDetail() {
   if (!detail) return null;
 
   const { eventInfo: ev, hostId, hostName, hostEmail, hostPhone, hostPhoto, booths, facilities } = detail;
+
+  const actionDisabled = isModerationBlocked(ev);
+  const disabledActionTitle = actionDisabled ? '승인대기 또는 반려 상태의 행사는 사용할 수 없습니다.' : '';
 
   const statusUI  = getStatusUI(ev);
   const statusKey = statusUI?.key;
@@ -626,6 +626,7 @@ export default function EventDetail() {
         .ed-icon-row { display:flex; align-items:center; gap:8px; padding:16px 26px 20px; justify-content:flex-end; }
         .ed-icon-btn { display:flex; align-items:center; gap:6px; padding:7px 13px; border-radius:10px; border:1.5px solid #E5E7EB; background:#fff; cursor:pointer; font-size:12px; font-weight:700; color:#6B7280; transition:all 0.15s; }
         .ed-icon-btn:hover { border-color:#D1D5DB; background:#F9FAFB; color:#374151; }
+        .ed-icon-btn:disabled { border-color:#E5E7EB; background:#F8FAFC; color:#94A3B8; cursor:not-allowed; }
         .ed-icon-btn.liked { border-color:#FECACA; background:#FFF5F5; color:#EF4444; }
         .ed-icon-btn.liked:hover { border-color:#FCA5A5; }
         .ed-tabs { display:flex; border-top:1px solid #F3F4F6; }
@@ -649,8 +650,6 @@ export default function EventDetail() {
 
         <div className="ed-wrap">
           <div className="ed-card">
-
-            {/* ── 히어로 ── */}
             <div className="ed-hero">
               <div style={{ position: 'relative', flexShrink: 0, width: 150, height: 150 }}>
                 <img src={imgUrl(ev.thumbnail)} alt={ev.title} className="ed-thumb"
@@ -767,7 +766,6 @@ export default function EventDetail() {
               </div>
             </div>
 
-            {/* 주제 / 해시태그 */}
             {(topics.length > 0 || hashtags.length > 0) && (
               <div style={{ padding: '14px 26px', borderTop: '1px solid #F3F4F6', marginTop: 22, display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {topics.length > 0 && (
@@ -789,7 +787,6 @@ export default function EventDetail() {
               </div>
             )}
 
-            {/* ── 주최자 + 버튼 ── */}
             <div className="ed-host-section">
               <div className="ed-host-action">
                 <div className="ed-host">
@@ -837,7 +834,6 @@ export default function EventDetail() {
                 })()}
               </div>
 
-              {/* 부스 정보 */}
               {showBooth && (
                 <div className="ed-section">
                   <div className="ed-section-title">부스 정보</div>
@@ -871,7 +867,6 @@ export default function EventDetail() {
                 </div>
               )}
 
-              {/* 부대시설 */}
               {showFaci && (
                 <div className="ed-section">
                   <div className="ed-section-title">부대시설</div>
@@ -897,26 +892,59 @@ export default function EventDetail() {
               )}
             </div>
 
-            {/* ── 관심 / 공유 / 신고 ── */}
             <div className="ed-icon-row">
-              <button className={`ed-icon-btn${liked ? ' liked' : ''}`}
-                onClick={() => setLiked((p) => !p)} title={liked ? '관심 취소' : '관심 행사 등록'}>
+              <button
+                className={`ed-icon-btn${liked ? ' liked' : ''}`}
+                disabled={actionDisabled}
+                onClick={() => {
+                  if (actionDisabled) return;
+                  setLiked((p) => !p);
+                }}
+                title={actionDisabled ? disabledActionTitle : liked ? '관심 취소' : '관심 행사 등록'}
+                style={getDisabledActionStyle(actionDisabled)}
+              >
                 <HeartIcon filled={liked} />{liked ? '관심 등록됨' : '관심 행사'}
               </button>
-              <button className="ed-icon-btn" onClick={() => setShareOpen(true)} title="공유하기">
+
+              <button
+                className="ed-icon-btn"
+                disabled={actionDisabled}
+                onClick={() => {
+                  if (actionDisabled) return;
+                  setShareOpen(true);
+                }}
+                title={actionDisabled ? disabledActionTitle : '공유하기'}
+                style={getDisabledActionStyle(actionDisabled)}
+              >
                 <ShareIcon />공유
               </button>
-              <button className="ed-icon-btn" title="신고하기" onClick={(e) => { e.stopPropagation(); setReportOpen(true); }}>
+
+              <button
+                className="ed-icon-btn"
+                disabled={actionDisabled}
+                title={actionDisabled ? disabledActionTitle : '신고하기'}
+                onClick={(e) => {
+                  if (actionDisabled) return;
+                  e.stopPropagation();
+                  setReportOpen(true);
+                }}
+                style={getDisabledActionStyle(actionDisabled)}
+              >
                 <SirenIcon />신고
               </button>
             </div>
+
+            {actionDisabled ? (
+              <div style={{ padding: '0 26px 18px', fontSize: 12, color: '#DC2626', fontWeight: 700 }}>
+                승인대기 또는 반려 상태의 행사는 관심행사, 공유, 신고가 비활성화됩니다.
+              </div>
+            ) : null}
+
             <ReportModal open={reportOpen} onClose={() => setReportOpen(false)} eventId={Number(eventId)} />
             <ShareModal open={shareOpen} onClose={() => setShareOpen(false)} ev={ev} />
 
-            {/* ══ ✨ AI 여행 코스 추천 ══ */}
             <AiCourseSection ev={ev} />
 
-            {/* ── 탭 ── */}
             <div className="ed-tabs">
               {TABS.map((t) => (
                 <button key={t} className={`ed-tab-btn${tab === t ? ' active' : ''}`} onClick={() => setTab(t)}>{t}</button>

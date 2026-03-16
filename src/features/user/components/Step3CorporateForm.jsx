@@ -68,7 +68,7 @@ const Step3CorporateForm = ({ onBack }) => {
       const formData = new FormData();
       formData.append('businessFile', bizFile);
 
-      const res = await fetch('http://localhost:8080/api/user/verifyBiz', {
+      const res = await fetch('/api/user/verifyBiz', {
         method: 'POST',
         body: formData,
       });

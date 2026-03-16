@@ -4,12 +4,12 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { getEventParticipationInfo, getMyProfile, submitParticipation } from '../api/ParticipationApi';
 import { preparePayment } from '../../../payment/api/PaymentAPI';
 import Header from '../../../../shared/components/common/Header';
+import { eventImageUrl, photoImageUrl } from '../../../../shared/utils/uploadFileUrl';
 
 const THEME = {
   primary: '#FFD700', secondary: '#D97706', bg: '#F9FAFB',
   border: '#E5E7EB', text: '#111827', subText: '#9CA3AF',
 };
-const PHOTO_BASE = 'http://localhost:8080/upload_files/photo';
 
 const getDatesInRange = (startDate, endDate) => {
   if (!startDate || !endDate) return [];
@@ -217,7 +217,7 @@ export default function ParticipationApply() {
   const getThumbnailUrl = (path) => {
     if (!path) return 'https://via.placeholder.com/150';
     if (path.startsWith('http')) return path;
-    return `http://localhost:8080/upload_files/event/${path}`;
+    return eventImageUrl(path, '/images/moheng.png');
   };
 
   return (
@@ -243,7 +243,7 @@ export default function ParticipationApply() {
         <SectionBox title="신청자 정보">
           {userInfo.profileImg && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 0', borderBottom: `1px solid ${THEME.border}`, marginBottom: 16 }}>
-              <img src={`${PHOTO_BASE}/${userInfo.profileImg}`} alt="프로필" style={{ width: 60, height: 60, borderRadius: '50%', objectFit: 'cover', border: '2px solid #E5E7EB' }} onError={(e) => { e.target.style.display = 'none'; }} />
+              <img src={photoImageUrl(userInfo.profileImg)} alt="프로필" style={{ width: 60, height: 60, borderRadius: '50%', objectFit: 'cover', border: '2px solid #E5E7EB' }} onError={(e) => { e.target.style.display = 'none'; }} />
               <span style={{ fontSize: 13, color: THEME.subText, fontWeight: 600 }}>마이페이지에서 사진을 변경할 수 있어요.</span>
             </div>
           )}

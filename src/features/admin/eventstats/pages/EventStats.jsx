@@ -7,6 +7,8 @@ import {
   PieChart, Pie, Cell, Legend,
 } from 'recharts';
 import { EventStatsApi } from '../api/EventStatsApi';
+import eventThumbUrl from '../../../../shared/utils/eventThumbUrl';
+import { photoImageUrl } from '../../../../shared/utils/uploadFileUrl';
 
 const HIDDEN_STATUSES = new Set(["deleted", "reportdeleted", "report_deleted"]);
 
@@ -74,8 +76,6 @@ const GENDER_COLORS  = { 남: "#3B82F6", 여: "#EC4899" };
 const GENDER_MAP     = { M: '남성', F: '여성' };
 const AGE_GROUP_MAP  = { '1':'10대', '2':'20대', '3':'30대', '4':'40대', '5':'50대', '6':'60대 이상' };
 
-const THUMBNAIL_BASE = "http://localhost:8080/upload_files/event/";
-const PHOTO_BASE     = "http://localhost:8080/upload_files/photo/";
 
 // ─────────── 유틸 ───────────
 const fmt     = (n) => (n == null ? "-" : Number(n).toLocaleString());
@@ -355,7 +355,7 @@ function EventListView({ onSelectEvent }) {
                   onMouseLeave={e => e.currentTarget.style.background = ""}
                 >
                   <td style={{ padding:"8px 12px" }}>
-                    <img src={ev.thumbnail ? `${THUMBNAIL_BASE}${ev.thumbnail}` : ""} alt=""
+                    <img src={eventThumbUrl(ev.thumbnail, '')} alt=""
                       style={{ width:48, height:36, objectFit:"cover", borderRadius:6, background:"#F3F4F6" }}
                       onError={e => { e.target.style.display = "none"; }} />
                   </td>
@@ -512,7 +512,7 @@ function EventDetailView({ eventId, eventTitle, onBack, isAdmin }) {
             <div style={{ width:100, height:80, borderRadius:10, flexShrink:0, overflow:"hidden",
               background:"#F3F4F6", border:"1px solid #E5E7EB" }}>
               {detail.thumbnail ? (
-                <img src={`${THUMBNAIL_BASE}${detail.thumbnail}`} alt="썸네일"
+                <img src={eventThumbUrl(detail.thumbnail)} alt="썸네일"
                   style={{ width:"100%", height:"100%", objectFit:"cover" }}
                   onError={e => { e.target.src = ""; e.target.style.display = "none"; }} />
               ) : (
@@ -554,7 +554,7 @@ function EventDetailView({ eventId, eventTitle, onBack, isAdmin }) {
               <div style={{ width:48, height:48, borderRadius:"50%", flexShrink:0, overflow:"hidden",
                 background:"#F3F4F6", border:"1px solid #E5E7EB", display:"flex", alignItems:"center", justifyContent:"center", fontSize:20 }}>
                 {detail.hostPhoto ? (
-                  <img src={`${PHOTO_BASE}${detail.hostPhoto}`} alt="주최자"
+                  <img src={photoImageUrl(detail.hostPhoto)} alt="주최자"
                     style={{ width:"100%", height:"100%", objectFit:"cover" }}
                     onError={e => { e.target.style.display = "none"; e.target.parentElement.textContent = "🏢"; }} />
                 ) : "🏢"}

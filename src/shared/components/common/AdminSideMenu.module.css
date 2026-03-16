@@ -25,7 +25,8 @@
   gap: 8px;
 }
 
-.item {
+.item,
+.groupButton {
   display: block;
   width: 100%;
   padding: 10px 12px;
@@ -39,12 +40,67 @@
   box-sizing: border-box;
 }
 
-.item:hover {
+.groupButton {
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+}
+
+.item:hover,
+.groupButton:hover,
+.childItem:hover {
   background: rgba(0, 0, 0, 0.04);
 }
 
-.active {
+.active,
+.activeGroup {
   background: rgba(0, 0, 0, 0.06);
   border-color: rgba(0, 0, 0, 0.1);
   font-weight: 700;
+}
+
+.groupWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.children {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-left: 12px;
+}
+
+.childItem {
+  display: block;
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: #374151;
+  font-size: 13px;
+  background: transparent;
+  border: 1px solid transparent;
+  transition: 0.15s;
+  box-sizing: border-box;
+}
+
+.activeChild {
+  background: rgba(255, 216, 77, 0.18);
+  border-color: rgba(245, 158, 11, 0.2);
+  color: #111827;
+  font-weight: 700;
+}
+
+.chevron {
+  transition: transform 0.18s ease;
+  color: #6b7280;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
 }

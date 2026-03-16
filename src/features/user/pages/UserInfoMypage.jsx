@@ -3,6 +3,7 @@ import React from 'react';
 import styles from '../styles/UserInfoMypage.module.css';
 import { useUserInfo } from '../hooks/useUserInfo';
 import { useNavigate } from 'react-router-dom';
+import { photoImageUrl } from '../../../shared/utils/uploadFileUrl';
 
 export function UserInfoIndex() {
   const { userInfo, passwords, loading, isEditing, isPasswordValid, isPasswordMatch, isSaveDisabled, fileInputRef,
@@ -16,7 +17,6 @@ export function UserInfoIndex() {
   const isCompany = userInfo.userType === 'COMPANY';
   const isBASIC = userInfo.signupType === 'BASIC';
 
-  const IMG_URL = process.env.REACT_APP_API_BASE_URL + '/upload_files/photo';
 
   return (
     <main className={styles.content}>
@@ -29,7 +29,7 @@ export function UserInfoIndex() {
             {userInfo.profileImg ? (
               <img src={ userInfo.profileImg.startsWith('data:')  // 새로 업로드한 이미지인지
                         ? userInfo.profileImg // 새로 업로드한 미리보기 데이터
-                        : `${IMG_URL}/${userInfo.profileImg}` // 서버에서 가져온 기존 파일명
+                        : photoImageUrl(userInfo.profileImg) // 서버에서 가져온 기존 파일명
                     } alt="Profile" />
             ) : (
               <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" /></svg>

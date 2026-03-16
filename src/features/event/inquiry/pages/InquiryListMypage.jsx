@@ -67,33 +67,32 @@ export default function InquiryListMypage() {
 
   // ✅ 삭제된 행사 클릭 시 알림창, 정상이면 상세로 이동
   const goEventDetail = (row) => {
-    if (!row?.eventId) return;
-    const status = (row?.eventStatus ?? '').toString();
-    if (status === 'REPORTDELETED') {
-      alert('이 행사에 대한 신고가 접수되어 삭제 처리 되었습니다.');
-      return;
-    }
-    if (status === 'DELETED') {
-      alert('주최자에 의하여 행사가 삭제되었습니다.');
-      return;
-    }
-    navigate(`/events/${row.eventId}`);
-  };
+  if (!row?.eventId) return;
+  const status = (row?.eventStatus ?? '').toString().toUpperCase().replace('_', '');
+  if (status === 'REPORTDELETED') {
+    alert('이 행사에 대한 신고가 접수되어 삭제 처리 되었습니다.');
+    return;
+  }
+  if (status === 'DELETED') {
+    alert('주최자에 의하여 행사가 삭제되었습니다.');
+    return;
+  }
+  navigate(`/events/${row.eventId}`);
+};
 
-  // ✅ 문의 탭 이동도 동일하게 삭제 체크
-  const goEventInquiryTab = (row) => {
-    if (!row?.eventId) return;
-    const status = (row?.eventStatus ?? '').toString();
-    if (status === 'REPORTDELETED') {
-      alert('이 행사에 대한 신고가 접수되어 삭제 처리 되었습니다.');
-      return;
-    }
-    if (status === 'DELETED') {
-      alert('주최자에 의하여 행사가 삭제되었습니다.');
-      return;
-    }
-    navigate(`/events/${row.eventId}?tab=inquiry`);
-  };
+const goEventInquiryTab = (row) => {
+  if (!row?.eventId) return;
+  const status = (row?.eventStatus ?? '').toString().toUpperCase().replace('_', '');
+  if (status === 'REPORTDELETED') {
+    alert('이 행사에 대한 신고가 접수되어 삭제 처리 되었습니다.');
+    return;
+  }
+  if (status === 'DELETED') {
+    alert('주최자에 의하여 행사가 삭제되었습니다.');
+    return;
+  }
+  navigate(`/events/${row.eventId}?tab=inquiry`);
+};
 
   const pickSimpleExplain = (row) => {
     return (
@@ -263,8 +262,8 @@ export default function InquiryListMypage() {
             items.map((row) => {
               const simpleExplain = pickSimpleExplain(row);
               const isDeleted = ['DELETED', 'REPORTDELETED'].includes(
-                (row?.eventStatus ?? '').toString()
-              );
+  (row?.eventStatus ?? '').toString().toUpperCase().replace('_', '')
+);
 
               return (
                 <div

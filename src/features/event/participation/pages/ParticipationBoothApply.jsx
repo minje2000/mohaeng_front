@@ -4,13 +4,11 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ParticipationBoothApi } from '../api/ParticipationBoothAPI';
 import { preparePayment } from '../../../payment/api/PaymentAPI';
 import Header from '../../../../shared/components/common/Header';
+import { eventImageUrl, hostBoothFileUrl, photoImageUrl } from '../../../../shared/utils/uploadFileUrl';
 
-const UPLOAD_BASE_EVENT  = 'http://localhost:8080/upload_files/event';
-const UPLOAD_BASE_HBOOTH = 'http://localhost:8080/upload_files/hbooth';
-const PHOTO_BASE         = 'http://localhost:8080/upload_files/photo';
 const PLACEHOLDER        = 'https://dummyimage.com/400x400/f3f4f6/666666.png&text=Mohaeng';
 
-const imgUrl = (path) => (path ? `${UPLOAD_BASE_EVENT}/${path}` : PLACEHOLDER);
+const imgUrl = (path) => eventImageUrl(path, PLACEHOLDER);
 
 const fmtDate = (dateStr) => {
   if (!dateStr) return '';
@@ -325,7 +323,7 @@ export default function ParticipationBoothApply() {
             {boothFilePaths.filter(isImageFile).length > 0 && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', marginBottom: '16px' }}>
                 {boothFilePaths.filter(isImageFile).map((filename, i) => {
-                  const src = `${UPLOAD_BASE_HBOOTH}/${filename}`;
+                  const src = hostBoothFileUrl(filename);
                   return (
                     <div key={i} style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
                       {/* 이미지 썸네일 — 클릭 없음, 버튼으로 제어 */}
@@ -370,7 +368,7 @@ export default function ParticipationBoothApply() {
                       <span>{filename}</span>
                     </div>
                     <button
-                      onClick={() => downloadFile(`${UPLOAD_BASE_HBOOTH}/${filename}`, filename)}
+                      onClick={() => downloadFile(hostBoothFileUrl(filename), filename)}
                       style={{ fontSize: '12px', fontWeight: '800', color: THEME.secondary, background: `${THEME.primary}20`, border: 'none', borderRadius: '6px', padding: '5px 14px', cursor: 'pointer', flexShrink: 0 }}
                     >
                       ⬇ 다운로드
@@ -448,7 +446,7 @@ export default function ParticipationBoothApply() {
           <p style={{ fontSize: '12px', color: THEME.subText, marginBottom: '20px', marginTop: '-4px' }}>로그인한 계정 정보로 자동 설정됩니다. 수정이 필요하면 마이페이지에서 변경해주세요.</p>
           {profile.profileImg && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 16px', background: '#F9FAFB', borderRadius: 12, marginBottom: 20, border: `1px solid ${THEME.border}` }}>
-              <img src={`${PHOTO_BASE}/${profile.profileImg}`} alt="프로필" style={{ width: 64, height: 64, borderRadius: '50%', objectFit: 'cover', border: '2px solid #E5E7EB', flexShrink: 0 }} onError={(e) => { e.target.style.display = 'none'; }} />
+              <img src={photoImageUrl(profile.profileImg)} alt="프로필" style={{ width: 64, height: 64, borderRadius: '50%', objectFit: 'cover', border: '2px solid #E5E7EB', flexShrink: 0 }} onError={(e) => { e.target.style.display = 'none'; }} />
               <span style={{ fontSize: 12, color: THEME.subText, fontWeight: 600 }}>프로필 사진은 마이페이지에서만 변경할 수 있어요.</span>
             </div>
           )}

@@ -4,6 +4,7 @@ import Header from '../../../shared/components/common/Header';
 import Footer from '../../../shared/components/common/Footer';
 import { fetchEventList, fetchRecommendEvents } from '../api/EventlistApi';
 import AiChatWidget from '../../../shared/components/ai/AiChatWidget';
+import eventThumbUrl from '../../../shared/utils/eventThumbUrl';
 
 
 const CITY_IDS = {
@@ -380,7 +381,7 @@ const EventList = () => {
                                                 style={{ ...cardStyle, border: '1.5px solid #FFE88A' }}>
                                                 <div style={{ height: '120px', backgroundColor: '#F3F4F6', overflow: 'hidden', position: 'relative' }}>
                                                     <img
-                                                        src={`http://localhost:8080/upload_files/event/${event.thumbnail}`}
+                                                        src={eventThumbUrl(event.thumbnail)}
                                                         alt={event.title}
                                                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                                         onError={(e) => { e.target.src = "https://dummyimage.com/400x300/f3f4f6/666666.png&text=Mohaeng"; }}
@@ -431,7 +432,7 @@ const EventList = () => {
                                         onClick={() => navigate(`/events/${event.eventId}`)} style={cardStyle}>
                                         <div style={{ height: '190px', backgroundColor: '#F3F4F6', overflow: 'hidden', position: 'relative' }}>
                                             <img
-                                                src={`http://localhost:8080/upload_files/event/${event.thumbnail}`}
+                                                src={eventThumbUrl(event.thumbnail)}
                                                 alt={event.title}
                                                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                                 onError={(e) => { e.target.src = "https://dummyimage.com/400x300/f3f4f6/666666.png&text=Mohaeng"; }}

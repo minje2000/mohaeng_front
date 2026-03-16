@@ -15,6 +15,7 @@ export default function UseMyInquiryList(tab, page, size) {
 
   const [eventSimpleExplainById, setEventSimpleExplainById] = useState({});
   const fetchingRef = useRef(new Set());
+  const cachedIdsRef = useRef(new Set());
 
   // ✅ 현재 탭의 페이지 데이터
   useEffect(() => {
@@ -45,57 +46,61 @@ export default function UseMyInquiryList(tab, page, size) {
   // ✅ 현재 페이지의 행사 설명 보강(캐시)
   // ✅ 삭제된 행사(DELETED/REPORTDELETED)는 fetchEventDetail 호출 제외
   useEffect(() => {
-    let mounted = true;
+  let mounted = true;
 
-    const DELETED_STATUSES = ['DELETED', 'REPORTDELETED'];
+  const DELETED_STATUSES = ['DELETED', 'REPORTDELETED', 'report_deleted'];
 
-    const ids = Array.from(
-      new Set(
-        (items ?? [])
-          .filter((it) => it?.eventId && !DELETED_STATUSES.includes((it?.eventStatus ?? '').toString()))
-          .map((it) => it.eventId)
-      )
-    );
+  const ids = Array.from(
+    new Set(
+      (items ?? [])
+        .filter((it) => it?.eventId && !DELETED_STATUSES.includes(
+          (it?.eventStatus ?? '').toString().toUpperCase().replace('_', '')
+        ))
+        .map((it) => it.eventId)
+    )
+  );
 
-    const need = ids.filter((id) => !eventSimpleExplainById?.[id] && !fetchingRef.current.has(id));
-    if (need.length === 0) return () => {};
+  const need = ids.filter(
+    (id) => !cachedIdsRef.current.has(id) && !fetchingRef.current.has(id)
+  );
+  if (need.length === 0) return;
 
-    (async () => {
-      try {
-        need.forEach((id) => fetchingRef.current.add(id));
+  (async () => {
+    try {
+      need.forEach((id) => fetchingRef.current.add(id));
 
-        const results = await Promise.all(
-          need.map(async (eventId) => {
-            try {
-              const detail = await fetchEventDetail(eventId);
-              const ev = detail?.eventInfo ?? detail?.data?.eventInfo ?? detail?.data ?? detail;
-              const simpleExplain =
-                ev?.simpleExplain ?? ev?.SIMPLE_EXPLAIN ?? ev?.eventSimpleExplain ?? '';
-              return { eventId, simpleExplain: (simpleExplain ?? '').toString().trim() };
-            } catch (e) {
-              return { eventId, simpleExplain: '' };
-            }
-          })
-        );
+      const results = await Promise.all(
+        need.map(async (eventId) => {
+          try {
+            const detail = await fetchEventDetail(eventId);
+            const ev = detail?.eventInfo ?? detail?.data?.eventInfo ?? detail?.data ?? detail;
+            const simpleExplain =
+              ev?.simpleExplain ?? ev?.SIMPLE_EXPLAIN ?? ev?.eventSimpleExplain ?? '';
+            return { eventId, simpleExplain: (simpleExplain ?? '').toString().trim() };
+          } catch (e) {
+            return { eventId, simpleExplain: '' };
+          }
+        })
+      );
 
-        if (!mounted) return;
+      if (!mounted) return;
 
-        setEventSimpleExplainById((prev) => {
-          const next = { ...(prev || {}) };
-          results.forEach(({ eventId, simpleExplain }) => {
-            if (simpleExplain) next[eventId] = simpleExplain;
-          });
-          return next;
+      need.forEach((id) => cachedIdsRef.current.add(id)); // ← 캐시에 추가
+
+      setEventSimpleExplainById((prev) => {
+        const next = { ...(prev || {}) };
+        results.forEach(({ eventId, simpleExplain }) => {
+          if (simpleExplain) next[eventId] = simpleExplain;
         });
-      } finally {
-        need.forEach((id) => fetchingRef.current.delete(id));
-      }
-    })();
+        return next;
+      });
+    } finally {
+      need.forEach((id) => fetchingRef.current.delete(id));
+    }
+  })();
 
-    return () => {
-      mounted = false;
-    };
-  }, [items, eventSimpleExplainById]);
+  return () => { mounted = false; };
+}, [items]); 
 
   // ✅ 탭 카운트(전체/작성/받은)
   useEffect(() => {

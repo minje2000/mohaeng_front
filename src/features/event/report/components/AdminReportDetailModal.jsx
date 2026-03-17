@@ -43,11 +43,7 @@ export default function AdminReportDetailModal({
   const title =
     report?.eventTitle ?? report?.eventName ?? `eventId=${report?.eventId ?? "-"}`;
   const writer = report?.reporterName ?? report?.reporterId ?? "-";
-
-  //  기존: report?.reasonCategory 그대로 출력 -> 영어 코드 보임
-  //  변경: reasonLabel로 한글 변환 출력
   const reason = reasonLabel(report?.reasonCategory);
-
   const detail = report?.reasonDetailText ?? "-";
   const result = report?.reportResult;
   const isPending = result === "PENDING" || !result;
@@ -55,125 +51,42 @@ export default function AdminReportDetailModal({
   return (
     <div
       onClick={onClose}
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.35)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 9999,
-        padding: 16,
-      }}
+      style={overlayStyle}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        style={{
-          width: 520,
-          maxWidth: "100%",
-          background: "#fff",
-          borderRadius: 12,
-          border: "2px solid #222",
-          boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
-          padding: 16,
-        }}
+        style={modalStyle}
       >
         <div style={{ display: "flex", justifyContent: "flex-end" }}>
           <button
             type="button"
             onClick={onClose}
             aria-label="닫기"
-            style={{
-              border: "1px solid #ccc",
-              background: "#fff",
-              borderRadius: 8,
-              padding: "6px 10px",
-              cursor: "pointer",
-            }}
+            style={closeBtnStyle}
           >
             ✕
           </button>
         </div>
 
-        <div
-          style={{
-            border: "2px solid #222",
-            borderRadius: 6,
-            padding: 10,
-            marginBottom: 10,
-            fontWeight: 700,
-            textAlign: "center",
-          }}
-        >
-          {title}
-        </div>
+        <div style={titleBoxStyle}>{title}</div>
 
-        <div
-          style={{
-            border: "2px solid #222",
-            borderRadius: 6,
-            overflow: "hidden",
-            marginBottom: 10,
-          }}
-        >
+        <div style={rowBoxStyle}>
           <div style={{ display: "flex" }}>
-            <div
-              style={{
-                width: 90,
-                borderRight: "2px solid #222",
-                padding: 10,
-                fontWeight: 700,
-              }}
-            >
-              작성자
-            </div>
-            <div style={{ padding: 10, flex: 1 }}>{writer}</div>
+            <div style={rowLabelStyle}>작성자</div>
+            <div style={rowValueStyle}>{writer}</div>
           </div>
         </div>
 
-        <div
-          style={{
-            border: "2px solid #222",
-            borderRadius: 6,
-            overflow: "hidden",
-            marginBottom: 10,
-          }}
-        >
+        <div style={rowBoxStyle}>
           <div style={{ display: "flex" }}>
-            <div
-              style={{
-                width: 90,
-                borderRight: "2px solid #222",
-                padding: 10,
-                fontWeight: 700,
-              }}
-            >
-              신고 사유
-            </div>
-            <div style={{ padding: 10, flex: 1 }}>{reason}</div>
+            <div style={rowLabelStyle}>신고 사유</div>
+            <div style={rowValueStyle}>{reason}</div>
           </div>
         </div>
 
-        <div
-          style={{
-            border: "2px solid #222",
-            borderRadius: 6,
-            padding: 12,
-            minHeight: 140,
-            whiteSpace: "pre-wrap",
-          }}
-        >
-          {detail}
-        </div>
+        <div style={detailBoxStyle}>{detail}</div>
 
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginTop: 12,
-          }}
-        >
+        <div style={footerStyle}>
           <div style={{ fontSize: 12, opacity: 0.7 }}>
             신고일: {formatDate(report?.createdAt)} / 상태: {statusLabel(result)}
           </div>
@@ -182,34 +95,19 @@ export default function AdminReportDetailModal({
             <div style={{ display: "flex", gap: 10 }}>
               <button
                 type="button"
-                onClick={() => onReject?.(report)}
-                title="반려"
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 10,
-                  border: "2px solid #222",
-                  background: "#fff",
-                  cursor: "pointer",
-                  fontSize: 18,
-                }}
+                onClick={() => onApprove?.(report)}
+                style={approveBtnStyle}
               >
-                🗑️
+                승인
               </button>
+
               <button
                 type="button"
-                onClick={() => onApprove?.(report)}
-                title="승인"
-                aria-label="승인"
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 999,
-                  border: "2px solid #222",
-                  background: "#d11",
-                  cursor: "pointer",
-                }}
-              />
+                onClick={() => onReject?.(report)}
+                style={rejectBtnStyle}
+              >
+                반려
+              </button>
             </div>
           ) : (
             <div style={{ fontSize: 12, opacity: 0.7 }}>처리된 신고입니다.</div>
@@ -219,3 +117,98 @@ export default function AdminReportDetailModal({
     </div>
   );
 }
+
+const overlayStyle = {
+  position: "fixed",
+  inset: 0,
+  background: "rgba(0,0,0,0.35)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  zIndex: 9999,
+  padding: 16,
+};
+
+const modalStyle = {
+  width: 520,
+  maxWidth: "100%",
+  background: "#fff",
+  borderRadius: 12,
+  border: "2px solid #222",
+  boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
+  padding: 16,
+};
+
+const closeBtnStyle = {
+  border: "1px solid #ccc",
+  background: "#fff",
+  borderRadius: 8,
+  padding: "6px 10px",
+  cursor: "pointer",
+};
+
+const titleBoxStyle = {
+  border: "2px solid #222",
+  borderRadius: 6,
+  padding: 10,
+  marginBottom: 10,
+  fontWeight: 700,
+  textAlign: "center",
+};
+
+const rowBoxStyle = {
+  border: "2px solid #222",
+  borderRadius: 6,
+  overflow: "hidden",
+  marginBottom: 10,
+};
+
+const rowLabelStyle = {
+  width: 90,
+  borderRight: "2px solid #222",
+  padding: 10,
+  fontWeight: 700,
+};
+
+const rowValueStyle = {
+  padding: 10,
+  flex: 1,
+};
+
+const detailBoxStyle = {
+  border: "2px solid #222",
+  borderRadius: 6,
+  padding: 12,
+  minHeight: 140,
+  whiteSpace: "pre-wrap",
+};
+
+const footerStyle = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginTop: 12,
+  gap: 12,
+};
+
+const approveBtnStyle = {
+  height: 42,
+  padding: "0 18px",
+  borderRadius: 10,
+  border: "1px solid #A7F3D0",
+  background: "#ECFDF5",
+  color: "#047857",
+  fontWeight: 800,
+  cursor: "pointer",
+};
+
+const rejectBtnStyle = {
+  height: 42,
+  padding: "0 18px",
+  borderRadius: 10,
+  border: "1px solid #FECACA",
+  background: "#FEF2F2",
+  color: "#B91C1C",
+  fontWeight: 800,
+  cursor: "pointer",
+};

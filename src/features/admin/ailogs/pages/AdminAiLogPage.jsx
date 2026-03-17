@@ -2,8 +2,59 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { fetchAdminAiLogs } from '../../../../shared/api/adminAiApi';
 import Pagination from '../../../../shared/components/common/Pagination';
 
-const PAGE_SIZE = 10;
-const STATUS_FILTERS = ['전체', '정상', '오류', 'Rate Limit'];
+const PAGE_SIZE = 5;
+const STATUS_ALL = 'all';
+const STATUS_NORMAL = 'normal';
+const STATUS_ERROR = 'error';
+
+function formatDate(value) {
+  if (!value) return '-';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  const hour = date.getHours();
+  const ampm = hour < 12 ? '오전' : '오후';
+  const hh = String(((hour + 11) % 12) + 1).padStart(2, '0');
+  const mm = String(date.getMinutes()).padStart(2, '0');
+  return `${y}. ${m}. ${d}. ${ampm} ${hh}:${mm}`;
+}
+
+function isErrorLog(item) {
+  const statusCode = Number(item?.statusCode ?? item?.status_code ?? 200);
+  return Boolean(item?.isError || item?.is_error || statusCode >= 400);
+}
+
+function statusLabel(item) {
+  return isErrorLog(item) ? '오류' : '정상';
+}
+
+function normalizeIntent(item) {
+  return item?.intent || 'chat';
+}
+
+function normalizeQuestion(item) {
+  return item?.question || item?.message || '-';
+}
+
+function normalizeAnswer(item) {
+  return item?.answer || item?.answer_preview || item?.answerPreview || '-';
+}
+
+function normalizeCreatedAt(item) {
+  return item?.createdAt || item?.created_at || '';
+}
+
+function normalizeSessionId(item) {
+  return item?.sessionId || item?.session_id || '';
+}
+
+function getUniqueIntents(items) {
+  return Array.from(
+    new Set(items.map((item) => normalizeIntent(item)).filter(Boolean))
+  );
+}
 
 export default function AdminAiLogPage() {
   const [summary, setSummary] = useState({});
@@ -11,90 +62,59 @@ export default function AdminAiLogPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [page, setPage] = useState(1);
-  const [keyword, setKeyword] = useState('');
-  const [statusFilter, setStatusFilter] = useState('전체');
-  const [intentFilter, setIntentFilter] = useState('전체');
-  const [selectedId, setSelectedId] = useState(null);
-
-  const load = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const payload = await fetchAdminAiLogs(300);
-      setSummary(payload.summary || {});
-      setItems(Array.isArray(payload.items) ? payload.items : []);
-    } catch (e) {
-      setError(e?.response?.data?.message || 'AI 로그를 불러오지 못했어요.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [statusFilter, setStatusFilter] = useState(STATUS_ALL);
+  const [intentFilter, setIntentFilter] = useState('all');
+  const [query, setQuery] = useState('');
+  const [selectedId, setSelectedId] = useState('');
 
   useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const payload = await fetchAdminAiLogs(150);
+        if (!mounted) return;
+        const nextItems = Array.isArray(payload.items) ? payload.items : [];
+        setSummary(payload.summary || {});
+        setItems(nextItems);
+        setSelectedId((prev) => prev || nextItems[0]?.id || '');
+      } catch (e) {
+        if (!mounted) return;
+        setError(e?.response?.data?.message || 'AI 로그를 불러오지 못했어요.');
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
     load();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  const normalizedItems = useMemo(
-    () => items.map((item, index) => normalizeLog(item, index)),
-    [items],
-  );
-
-  const intentOptions = useMemo(() => {
-    const intents = Array.from(
-      new Set(normalizedItems.map((item) => item.intent).filter(Boolean)),
-    );
-    return ['전체', ...intents];
-  }, [normalizedItems]);
-
-  const safeSummary = useMemo(() => {
-    const total = Number(summary.total ?? normalizedItems.length ?? 0);
-    const errors = Number(summary.errors ?? normalizedItems.filter((item) => item.isError).length ?? 0);
-    const rateLimited = Number(
-      summary.rateLimited ??
-        normalizedItems.filter((item) => item.rateLimited).length ??
-        0,
-    );
-    const avgLatencyMs = Number(
-      summary.avgLatencyMs ??
-        average(normalizedItems.map((item) => item.latencyMs).filter(Boolean)) ??
-        0,
-    );
-    const topIntent = summary.topIntents?.[0]?.intent || normalizedItems[0]?.intent || '-';
-    return { total, errors, rateLimited, avgLatencyMs, topIntent };
-  }, [summary, normalizedItems]);
+  const uniqueIntents = useMemo(() => getUniqueIntents(items), [items]);
 
   const filteredItems = useMemo(() => {
-    const q = keyword.trim().toLowerCase();
-    return normalizedItems.filter((item) => {
-      const matchesKeyword =
-        !q ||
-        [
-          item.question,
-          item.answer,
-          item.intent,
-          item.pageType,
-          item.sessionId,
-          item.clientKey,
-        ]
-          .join(' ')
-          .toLowerCase()
-          .includes(q);
-
-      const matchesStatus =
-        statusFilter === '전체'
-          ? true
-          : statusFilter === '오류'
-            ? item.isError
-            : statusFilter === '정상'
-              ? !item.isError && !item.rateLimited
-              : item.rateLimited;
-
-      const matchesIntent =
-        intentFilter === '전체' ? true : item.intent === intentFilter;
-
-      return matchesKeyword && matchesStatus && matchesIntent;
+    const q = query.trim().toLowerCase();
+    return items.filter((item) => {
+      if (statusFilter === STATUS_NORMAL && isErrorLog(item)) return false;
+      if (statusFilter === STATUS_ERROR && !isErrorLog(item)) return false;
+      if (intentFilter !== 'all' && normalizeIntent(item) !== intentFilter)
+        return false;
+      if (!q) return true;
+      const haystack = [
+        item?.id,
+        normalizeQuestion(item),
+        normalizeAnswer(item),
+        normalizeSessionId(item),
+        normalizeIntent(item),
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(q);
     });
-  }, [normalizedItems, keyword, statusFilter, intentFilter]);
+  }, [items, statusFilter, intentFilter, query]);
 
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE));
 
@@ -107,495 +127,557 @@ export default function AdminAiLogPage() {
     return filteredItems.slice(start, start + PAGE_SIZE);
   }, [filteredItems, page]);
 
-  const selectedItem = useMemo(() => {
-    const candidate = filteredItems.find((item) => item.id === selectedId);
-    return candidate || pagedItems[0] || null;
-  }, [filteredItems, pagedItems, selectedId]);
-
   useEffect(() => {
-    if (selectedItem) setSelectedId(selectedItem.id);
-  }, [selectedItem?.id]);
+    if (!pagedItems.length) {
+      setSelectedId('');
+      return;
+    }
+    if (!pagedItems.some((item) => String(item.id) === String(selectedId))) {
+      setSelectedId(String(pagedItems[0].id));
+    }
+  }, [pagedItems, selectedId]);
+
+  const selected = useMemo(
+    () =>
+      filteredItems.find((item) => String(item.id) === String(selectedId)) ||
+      pagedItems[0] ||
+      null,
+    [filteredItems, pagedItems, selectedId]
+  );
+
+  const topIntent = summary?.topIntents?.[0]?.intent || uniqueIntents[0] || '-';
+  const total = summary?.total ?? items.length;
+  const errorsCount = summary?.errors ?? items.filter(isErrorLog).length;
 
   return (
-    <div>
-      <div style={headerRowStyle}>
-        <div>
-          <h2 style={titleStyle}>AI 로그 분석</h2>
-          <p style={descStyle}>
-            챗봇 응답 품질, 장애 발생 구간, 주요 인텐트 흐름을 실서비스 운영
-            관점으로 모니터링합니다.
-          </p>
-        </div>
-        <button type="button" onClick={load} style={refreshButtonStyle}>
-          새로고침
-        </button>
-      </div>
+    <div style={{ display: 'grid', gap: 18 }}>
+      <style>{`
+        .ai-log-id-scroll {
+          overflow-x: auto;
+          overflow-y: hidden;
+          white-space: nowrap;
+          scrollbar-width: thin;
+          scrollbar-color: transparent transparent;
+          padding-bottom: 2px;
+        }
+        .ai-log-id-scroll:hover,
+        .ai-log-id-scroll:focus-within {
+          scrollbar-color: rgba(148,163,184,.65) transparent;
+        }
+        .ai-log-id-scroll::-webkit-scrollbar { height: 6px; }
+        .ai-log-id-scroll::-webkit-scrollbar-track { background: transparent; }
+        .ai-log-id-scroll::-webkit-scrollbar-thumb {
+          background: transparent;
+          border-radius: 999px;
+        }
+        .ai-log-id-scroll:hover::-webkit-scrollbar-thumb,
+        .ai-log-id-scroll:focus-within::-webkit-scrollbar-thumb {
+          background: rgba(148,163,184,.65);
+        }
+      `}</style>
 
-      <div style={summaryGridStyle}>
-        <SummaryCard title="전체 로그" value={safeSummary.total} sub="최근 누적 호출" />
-        <SummaryCard title="오류 건수" value={safeSummary.errors} sub="HTTP 400 이상" />
-        <SummaryCard title="Rate Limit" value={safeSummary.rateLimited} sub="과호출 차단" />
-        <SummaryCard title="평균 응답시간" value={`${safeSummary.avgLatencyMs} ms`} sub="서비스 지연 지표" />
-        <SummaryCard title="주요 인텐트" value={safeSummary.topIntent} sub="가장 많이 호출됨" />
-      </div>
-
-      <div style={filterPanelStyle}>
-        <div style={chipWrapStyle}>
-          {STATUS_FILTERS.map((option) => {
-            const active = statusFilter === option;
-            return (
-              <button
-                key={option}
-                type="button"
-                onClick={() => {
-                  setStatusFilter(option);
-                  setPage(1);
-                }}
-                style={filterChipStyle(active)}
-              >
-                {option}
-              </button>
-            );
-          })}
+      <section
+        style={{
+          background: '#F8F3E4',
+          border: '1px solid #E9D8A6',
+          borderRadius: 28,
+          padding: '26px 28px',
+        }}
+      >
+        <div
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            padding: '8px 14px',
+            borderRadius: 999,
+            background: '#0F172A',
+            color: '#FACC15',
+            fontSize: 14,
+            fontWeight: 800,
+            marginBottom: 16,
+          }}
+        >
+          AI 운영센터
         </div>
-        <div style={filterControlsStyle}>
-          <select
-            value={intentFilter}
-            onChange={(e) => {
-              setIntentFilter(e.target.value);
-              setPage(1);
-            }}
-            style={selectStyle}
-          >
-            {intentOptions.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-          <input
-            value={keyword}
-            onChange={(e) => {
-              setKeyword(e.target.value);
-              setPage(1);
-            }}
-            placeholder="질문, 답변, 세션, 페이지 유형 검색"
-            style={searchInputStyle}
+        <h2
+          style={{ fontSize: 26, fontWeight: 800, margin: 0, color: '#0F172A' }}
+        >
+          AI 로그 분석
+        </h2>
+      </section>
+
+      {!loading && !error ? (
+        <section
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+            gap: 14,
+          }}
+        >
+          <SummaryCard
+            title="전체 로그"
+            value={total}
+            description="최근 조회 기준"
           />
-        </div>
-      </div>
+          <SummaryCard
+            title="오류 로그"
+            value={errorsCount}
+            description="오류 응답 건수"
+            danger={errorsCount > 0}
+          />
+          <SummaryCard
+            title="주요 인텐트"
+            value={topIntent}
+            description="가장 많이 들어온 질문"
+            textValue
+          />
+        </section>
+      ) : null}
 
-      {loading ? <StateBox text="AI 로그를 불러오는 중입니다..." /> : null}
-      {error ? <StateBox text={error} tone="error" /> : null}
+      <section
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'auto auto auto minmax(260px, 1fr) 180px',
+          gap: 12,
+          alignItems: 'center',
+        }}
+      >
+        <FilterChip
+          active={statusFilter === STATUS_ALL}
+          onClick={() => setStatusFilter(STATUS_ALL)}
+        >
+          전체
+        </FilterChip>
+        <FilterChip
+          active={statusFilter === STATUS_NORMAL}
+          onClick={() => setStatusFilter(STATUS_NORMAL)}
+        >
+          정상
+        </FilterChip>
+        <FilterChip
+          active={statusFilter === STATUS_ERROR}
+          onClick={() => setStatusFilter(STATUS_ERROR)}
+        >
+          오류
+        </FilterChip>
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="질문, 답변, 로그 ID 검색"
+          style={searchInputStyle}
+        />
+        <select
+          value={intentFilter}
+          onChange={(e) => setIntentFilter(e.target.value)}
+          style={searchInputStyle}
+        >
+          <option value="all">전체 인텐트</option>
+          {uniqueIntents.map((intent) => (
+            <option key={intent} value={intent}>
+              {intent}
+            </option>
+          ))}
+        </select>
+      </section>
+
+      {loading ? <StateBox text="불러오는 중..." /> : null}
+      {error ? <StateBox text={error} error /> : null}
       {!loading && !error && filteredItems.length === 0 ? (
-        <StateBox text="조건에 맞는 AI 로그가 없습니다." />
+        <StateBox text="조건에 맞는 로그가 없습니다." />
       ) : null}
 
       {!loading && !error && filteredItems.length > 0 ? (
-        <>
-          <div style={layoutStyle}>
-            <section style={tablePanelStyle}>
-              <div style={panelHeaderStyle}>
-                <strong>로그 목록</strong>
-                <span style={mutedStyle}>{filteredItems.length}건</span>
+        <section
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1.2fr 0.95fr',
+            gap: 16,
+            alignItems: 'start',
+          }}
+        >
+          <div style={panelStyle}>
+            <div style={panelHeaderStyle}>
+              <div>
+                <div
+                  style={{ fontSize: 18, fontWeight: 800, color: '#0F172A' }}
+                >
+                  로그 목록
+                </div>
+                <div style={{ marginTop: 6, fontSize: 14, color: '#64748B' }}>
+                  {filteredItems.length}건 · 페이지당 {PAGE_SIZE}건
+                </div>
               </div>
-              <div style={tableWrapStyle}>
-                <table style={tableStyle}>
-                  <thead>
-                    <tr>
-                      <th style={thStyle}>상태</th>
-                      <th style={thStyle}>인텐트</th>
-                      <th style={thStyle}>질문</th>
-                      <th style={thStyle}>응답시간</th>
-                      <th style={thStyle}>시각</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pagedItems.map((item) => {
-                      const active = selectedItem?.id === item.id;
-                      return (
-                        <tr
-                          key={item.id}
-                          onClick={() => setSelectedId(item.id)}
-                          style={trStyle(active)}
-                        >
-                          <td style={tdStyle}>
-                            <span style={statusBadgeStyle(item.statusTone)}>
-                              {item.statusLabel}
-                            </span>
-                          </td>
-                          <td style={tdStyle}>{item.intent}</td>
-                          <td style={tdStyle}>
-                            <div style={questionCellStyle}>{item.question}</div>
-                            <div style={subTextStyle}>{item.pageTypeLabel}</div>
-                          </td>
-                          <td style={tdStyle}>{item.latencyLabel}</td>
-                          <td style={tdStyle}>{item.createdAtLabel}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </section>
+            </div>
 
-            <section style={detailPanelStyle}>
-              {selectedItem ? (
-                <>
-                  <div style={panelHeaderStyle}>
-                    <div>
-                      <strong>로그 상세</strong>
-                      <div style={mutedStyle}>로그 ID {selectedItem.id}</div>
+            <div style={{ display: 'grid', gap: 12, padding: 16 }}>
+              {pagedItems.map((item) => {
+                const selectedNow = String(item.id) === String(selected?.id);
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setSelectedId(String(item.id))}
+                    style={{
+                      ...listCardStyle,
+                      border: selectedNow
+                        ? '1.5px solid #EAB308'
+                        : '1px solid #E2E8F0',
+                      background: selectedNow ? '#FFFBEF' : '#FFFFFF',
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        gap: 12,
+                        marginBottom: 12,
+                      }}
+                    >
+                      <div
+                        style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}
+                      >
+                        <Pill kind={isErrorLog(item) ? 'error' : 'success'}>
+                          {statusLabel(item)}
+                        </Pill>
+                        <Pill>{normalizeIntent(item)}</Pill>
+                      </div>
+                      <span
+                        style={{
+                          fontSize: 13,
+                          color: '#64748B',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {formatDate(normalizeCreatedAt(item))}
+                      </span>
                     </div>
-                    <span style={statusBadgeStyle(selectedItem.statusTone)}>
-                      {selectedItem.statusLabel}
-                    </span>
-                  </div>
 
-                  <div style={detailGridStyle}>
-                    <DetailField label="발생 시각" value={selectedItem.createdAtLabel} />
-                    <DetailField label="인텐트" value={selectedItem.intent} />
-                    <DetailField label="세션 ID" value={selectedItem.sessionId || '-'} />
-                    <DetailField label="Client Key" value={selectedItem.clientKey || '-'} />
-                    <DetailField label="페이지 유형" value={selectedItem.pageTypeLabel} />
-                    <DetailField label="HTTP 상태" value={String(selectedItem.statusCode)} />
-                    <DetailField label="응답시간" value={selectedItem.latencyLabel} />
-                    <DetailField label="카드/소스" value={`${selectedItem.cardCount} / ${selectedItem.sourceCount}`} />
-                  </div>
-
-                  <div style={contentSectionStyle}>
-                    <div style={sectionTitleStyle}>사용자 질문</div>
-                    <div style={messageBoxStyle}>{selectedItem.question}</div>
-                  </div>
-
-                  <div style={contentSectionStyle}>
-                    <div style={sectionTitleStyle}>응답 미리보기</div>
-                    <div style={messageBoxStyle}>{selectedItem.answer}</div>
-                  </div>
-
-                  <div style={{ padding: 18 }}>
-                    <div style={sectionTitleStyle}>운영 메타 정보</div>
-                    <div style={metaTagWrapStyle}>
-                      <MetaTag label={`rate_limited: ${selectedItem.rateLimited ? 'true' : 'false'}`} />
-                      <MetaTag label={`status_code: ${selectedItem.statusCode}`} />
-                      <MetaTag label={`card_count: ${selectedItem.cardCount}`} />
-                      <MetaTag label={`source_count: ${selectedItem.sourceCount}`} />
+                    <div
+                      style={{
+                        fontSize: 15,
+                        fontWeight: 700,
+                        lineHeight: 1.55,
+                        color: '#0F172A',
+                        textAlign: 'left',
+                        marginBottom: 10,
+                      }}
+                    >
+                      {normalizeQuestion(item)}
                     </div>
-                    <pre style={metaBoxStyle}>{selectedItem.metadataText}</pre>
-                  </div>
-                </>
-              ) : null}
-            </section>
+
+                    <div
+                      style={{
+                        fontSize: 14,
+                        lineHeight: 1.6,
+                        color: '#64748B',
+                        textAlign: 'left',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        marginBottom: 10,
+                      }}
+                    >
+                      {normalizeAnswer(item)}
+                    </div>
+
+                    <div
+                      style={{
+                        display: 'flex',
+                        gap: 14,
+                        flexWrap: 'wrap',
+                        fontSize: 13,
+                        color: '#94A3B8',
+                      }}
+                    >
+                      <span>
+                        로그 ID {String(item.id || '-').slice(0, 10)}...
+                      </span>
+                      {normalizeSessionId(item) ? (
+                        <span>세션 연결됨</span>
+                      ) : null}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div style={{ padding: '0 16px 16px' }}>
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                onChange={setPage}
+              />
+            </div>
           </div>
-          <Pagination page={page} totalPages={totalPages} onChange={setPage} />
-        </>
+
+          <div style={panelStyle}>
+            {selected ? (
+              <>
+                <div style={panelHeaderStyle}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div
+                      style={{
+                        fontSize: 18,
+                        fontWeight: 800,
+                        color: '#0F172A',
+                      }}
+                    >
+                      로그 상세
+                    </div>
+                    <div
+                      style={{
+                        marginTop: 8,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: 13,
+                          color: '#64748B',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        로그 ID
+                      </span>
+                      <div
+                        className="ai-log-id-scroll"
+                        style={{ minWidth: 0, flex: 1 }}
+                      >
+                        <span style={{ fontSize: 14, color: '#475569' }}>
+                          {String(selected.id || '-')}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <Pill kind={isErrorLog(selected) ? 'error' : 'success'}>
+                    {statusLabel(selected)}
+                  </Pill>
+                </div>
+
+                <div style={{ padding: 16, display: 'grid', gap: 12 }}>
+                  <InfoRow
+                    label="발생 시각"
+                    value={formatDate(normalizeCreatedAt(selected))}
+                  />
+                  <InfoRow label="인텐트" value={normalizeIntent(selected)} />
+                  {normalizeSessionId(selected) ? (
+                    <InfoRow
+                      label="세션 ID"
+                      value={normalizeSessionId(selected)}
+                      mono
+                    />
+                  ) : null}
+                  <InfoRow
+                    label="질문"
+                    value={normalizeQuestion(selected)}
+                    multiline
+                  />
+                  <InfoRow
+                    label="답변"
+                    value={normalizeAnswer(selected)}
+                    multiline
+                  />
+                </div>
+              </>
+            ) : (
+              <div style={{ padding: 24, color: '#64748B' }}>
+                확인할 로그를 선택해 주세요.
+              </div>
+            )}
+          </div>
+        </section>
       ) : null}
     </div>
   );
 }
 
-function normalizeLog(item, index) {
-  const id = String(item?.id ?? `log-${index}`);
-  const statusCode = Number(item?.status_code ?? item?.statusCode ?? (item?.isError ? 500 : 200));
-  const latencyMs = Number(item?.latency_ms ?? item?.latencyMs ?? 0);
-  const rateLimited = Boolean(item?.rate_limited ?? item?.rateLimited);
-  const isError = Boolean(item?.isError) || statusCode >= 400;
-  const statusTone = rateLimited ? 'warn' : isError ? 'error' : 'success';
-  const statusLabel = rateLimited ? 'Rate Limit' : isError ? '오류' : '정상';
-  const metadataRaw = item?.metadata_json ?? item?.metadataJson ?? item?.metadata ?? {};
-  const metadataText = stringifyMeta(metadataRaw);
-  const pageType = String(item?.page_type ?? item?.pageType ?? '').trim();
-  const question = String(item?.question ?? item?.message ?? '').trim() || '-';
-  const answer = String(item?.answer ?? item?.answer_preview ?? item?.answerPreview ?? '').trim() || '-';
-  const intent = String(item?.intent || 'unknown').trim() || 'unknown';
-  const createdAt = item?.createdAt ?? item?.created_at ?? '';
+function SummaryCard({
+  title,
+  value,
+  description,
+  danger = false,
+  textValue = false,
+}) {
+  return (
+    <div
+      style={{
+        border: `1px solid ${danger ? '#F5C2C7' : '#CBD5E1'}`,
+        borderRadius: 22,
+        padding: '22px 20px',
+        background: '#FFFFFF',
+      }}
+    >
+      <div
+        style={{
+          fontSize: 14,
+          fontWeight: 700,
+          color: '#334155',
+          marginBottom: 14,
+        }}
+      >
+        {title}
+      </div>
+      <div
+        style={{
+          fontSize: textValue ? 18 : 24,
+          fontWeight: 800,
+          color: '#0F172A',
+          marginBottom: 10,
+          lineHeight: 1.3,
+          wordBreak: 'break-word',
+        }}
+      >
+        {String(value ?? '-')}
+      </div>
+      <div style={{ fontSize: 13, color: '#94A3B8' }}>{description}</div>
+    </div>
+  );
+}
 
-  return {
-    ...item,
-    id,
-    statusCode,
-    latencyMs,
-    latencyLabel: latencyMs ? `${latencyMs} ms` : '-',
-    rateLimited,
-    isError,
-    statusTone,
-    statusLabel,
-    question,
-    answer,
-    intent,
-    createdAt,
-    createdAtLabel: formatDateTime(createdAt),
-    sessionId: String(item?.session_id ?? item?.sessionId ?? '').trim(),
-    clientKey: String(item?.client_key ?? item?.clientKey ?? '').trim(),
-    pageType,
-    pageTypeLabel: pageType || '미지정',
-    cardCount: Number(item?.card_count ?? item?.cardCount ?? 0),
-    sourceCount: Number(item?.source_count ?? item?.sourceCount ?? 0),
-    metadataText,
+function FilterChip({ active, onClick, children }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        height: 46,
+        padding: '0 20px',
+        borderRadius: 999,
+        border: active ? '1.5px solid #EAB308' : '1px solid #CBD5E1',
+        background: active ? '#FFF8DB' : '#FFFFFF',
+        color: '#0F172A',
+        fontSize: 15,
+        fontWeight: 700,
+        cursor: 'pointer',
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function Pill({ children, kind = 'default' }) {
+  const map = {
+    success: { bg: '#DCFCE7', fg: '#15803D' },
+    error: { bg: '#FEE2E2', fg: '#B91C1C' },
+    default: { bg: '#E2E8F0', fg: '#334155' },
   };
-}
-
-function stringifyMeta(value) {
-  if (!value) return '{}';
-  if (typeof value === 'string') {
-    try {
-      const parsed = JSON.parse(value);
-      return JSON.stringify(parsed, null, 2);
-    } catch {
-      return value;
-    }
-  }
-  try {
-    return JSON.stringify(value, null, 2);
-  } catch {
-    return String(value);
-  }
-}
-
-function formatDateTime(value) {
-  if (!value) return '-';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return String(value);
-  return new Intl.DateTimeFormat('ko-KR', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date);
-}
-
-function average(values) {
-  if (!values.length) return 0;
-  return Math.round(values.reduce((sum, value) => sum + Number(value || 0), 0) / values.length);
-}
-
-function SummaryCard({ title, value, sub }) {
+  const theme = map[kind] || map.default;
   return (
-    <div style={summaryCardStyle}>
-      <div style={summaryTitleStyle}>{title}</div>
-      <div style={summaryValueStyle}>{String(value ?? '-')}</div>
-      <div style={summarySubStyle}>{sub}</div>
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minWidth: 76,
+        height: 34,
+        padding: '0 14px',
+        borderRadius: 999,
+        background: theme.bg,
+        color: theme.fg,
+        fontSize: 14,
+        fontWeight: 700,
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
+function InfoRow({ label, value, multiline = false, mono = false }) {
+  return (
+    <div
+      style={{
+        border: '1px solid #E2E8F0',
+        borderRadius: 18,
+        padding: '14px 16px',
+        background: '#F8FAFC',
+      }}
+    >
+      <div
+        style={{
+          fontSize: 13,
+          fontWeight: 700,
+          color: '#64748B',
+          marginBottom: 8,
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          fontSize: 15,
+          fontWeight: 700,
+          color: '#0F172A',
+          lineHeight: multiline ? 1.65 : 1.45,
+          whiteSpace: multiline ? 'pre-wrap' : 'normal',
+          wordBreak: mono ? 'break-all' : 'keep-all',
+          fontFamily: mono
+            ? 'ui-monospace, SFMono-Regular, Menlo, monospace'
+            : 'inherit',
+        }}
+      >
+        {value || '-'}
+      </div>
     </div>
   );
 }
 
-function DetailField({ label, value }) {
+function StateBox({ text, error = false }) {
   return (
-    <div style={detailFieldStyle}>
-      <div style={detailLabelStyle}>{label}</div>
-      <div style={detailValueStyle}>{value || '-'}</div>
+    <div
+      style={{
+        border: `1px solid ${error ? '#FECACA' : '#E2E8F0'}`,
+        background: error ? '#FEF2F2' : '#FFFFFF',
+        color: error ? '#B91C1C' : '#64748B',
+        borderRadius: 18,
+        padding: '18px 20px',
+        fontSize: 14,
+      }}
+    >
+      {text}
     </div>
   );
 }
 
-function MetaTag({ label }) {
-  return <span style={metaTagStyle}>{label}</span>;
-}
+const searchInputStyle = {
+  height: 46,
+  width: '100%',
+  borderRadius: 16,
+  border: '1px solid #CBD5E1',
+  background: '#FFFFFF',
+  padding: '0 16px',
+  boxSizing: 'border-box',
+  fontSize: 15,
+  color: '#0F172A',
+  outline: 'none',
+};
 
-function StateBox({ text, tone = 'default' }) {
-  return <div style={stateBoxStyle(tone)}>{text}</div>;
-}
+const panelStyle = {
+  border: '1px solid #CBD5E1',
+  borderRadius: 24,
+  background: '#FFFFFF',
+  overflow: 'hidden',
+};
 
-const titleStyle = { fontSize: 28, fontWeight: 800, margin: 0, color: '#111827' };
-const descStyle = { margin: '8px 0 0', color: '#6B7280', fontSize: 14, lineHeight: 1.6 };
-const mutedStyle = { color: '#6B7280', fontSize: 13 };
-const subTextStyle = { color: '#9CA3AF', fontSize: 12, marginTop: 4 };
-const headerRowStyle = {
+const panelHeaderStyle = {
+  padding: '20px 20px 16px',
+  borderBottom: '1px solid #E2E8F0',
   display: 'flex',
   alignItems: 'flex-start',
   justifyContent: 'space-between',
-  gap: 16,
-  marginBottom: 20,
-  flexWrap: 'wrap',
+  gap: 14,
 };
-const refreshButtonStyle = {
-  border: '1px solid #E5E7EB',
-  background: '#fff',
-  borderRadius: 12,
-  padding: '10px 14px',
-  fontWeight: 700,
-  cursor: 'pointer',
-};
-const summaryGridStyle = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-  gap: 12,
-  marginBottom: 18,
-};
-const summaryCardStyle = {
-  border: '1px solid #E5E7EB',
-  background: '#fff',
-  borderRadius: 18,
-  padding: 18,
-  boxShadow: '0 8px 24px rgba(17,24,39,0.04)',
-};
-const summaryTitleStyle = { color: '#6B7280', fontSize: 13, marginBottom: 8, fontWeight: 700 };
-const summaryValueStyle = { color: '#111827', fontSize: 24, fontWeight: 800, marginBottom: 6 };
-const summarySubStyle = { color: '#9CA3AF', fontSize: 12 };
-const filterPanelStyle = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  gap: 12,
-  marginBottom: 18,
-  flexWrap: 'wrap',
-};
-const chipWrapStyle = { display: 'flex', gap: 8, flexWrap: 'wrap' };
-const filterChipStyle = (active) => ({
-  border: active ? '1px solid #FACC15' : '1px solid #E5E7EB',
-  background: active ? '#FFF8D6' : '#fff',
-  color: '#111827',
-  borderRadius: 999,
-  padding: '9px 14px',
-  fontSize: 13,
-  fontWeight: 700,
-  cursor: 'pointer',
-});
-const filterControlsStyle = { display: 'flex', gap: 10, flexWrap: 'wrap', flex: '1 1 420px' };
-const selectStyle = {
-  minWidth: 160,
-  border: '1px solid #E5E7EB',
-  background: '#fff',
-  borderRadius: 12,
-  padding: '11px 14px',
-  fontSize: 14,
-  color: '#111827',
-};
-const searchInputStyle = {
-  minWidth: 260,
-  flex: '1 1 280px',
-  border: '1px solid #E5E7EB',
-  background: '#fff',
-  borderRadius: 12,
-  padding: '11px 14px',
-  fontSize: 14,
-  color: '#111827',
-};
-const stateBoxStyle = (tone) => ({
-  border: `1px solid ${tone === 'error' ? '#FCA5A5' : '#E5E7EB'}`,
-  color: tone === 'error' ? '#B91C1C' : '#4B5563',
-  background: tone === 'error' ? '#FEF2F2' : '#fff',
-  borderRadius: 16,
-  padding: 18,
-  marginBottom: 16,
-});
-const layoutStyle = {
-  display: 'grid',
-  gridTemplateColumns: 'minmax(0, 1.25fr) minmax(360px, 0.95fr)',
-  gap: 16,
-  alignItems: 'start',
-};
-const basePanelStyle = {
-  border: '1px solid #E5E7EB',
-  background: '#fff',
+
+const listCardStyle = {
+  width: '100%',
   borderRadius: 20,
-  overflow: 'hidden',
-  boxShadow: '0 8px 24px rgba(17,24,39,0.04)',
-};
-const tablePanelStyle = { ...basePanelStyle };
-const detailPanelStyle = { ...basePanelStyle };
-const panelHeaderStyle = {
-  padding: '18px 18px 14px',
-  borderBottom: '1px solid #F3F4F6',
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  gap: 12,
-};
-const tableWrapStyle = { overflowX: 'auto' };
-const tableStyle = { width: '100%', borderCollapse: 'collapse' };
-const thStyle = {
-  textAlign: 'left',
-  padding: '14px 16px',
-  fontSize: 12,
-  fontWeight: 800,
-  color: '#6B7280',
-  background: '#F9FAFB',
-  borderBottom: '1px solid #E5E7EB',
-  whiteSpace: 'nowrap',
-};
-const trStyle = (active) => ({
-  background: active ? '#FFFBEB' : '#fff',
-  cursor: 'pointer',
-});
-const tdStyle = {
-  padding: '14px 16px',
-  borderBottom: '1px solid #F3F4F6',
-  fontSize: 14,
-  color: '#111827',
-  verticalAlign: 'top',
-};
-const questionCellStyle = {
-  maxWidth: 320,
-  display: '-webkit-box',
-  WebkitLineClamp: 2,
-  WebkitBoxOrient: 'vertical',
-  overflow: 'hidden',
-  lineHeight: 1.5,
-};
-const statusBadgeStyle = (tone) => ({
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  minWidth: 74,
-  padding: '6px 10px',
-  borderRadius: 999,
-  fontSize: 12,
-  fontWeight: 800,
-  color:
-    tone === 'success' ? '#166534' : tone === 'warn' ? '#92400E' : '#991B1B',
-  background:
-    tone === 'success' ? '#DCFCE7' : tone === 'warn' ? '#FEF3C7' : '#FEE2E2',
-});
-const detailGridStyle = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-  gap: 12,
   padding: 18,
-  borderBottom: '1px solid #F3F4F6',
-};
-const detailFieldStyle = {
-  border: '1px solid #F3F4F6',
-  borderRadius: 14,
-  padding: 14,
-  background: '#F9FAFB',
-};
-const detailLabelStyle = { color: '#6B7280', fontSize: 12, marginBottom: 6, fontWeight: 700 };
-const detailValueStyle = { color: '#111827', fontSize: 14, fontWeight: 600, wordBreak: 'break-word' };
-const contentSectionStyle = { padding: 18, borderBottom: '1px solid #F3F4F6' };
-const sectionTitleStyle = { fontSize: 14, fontWeight: 800, color: '#111827', marginBottom: 10 };
-const messageBoxStyle = {
-  border: '1px solid #E5E7EB',
-  borderRadius: 16,
-  background: '#fff',
-  padding: 16,
-  whiteSpace: 'pre-wrap',
-  lineHeight: 1.7,
-  color: '#111827',
-  minHeight: 110,
-};
-const metaTagWrapStyle = { display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 };
-const metaTagStyle = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  borderRadius: 999,
-  border: '1px solid #E5E7EB',
-  padding: '7px 10px',
-  background: '#F9FAFB',
-  color: '#374151',
-  fontSize: 12,
-  fontWeight: 700,
-};
-const metaBoxStyle = {
-  margin: 0,
-  background: '#111827',
-  color: '#F9FAFB',
-  padding: 16,
-  borderRadius: 16,
-  fontSize: 12,
-  lineHeight: 1.7,
-  whiteSpace: 'pre-wrap',
-  wordBreak: 'break-word',
-  overflowX: 'auto',
+  cursor: 'pointer',
+  textAlign: 'left',
+  background: '#FFFFFF',
 };

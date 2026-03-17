@@ -5,6 +5,7 @@ import { login } from '../api/authApi';
 import { ROLES } from '../../../shared/constants/roles';
 import { useAuth } from '../../../app/providers/AuthProvider';
 import styles from './Login.module.css';
+import { backendUrl } from '../../../app/http/axiosInstance';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -37,7 +38,7 @@ export default function Login() {
 
   // 구글 로그인 핸들러
   const handleGoogleLogin = () => {
-    window.location.href = "/oauth2/authorization/google";
+    window.location.href = `${backendUrl}/oauth2/authorization/google`;
   };
 
   async function onSubmit(e) {

@@ -5,13 +5,14 @@ import { usePhoneVerification } from '../hooks/usePhoneVerification';
 import { useModal } from '../hooks/usePerInfoTermsModal';
 import SignUpTerms from '../pages/SignUpTerms';
 import styles from '../styles/SignUp.module.css';
+import { backendUrl } from '../../../app/http/axiosInstance';
 
 const Step2IndividualForm = ({ onBack }) => {
   const navigate = useNavigate();
   const { isOpen, openModal, closeModal } = useModal();
 
   const handleGoogleLogin = () => {
-    window.location.href = '/oauth2/authorization/google';
+    window.location.href = `${backendUrl}/oauth2/authorization/google`;
   };
 
   const {

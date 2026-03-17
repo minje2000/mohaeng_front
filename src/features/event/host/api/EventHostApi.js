@@ -41,11 +41,11 @@ export async function deleteEvent(eventId) {
  * AI 태그 추천
  * POST /api/events/suggest-tags
  */
-export async function suggestTags({ title, description, thumbnail = null }) {
+export async function suggestTags({ title, description }) {
   const formData = new FormData();
   formData.append('title', title);
   formData.append('description', description || '');
-  if (thumbnail) formData.append('thumbnail', thumbnail);
+  // thumbnail 제거 - 실제로 AI에서 사용 안 함
 
   const token = tokenStore.getAccess();
   const res = await fetch('/api/events/suggest-tags', {

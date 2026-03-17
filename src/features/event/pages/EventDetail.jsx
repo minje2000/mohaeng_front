@@ -205,9 +205,17 @@ function AiCourseSection({ ev }) {
         });
       });
 
+      const token = localStorage.getItem("accessToken");
+
+       if (!token) {
+  setError('로그인 후 사용 가능한 서비스입니다.');
+  setLoading(false);
+  return;
+}
+
       const res = await fetch('/api/ai/nearby/course', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({
           festival_name: ev.title,
           latitude:      coords.lat,
@@ -220,7 +228,8 @@ function AiCourseSection({ ev }) {
           festival_date:       ev.startDate || null,
         }),
       });
-      if (!res.ok) throw new Error('코스 생성에 실패했어요. 잠시 후 다시 시도해주세요.');
+     
+if (!res.ok) throw new Error('코스 생성에 실패했어요. 잠시 후 다시 시도해주세요.');
       const data = await res.json();
       setCourse(data);
     } catch (e) {
@@ -519,13 +528,16 @@ export default function EventDetail() {
   }, [eventId]);
 
   useEffect(() => {
-    apiJson().get(`/api/eventParticipation/check/${eventId}`)
-      .then(res => {
-        setAlreadyApplied(!!res.data.alreadyApplied);
-        setAlreadyBoothApplied(!!res.data.alreadyBoothApplied);
-      })
-      .catch(() => {});
-  }, [eventId]);
+  const token = localStorage.getItem("accessToken");
+  if (!token) return;
+
+  apiJson().get(`/api/eventParticipation/check/${eventId}`)
+    .then(res => {
+      setAlreadyApplied(!!res.data.alreadyApplied);
+      setAlreadyBoothApplied(!!res.data.alreadyBoothApplied);
+    })
+    .catch(() => {});
+}, [eventId]);
 
   if (loading) return <LoadingScreen />;
   if (error)   return <ErrorScreen msg={error} />;

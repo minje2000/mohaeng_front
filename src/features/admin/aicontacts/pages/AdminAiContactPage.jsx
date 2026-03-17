@@ -202,9 +202,6 @@ export default function AdminAiContactPage() {
           <h2 style={titleStyle}>AI 문의 관리</h2>
         </div>
         <div style={heroActionsStyle}>
-          <button type="button" onClick={load} style={secondaryBtnStyle}>
-            새로고침
-          </button>
           <button
             type="button"
             onClick={handleSave}

@@ -33,6 +33,17 @@ const QUICK_QUESTIONS = {
   ],
 };
 
+const AI_SESSION_KEY = 'mohaeng_ai_session_id';
+
+function getAiSessionId() {
+  let value = sessionStorage.getItem(AI_SESSION_KEY);
+  if (!value) {
+    value = `sess_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+    sessionStorage.setItem(AI_SESSION_KEY, value);
+  }
+  return value;
+}
+
 const PAGE_LABEL = {
   map: '행사 지도',
   calendar: '행사 달력',
@@ -389,6 +400,7 @@ export default function AiChatWidget({ pageType = 'board' }) {
         role: m.role,
         text: m.text,
       }));
+      const sessionId = getAiSessionId();
 
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
@@ -406,6 +418,7 @@ export default function AiChatWidget({ pageType = 'board' }) {
           locationKeywords,
           filters: { region, locations: locationKeywords },
           history,
+          sessionId,
         }),
       });
 

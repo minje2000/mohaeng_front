@@ -25,48 +25,29 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_REGION }}
 
-    # ECR 로그인
-    - name: Login to ECR
-      uses: aws-actions/amazon-ecr-login@v1
-
-    # React Docker 이미지 빌드
-    - name: Build Docker image
+    # React 빌드
+    - name: Build React
       run: |
-        docker build -t mohaeng-react .
+        cd react
+        npm ci
+        npm run build
 
-    # ECR에 push하기 위해 태그 변경
-    - name: Tag Docker image
-      run: |
-        docker tag mohaeng-react:latest \
-        ${{ secrets.ECR_REGISTRY }}/mohaeng-react:latest
+    # 빌드 결과를 EC2 서버로 복사
+    - name: Copy build to EC2
+      uses: appleboy/scp-action@v0.1.0
+      with:
+        host: ${{ secrets.EC2_HOST }}      
+        username: ${{ secrets.EC2_USER }}  
+        key: ${{ secrets.EC2_SSH_KEY }}   
+        source: "react/build/*"            # 빌드된 정적 파일만 복사
+        target: "/usr/share/nginx/html/"   # Nginx 루트 디렉토리
 
-    # ECR에 이미지 push
-    - name: Push Docker image
-      run: |
-        docker push \
-        ${{ secrets.ECR_REGISTRY }}/mohaeng-react:latest
-
-    # EC2 서버에 SSH 접속 후 배포
-    - name: Deploy to EC2
+    # EC2 서버에서 Nginx reload
+    - name: Reload Nginx
       uses: appleboy/ssh-action@v1.0.3
       with:
-        host: ${{ secrets.EC2_HOST }}      # EC2 public IP
-        username: ${{ secrets.EC2_USER }}  # ubuntu
-        key: ${{ secrets.EC2_SSH_KEY }}    # pem key
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_SSH_KEY }}
         script: |
-
-          # docker-compose 위치로 이동
-          cd deploy
-
-          # ECR 로그인
-          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} \
-          | docker login \
-          --username AWS \
-          --password-stdin \
-          ${{ secrets.ECR_REGISTRY }}
-
-          # 최신 이미지 pull
-          docker compose pull react
-
-          # 컨테이너 재시작
-          docker compose up -d react --no-deps
+          sudo systemctl reload nginx

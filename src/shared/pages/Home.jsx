@@ -102,9 +102,9 @@ const labelOffset = {
   충북: { dx: -32, dy: -6 },
   제주: { dx: 0, dy: -4 },
   세종: { dx: 3, dy: 12 },
-  인천: { dx: 3, dy: 0 },    // 살짝만 오른쪽
+  인천: { dx: 3, dy: 0 },
   서울: { dx: 2, dy: 6 },
-  부산: { dx: -2, dy: 6 },   // 살짝만 왼쪽
+  부산: { dx: -2, dy: 6 },
   울산: { dx: 2, dy: 0 },
   대구: { dx: 2, dy: 0 },
 };
@@ -130,9 +130,8 @@ export default function Home() {
   const onLogout = () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
-    
-    setLoggedIn(false); // 👈 핵심! 토큰을 지운 즉시 로그인 상태를 false로 바꿔서 화면을 다시 그림
-    navigate("/"); // 혹시 몰라서 홈으로 확실히 쐐기 박기
+    setLoggedIn(false);
+    navigate("/");
   };
   const svgRef = useRef(null);
   const tooltipRef = useRef(null);
@@ -150,17 +149,13 @@ export default function Home() {
         const countRes = await apiJson().get("/api/events/counts").catch(() => null);
         if (countRes) {
           const raw = countRes.data || [];
-          // 구/군 단위 ID를 시/도 단위로 합산
-          // 앞 2자리가 같으면 같은 시/도 (예: 11xxxxxxxx → 서울)
-          // REGION_CENTER의 id(예: 1100000000)도 앞 2자리로 매칭
-          const sidoMap = {}; // { "11": 총count, "26": 총count, ... }
+          const sidoMap = {};
           raw.forEach(item => {
             const prefix = String(item.regionId).substring(0, 2);
             sidoMap[prefix] = (sidoMap[prefix] || 0) + Number(item.count);
           });
-          // REGION_CENTER 형태로 변환 { regionId: 1100000000, count: N }
           countsData = Object.entries(sidoMap).map(([prefix, count]) => ({
-            regionId: prefix, // 앞 2자리로 비교할 것
+            regionId: prefix,
             count,
           }));
         }
@@ -177,12 +172,6 @@ export default function Home() {
             <feGaussianBlur in="SourceAlpha" stdDeviation="7" result="blur"/>
             <feOffset dx="0" dy="16" result="offsetBlur"/>
             <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.4 0" />
-            <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
-          </filter>
-          <filter id="hoverShadow" x="-80%" y="-80%" width="260%" height="260%">
-            <feGaussianBlur in="SourceAlpha" stdDeviation="14" result="blur"/>
-            <feOffset dx="0" dy="24" result="offsetBlur"/>
-            <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.6 0" />
             <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
           </filter>
           <linearGradient id="tileFill" x1="0" y1="0" x2="0" y2="1">
@@ -206,20 +195,10 @@ export default function Home() {
       const pathGenerator = geoPath().projection(projection);
       projection.fitExtent([[40, 40], [width - 40, height - 40]], cleaned);
 
-      // 기본 레이어
       const topG = document.createElementNS(ns, "g");
       topG.setAttribute("transform", "translate(0,6)");
       topG.setAttribute("filter", "url(#softShadow)");
       svg.appendChild(topG);
-
-      // hover 전용 최상위 레이어
-      // pointer-events:none → 복제본이 마우스를 가로채지 못하게 해서 플리커링 방지
-      const hoverG = document.createElementNS(ns, "g");
-      hoverG.setAttribute("transform", "translate(0,6)");
-      hoverG.setAttribute("filter", "url(#hoverShadow)");
-      hoverG.setAttribute("pointer-events", "none");
-      hoverG.style.pointerEvents = "none";
-      svg.appendChild(hoverG);
 
       cleaned.features.forEach((feature) => {
         const d = pathGenerator(feature) ?? "";
@@ -233,7 +212,6 @@ export default function Home() {
         g.setAttribute("data-region-key", key || "");
         topG.appendChild(g);
 
-        // ★ path에 pointer-events:all → 클릭·hover 모두 path가 받음
         const p = document.createElementNS(ns, "path");
         p.setAttribute("d", d);
         p.setAttribute("fill", "url(#tileFill)");
@@ -262,19 +240,7 @@ export default function Home() {
           t.style.pointerEvents = "none";
           t.textContent = labelText[key];
           g.appendChild(t);
-
-          // 지도 위 행사 개수 텍스트는 표시하지 않음 (hover 툴팁으로만 표시)
         }
-
-        let hoverClone = null;
-
-        // 클론을 즉시 강제 제거
-        const killClone = () => {
-          if (hoverClone) {
-            if (hoverClone.parentNode) hoverClone.parentNode.removeChild(hoverClone);
-            hoverClone = null;
-          }
-        };
 
         p.addEventListener("mousemove", (e) => {
           const tip = tooltipRef.current;
@@ -287,8 +253,11 @@ export default function Home() {
           p.setAttribute("fill", "url(#tileFillHover)");
           p.setAttribute("stroke", "#4B72B8");
           p.setAttribute("stroke-width", "2.2");
+          p.style.transformOrigin = `${cx}px ${cy}px`;
+          p.style.transform = "scale(1.05) translateY(-10px)";
+          p.style.transition = "transform 0.13s cubic-bezier(0.2, 0, 0.2, 1)";
+          p.style.filter = "drop-shadow(0px 8px 12px rgba(0,0,0,0.4))";
 
-          // 툴팁 표시
           const tip = tooltipRef.current;
           if (tip && key) {
             const rid = REGION_CENTER[key]?.id;
@@ -304,60 +273,20 @@ export default function Home() {
             tip.style.left = (e.clientX + 14) + "px";
             tip.style.top  = (e.clientY - 38) + "px";
           }
-
-          // 기존 클론 즉시 제거 후 새로 생성 (빠르게 훑을 때 stuck 방지)
-          killClone();
-
-          const clone = g.cloneNode(true);
-          clone.setAttribute("pointer-events", "none");
-          clone.style.pointerEvents = "none";
-          clone.querySelectorAll("*").forEach(el => {
-            el.setAttribute("pointer-events", "none");
-            el.style.pointerEvents = "none";
-          });
-          clone.style.willChange = "transform";
-          clone.setAttribute("transform", `translate(${cx},${cy}) scale(1) translate(${-cx},${-cy})`);
-          clone.style.transition = "none";
-          hoverG.appendChild(clone);
-          hoverClone = clone;
-
-          requestAnimationFrame(() => {
-            if (hoverClone !== clone) return;
-            clone.style.transition = "transform 0.13s cubic-bezier(0.2, 0, 0.2, 1)";
-            clone.setAttribute(
-              "transform",
-              `translate(${cx},${cy - 10}) scale(1.05) translate(${-cx},${-cy})`
-            );
-          });
         });
 
         p.addEventListener("mouseleave", () => {
           p.setAttribute("fill", "url(#tileFill)");
           p.setAttribute("stroke", "#6B7280");
           p.setAttribute("stroke-width", "2");
+          p.style.transform = "";
+          p.style.filter = "";
+          p.style.transition = "transform 0.12s cubic-bezier(0.4, 0, 1, 1)";
 
           const tip = tooltipRef.current;
           if (tip) tip.style.display = "none";
-
-          if (!hoverClone) return;
-          const clone = hoverClone;
-          hoverClone = null;
-
-          clone.style.transition = "transform 0.12s cubic-bezier(0.4, 0, 1, 1)";
-          clone.setAttribute("transform", `translate(${cx},${cy}) scale(1) translate(${-cx},${-cy})`);
-
-          // transitionend와 타임아웃 중 먼저 오는 것으로 제거 (stuck 방지)
-          let done = false;
-          const doRemove = () => {
-            if (done) return;
-            done = true;
-            if (clone.parentNode) clone.parentNode.removeChild(clone);
-          };
-          clone.addEventListener("transitionend", doRemove, { once: true });
-          setTimeout(doRemove, 200);
         });
 
-        // ★ 클릭도 p에서 직접 처리
         p.addEventListener("click", () => {
           if (key && REGION_CENTER[key]) {
             navigate(`/events?regionId=${REGION_CENTER[key].id}`);
@@ -395,7 +324,6 @@ export default function Home() {
                 {tokenStore.getUserName()} 님, 환영합니다!
                 <NotificationBell className={styles.authLink} BellIcon={BellIcon} />
                 <Link className={styles.authLink} to={isAdmin ? "/admin/stats" : "/mypage"}><UserIcon /> 마이페이지</Link>
-                {/* 💡 button 대신 a 태그로 바꿔서 옆의 링크들과 폰트/규격을 완벽하게 통일! */}
                 <a 
                   className={styles.authLink} 
                   onClick={onLogout}
@@ -441,7 +369,7 @@ export default function Home() {
             }}
           />
           <AiChatWidget pageType="map" />
-</div>
+        </div>
       </section>
     </main>
   );

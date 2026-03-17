@@ -37,7 +37,7 @@ jobs:
 
     # 빌드 결과를 EC2 서버로 복사
     - name: Copy build to EC2
-      uses: appleboy/scp-action@v0.1.0
+      uses: appleboy/scp-action@v0.1.7
       with:
         host: ${{ secrets.EC2_HOST }}      
         username: ${{ secrets.EC2_USER }}  

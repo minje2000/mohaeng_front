@@ -1039,7 +1039,7 @@ export default function EventHost() {
     if (!form.description.trim()) { alert('먼저 상세 설명을 입력해주세요.'); return; }
     setAiLoading(true);
     try {
-      const result = await suggestTags({ title: form.title, description: form.description, thumbnail });
+      const result = await suggestTags({ title: form.title, description: form.description });
       if (result.simpleExplain) { setF('simpleExplain', result.simpleExplain); setAiSuggestedFields((p) => ({ ...p, simpleExplain: true })); }
       if (result.categoryId)    { setF('categoryId', String(result.categoryId)); setAiSuggestedFields((p) => ({ ...p, category: true })); }
       if (result.topicIds?.length > 0) { setSelectedTopics(result.topicIds.slice(0, 5)); setAiSuggestedFields((p) => ({ ...p, topics: true })); }

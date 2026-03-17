@@ -44,6 +44,7 @@ jobs:
         key: ${{ secrets.EC2_SSH_KEY }}   
         source: "build/*"            # 빌드된 정적 파일만 복사
         target: "/usr/share/nginx/html/"   # Nginx 루트 디렉토리
+        strip_components: 1   # build/ 폴더 제거하고 내용물만 복사
 
     # EC2 서버에서 Nginx reload
     - name: Reload Nginx

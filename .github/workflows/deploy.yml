@@ -30,6 +30,10 @@ jobs:
       run: |
         npm ci
         CI=false npm run build
+        
+    # build 폴더 존재 확인 (디버깅용)
+    - name: Check build folder
+      run: ls -al
 
     # 빌드 결과를 EC2 서버로 복사
     - name: Copy build to EC2
@@ -38,7 +42,7 @@ jobs:
         host: ${{ secrets.EC2_HOST }}      
         username: ${{ secrets.EC2_USER }}  
         key: ${{ secrets.EC2_SSH_KEY }}   
-        source: "react/build/*"            # 빌드된 정적 파일만 복사
+        source: "build/*"            # 빌드된 정적 파일만 복사
         target: "/usr/share/nginx/html/"   # Nginx 루트 디렉토리
 
     # EC2 서버에서 Nginx reload

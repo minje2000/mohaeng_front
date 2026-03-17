@@ -484,24 +484,28 @@ export default function EventHostMypage() {
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'center' }}>
-                    <button
-                      type="button"
-                      onClick={() => onGoStats(ev)}
-                      style={{
-                        padding: '9px 14px',
-                        borderRadius: 12,
-                        border: '1px solid #BFDBFE',
-                        background: '#EFF6FF',
-                        color: '#1D4ED8',
-                        cursor: 'pointer',
-                        fontSize: 13,
-                        fontWeight: 800,
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      통계
-                    </button>
-                  </div>
+  {statusUI.key === '승인대기' || statusUI.key === '반려' ? (
+    <span style={{ fontSize: 12, color: '#94A3B8', fontWeight: 800 }}>-</span>
+  ) : (
+    <button
+      type="button"
+      onClick={() => onGoStats(ev)}
+      style={{
+        padding: '9px 14px',
+        borderRadius: 12,
+        border: '1px solid #BFDBFE',
+        background: '#EFF6FF',
+        color: '#1D4ED8',
+        cursor: 'pointer',
+        fontSize: 13,
+        fontWeight: 800,
+        whiteSpace: 'nowrap',
+      }}
+    >
+      통계
+    </button>
+  )}
+</div>
 
                   <div style={{ display: 'flex', justifyContent: 'center' }}>
                     {canDelete ? (

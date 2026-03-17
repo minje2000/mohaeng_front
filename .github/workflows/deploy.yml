@@ -28,7 +28,6 @@ jobs:
     # React 빌드
     - name: Build React
       run: |
-        cd react
         npm ci
         npm run build
 

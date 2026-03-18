@@ -65,6 +65,13 @@ export const ParticipationBoothApi = {
     return response.data;
   },
 
+  async getPresignedDownloadUrl({ dir, value, filename }) {
+    const res = await apiJson().get('/api/files/presigned-download-url', {
+      params: { dir, value, filename },
+    });
+    return res.data?.url || null;
+  },
+
   // 5. 부스 참가 취소 (params 객체 대신 URL에 직접 파라미터로 붙이도록 수정)
   async cancelBoothParticipation(pctBoothId) {
     const res = await apiJson().delete(

@@ -250,9 +250,6 @@ export default function AdminEventModerationPage() {
         <h2 style={{ margin: 0, fontSize: 24, fontWeight: 900 }}>
           행사 검수 관리
         </h2>
-        <p style={{ marginTop: 8, color: "#64748B" }}>
-          승인대기 및 반려 상태의 행사를 확인하고 검수할 수 있습니다.
-        </p>
       </div>
 
       {message && <div style={messageStyle}>{message}</div>}

@@ -1,12 +1,10 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { tokenStore } from '../../../app/http/tokenStore';
 import { fetchEventDetail } from '../../../features/event/api/EventDetailAPI';
 import eventThumbUrl from '../../utils/eventThumbUrl';
 import { sendAiChat } from '../../api/aiChatApi';
 
-import { backendUrl } from '../../../app/http/axiosInstance';
 
 const LOCATION_PATTERNS = [
   /((?:서울|부산|대구|인천|광주|대전|울산|세종|제주|경기|강원|충북|충남|전북|전남|경북|경남)\S*)/g,
@@ -448,7 +446,6 @@ export default function AiChatWidget({ pageType = 'board' }) {
     setLoading(true);
 
     try {
-      const accessToken = tokenStore.getAccess();
       const locationKeywords = extractLocationKeywords(question);
       const region = locationKeywords[0] || '';
       const history = messages.slice(-6).map((m) => ({
@@ -456,33 +453,6 @@ export default function AiChatWidget({ pageType = 'board' }) {
         text: m.text,
       }));
       const sessionId = getAiSessionId();
-
-      const response = await fetch(`${backendUrl}/api/ai/chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-        },
-        body: JSON.stringify({
-          question,
-          message: question,
-          pageType,
-          contextPage: pageType,
-          region,
-          location: region,
-          locationKeywords,
-          filters: { region, locations: locationKeywords },
-          history,
-          sessionId,
-        }),
-      });
-
-      let payload = null;
-      try {
-        payload = await response.json();
-      } catch {
-        payload = null;
-      }
 
       const payload = await sendAiChat({
         question,

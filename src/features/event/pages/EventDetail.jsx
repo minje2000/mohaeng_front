@@ -11,6 +11,9 @@ import KakaoMap from '../../../shared/components/common/KakaoMap';
 import ShareModal from '../../../shared/components/Modal/ShareModal';
 import { eventImageUrl, photoImageUrl } from '../../../shared/utils/uploadFileUrl';
 
+import { backendUrl } from '../../../app/http/axiosInstance';
+
+
 const TOPIC_MAP = {
   1:'IT', 2:'비즈니스/창업', 3:'마케팅/브랜딩', 4:'디자인/아트',
   5:'재테크/투자', 6:'취업/이직', 7:'자기계발', 8:'인문/사회/과학',
@@ -213,7 +216,7 @@ function AiCourseSection({ ev }) {
   return;
 }
 
-      const res = await fetch('/api/ai/nearby/course', {
+      const res = await fetch(`${backendUrl}/api/ai/nearby/course`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({

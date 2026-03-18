@@ -3,6 +3,8 @@ import { apiForm, apiJson } from '../../../app/http/request';
 import { tokenStore } from '../../../app/http/tokenStore';
 import { normalizeApiError } from '../../../app/http/errorMapper';
 
+import { backendUrl } from '../../../app/http/axiosInstance';
+
 // 백엔드 응답이 ApiResponse로 감싸져도 토큰을 찾게 처리
 function unwrap(body) {
   return body?.data ?? body;
@@ -151,7 +153,7 @@ export async function updateProfile(userInfo, deletePhoto, newPhoto) {
   }
 
   const token = tokenStore.getAccess();
-  const res = await fetch('/api/user/profile', {
+  const res = await fetch(`${backendUrl}/api/user/profile`, {
     method: 'PATCH',
     headers: token ? { Authorization: `Bearer ${token}` } : {},
     // Content-Type 은 직접 쓰면 안 됨 — FormData가 boundary 포함해서 자동 설정

@@ -1,5 +1,6 @@
 // src/features/event/review/api/reviewApi.js
 import { tokenStore } from '../../../../app/http/tokenStore';
+import { backendUrl } from '../../../../app/http/axiosInstance';
 
 const API_BASE = process.env.REACT_APP_API_BASE_URL || '';
 
@@ -38,7 +39,7 @@ async function request(path, { method = 'GET', params, body, headers } = {}) {
     Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, String(v)));
   }
 
-  const res = await fetch(url.toString().replace(window.location.origin, ''), {
+  const res = await fetch(url.toString().replace(window.location.origin, `${backendUrl}`), {
     method,
     headers: {
       'Content-Type': 'application/json',

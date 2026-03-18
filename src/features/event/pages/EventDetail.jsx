@@ -229,6 +229,7 @@ function AiCourseSection({ ev }) {
           festival_start_time: ev.startTime || null,
           festival_end_time:   ev.endTime   || null,
           festival_date:       ev.startDate || null,
+          festival_address:    ev.lotNumberAdr || ev.detailAdr || null,
         }),
       });
      

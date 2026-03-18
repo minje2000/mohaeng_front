@@ -1064,6 +1064,7 @@ export default function EventHost() {
     if (!form.endRecruit)            { alert('모집 종료일을 선택해주세요.'); return false; }
     if (!form.roadAddress)           { alert('주소 찾기를 통해 주소를 입력해주세요.'); return false; }
     if (!form.detailAddressExtra.trim()) { alert('상세 주소를 입력해주세요.'); return false; }
+    if (/^\d+$/.test(form.detailAddressExtra.trim())) { alert('상세 주소를 올바르게 입력해주세요.\n예) 3층, B동 201호, 광장 내'); return false; }
     if (!form.categoryId)            { alert('카테고리를 선택해주세요.'); return false; }
     if (selectedTopics.length === 0) { alert('주제(Topic)를 1개 이상 선택해주세요.'); return false; }
     if (!form.isFree && !form.price) { alert('참가비를 입력해주세요.'); return false; }
@@ -1223,7 +1224,11 @@ export default function EventHost() {
                 📮 {form.zipCode}{form.lotNumberAdr && ` · 지번: ${form.lotNumberAdr}`}
               </div>
             )}
-            <Input placeholder="상세 주소를 입력하세요 (동/호수, 층 등) *필수" value={form.detailAddressExtra} onChange={(e) => setF('detailAddressExtra', e.target.value)} />
+            <Input 
+              placeholder="상세 주소를 입력하세요 (예: 3층, B동 201호, 광장 내) *필수" 
+              value={form.detailAddressExtra} 
+              onChange={(e) => setF('detailAddressExtra', e.target.value)} 
+            />
             {form.roadAddress && form.detailAddressExtra && (
               <div style={{ marginTop: 8, padding: '8px 12px', background: '#F0FDF4', borderRadius: 10, fontSize: 12, color: '#15803D', fontWeight: 700 }}>
                 📍 저장될 주소: {form.roadAddress} {form.detailAddressExtra}

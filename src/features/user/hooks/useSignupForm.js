@@ -1,6 +1,7 @@
 // src/features/user/hooks/userSignupForm.js
 import { useState, useMemo } from 'react';
 import { userApi } from '../api/UserApi';
+import { apiJson } from '../../../app/http/request';
 
 const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d)[^\s]{8,}$/;
 
@@ -11,6 +12,14 @@ export const useSignupForm = (initialValues) => {
 
   // 중복 확인 상태 (null: 확인전, true: 사용가능, false: 중복/사용불가)
   const [isIdAvailable, setIsIdAvailable] = useState(null);
+
+  // 사업자 인증 상태
+  const [bizFile,        setBizFile]        = useState(null);
+  const [bizVerified,    setBizVerified]    = useState(false);   // 인증 완료 여부
+  const [bizVerifying,   setBizVerifying]   = useState(false);   // 인증 중
+  const [bizMessage,     setBizMessage]     = useState('');      // 인증 결과 메시지
+  const [bizSuccess,     setBizSuccess]     = useState(null);    // true/false/null
+  const [bizNumber,      setBizNumber]      = useState('');      // 추출된 사업자번호
 
   // 실시간 비밀번호 유효성 검사
   const isPasswordValid = useMemo(() => {
@@ -27,9 +36,18 @@ export const useSignupForm = (initialValues) => {
 
     // 사업자 등록증
     if (type === 'file') {
+      const file = files[0];
+
+      setBizFile(file);
+      // 파일 바꾸면 인증 초기화
+      setBizVerified(false);
+      setBizSuccess(null);
+      setBizMessage('');
+      setBizNumber('');
+
       setFormData((prev) => ({
         ...prev,
-        [name]: files[0],
+        [name]: file,
       }));
       return;
     }
@@ -66,11 +84,76 @@ export const useSignupForm = (initialValues) => {
       alert('중복 확인 중 오류가 발생했습니다.');
     }
   };
-  
+
+  // 인증하기 클릭
+  const handleVerifyBiz = async () => {
+    if (!bizFile) {
+      alert('사업자등록증 파일을 먼저 업로드해주세요.');
+      return;
+    }
+    setBizVerifying(true);
+    setBizMessage('');
+    setBizSuccess(null);
+
+    try {
+      const form = new FormData();
+      form.append('businessFile', bizFile);
+
+      const res = await apiJson().post('/api/user/verifyBiz', form);
+      const data = res.data;
+
+      if (data.success) {
+        const businessNum = data.data?.businessNum || '';
+        const companyName = data.data?.companyName || '';
+
+        setBizNumber(businessNum);
+
+        // 회사명 자동 입력
+        setFormData((prev) => ({
+          ...prev,
+          name: companyName,
+          businessNum: businessNum,
+        }));
+
+        setBizVerified(true);
+        setBizSuccess(true);
+        setBizMessage(
+          `인증되었습니다. (사업자번호: ${businessNum})`
+        );
+      } else {
+        setBizVerified(false);
+        setBizSuccess(false);
+        setBizMessage(data.message);
+      }
+
+    } catch (e) {
+      setBizVerified(false);
+      setBizSuccess(false);
+
+      const message = e.response?.data?.message;
+      const businessNum = e.response?.data?.data?.businessNum;
+
+      if (e.response?.status === 401 && businessNum) {
+        setBizMessage(`${message} (사업자번호: ${businessNum})`);
+      } else if (message) {
+        setBizMessage(message);
+      } else {
+        setBizMessage("서버 오류가 발생했습니다.");
+      }
+    } finally {
+      setBizVerifying(false);
+    }
+  };
 
   const handleSubmit = async (e, userType, navigate, phone, isVerified) => {
     e.preventDefault();
     setErr('');
+
+    // 사업자 인증 여부 체크
+    if (userType === 'COMPANY' && !bizVerified) {
+      alert('사업자 등록증을 업로드하여 인증해야 합니다.');
+      return;
+    }
 
     // 이메일 중복 검사
     if (isIdAvailable !== true) {
@@ -85,14 +168,8 @@ export const useSignupForm = (initialValues) => {
     }
 
     // 본인 인증 검사
-    // if (!isVerified){
-    //   alert('본인 인증 확인이 필요합니다.');
-    //   return;
-    // }
-
-    // 사업자 등록번호 검사
-    if(userType === 'COMPANY' && !formData.businessFile) {
-      alert('사업자 등록증 파일을 업로드해주세요.');
+    if (!isVerified){
+      alert('본인 인증 확인이 필요합니다.');
       return;
     }
 
@@ -105,20 +182,16 @@ export const useSignupForm = (initialValues) => {
     try {
       const userData = new FormData();
       for (const key in formData) {
-        // 불필요한 값 제외
         if (key !== 'agreement') {
           userData.append(key, formData[key]);
         }
       }
       userData.append('phone', phone);
-      // 회원 유형(PERSONAL/COMPANY) 추가
       userData.append('userType', userType);
-      // 가입 유형 추가
       userData.append('signupType', 'BASIC');
 
-
       const res = await userApi.signup(userData);
-      // console.log("res", res)
+
       if(res.success === true){
         alert('회원가입이 완료되었습니다!');
         navigate('/login', { replace: true });
@@ -147,6 +220,15 @@ export const useSignupForm = (initialValues) => {
     isIdAvailable,
     isLoading, 
     isPasswordValid,
-    err 
+    err,
+
+    // 사업자 관련 반환
+    bizFile,
+    bizVerified,
+    bizVerifying,
+    bizMessage,
+    bizSuccess,
+    bizNumber,
+    handleVerifyBiz
   };
 };

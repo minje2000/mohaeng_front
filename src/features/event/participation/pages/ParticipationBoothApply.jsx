@@ -24,23 +24,31 @@ const THEME = {
   border: '#E5E7EB', text: '#111827', subText: '#9CA3AF',
 };
 
-// ✅ 이미지 강제 다운로드 헬퍼
-const downloadFile = async (url, filename) => {
+// ✅ S3 Presigned URL 다운로드 헬퍼
+const downloadFile = async ({ value, filename }) => {
   try {
-    const res = await fetch(url);
-    const blob = await res.blob();
+    const url = await ParticipationBoothApi.getPresignedDownloadUrl({
+      dir: 'host-booth',
+      value,
+      filename,
+    });
+
+    if (!url) throw new Error('empty presigned url');
+
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = filename;
+    a.href = url;
+    a.rel = 'noopener noreferrer';
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(a.href);
-  } catch {
+    document.body.removeChild(a);
+  } catch (e) {
+    console.error(e);
     alert('다운로드에 실패했습니다.');
   }
 };
 
 // ✅ 이미지 라이트박스 모달
-const LightboxModal = ({ src, filename, onClose }) => (
+const LightboxModal = ({ src, filename, storedValue, onClose }) => (
   <div
     onClick={onClose}
     style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '20px' }}
@@ -53,7 +61,7 @@ const LightboxModal = ({ src, filename, onClose }) => (
       />
       <div style={{ display: 'flex', gap: '10px' }}>
         <button
-          onClick={() => downloadFile(src, filename)}
+          onClick={() => downloadFile({ value: filename, filename })}
           style={{ padding: '9px 22px', borderRadius: '8px', border: 'none', background: THEME.primary, color: '#000', fontWeight: '800', fontSize: '13px', cursor: 'pointer' }}
         >
           ⬇ 다운로드
@@ -166,7 +174,7 @@ export default function ParticipationBoothApply() {
   const [showTermsModal, setShowTermsModal] = useState(false);
 
   // ✅ 라이트박스 상태
-  const [lightbox, setLightbox] = useState(null); // { src, filename }
+  const [lightbox, setLightbox] = useState(null); // { src, filename, storedValue }
 
   const [selectedBoothId, setSelectedBoothId]       = useState('');
   const [selectedFacilities, setSelectedFacilities] = useState([]);
@@ -290,6 +298,7 @@ export default function ParticipationBoothApply() {
         <LightboxModal
           src={lightbox.src}
           filename={lightbox.filename}
+          storedValue={lightbox.storedValue}
           onClose={() => setLightbox(null)}
         />
       )}
@@ -337,14 +346,14 @@ export default function ParticipationBoothApply() {
                       </div>
                       {/* 다운로드 버튼 */}
                       <button
-                        onClick={() => downloadFile(src, filename)}
+                        onClick={() => downloadFile({ value: filename, filename })}
                         style={{ fontSize: '11px', fontWeight: '700', color: THEME.secondary, background: 'none', border: `1px solid ${THEME.border}`, borderRadius: '6px', padding: '4px 0', cursor: 'pointer', width: '120px' }}
                       >
                         ⬇ 다운로드
                       </button>
                       {/* 미리보기 버튼 */}
                       <button
-                        onClick={() => setLightbox({ src, filename })}
+                        onClick={() => setLightbox({ src, filename, storedValue: filename })}
                         style={{ fontSize: '11px', fontWeight: '700', color: '#fff', background: '#374151', border: 'none', borderRadius: '6px', padding: '4px 0', cursor: 'pointer', width: '120px' }}
                       >
                         🔍 미리보기
@@ -368,7 +377,7 @@ export default function ParticipationBoothApply() {
                       <span>{filename}</span>
                     </div>
                     <button
-                      onClick={() => downloadFile(hostBoothFileUrl(filename), filename)}
+                      onClick={() => downloadFile({ value: filename, filename })}
                       style={{ fontSize: '12px', fontWeight: '800', color: THEME.secondary, background: `${THEME.primary}20`, border: 'none', borderRadius: '6px', padding: '5px 14px', cursor: 'pointer', flexShrink: 0 }}
                     >
                       ⬇ 다운로드

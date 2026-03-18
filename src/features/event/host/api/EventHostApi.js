@@ -2,6 +2,8 @@
 import { apiJson } from '../../../../app/http/request';
 import { tokenStore } from '../../../../app/http/tokenStore';
 
+import { backendUrl } from '../../../../app/http/axiosInstance';
+
 /**
  * 행사 생성
  * POST /api/events (multipart/form-data)
@@ -17,7 +19,7 @@ export async function createEvent({ eventData, thumbnail, detailFiles = [], boot
   boothFiles.forEach(f  => formData.append('boothFiles',  f));
 
   const token = tokenStore.getAccess();
-  const res = await fetch('/api/events', {
+  const res = await fetch(`${backendUrl}/api/events`, {
     method: 'POST',
     headers: token ? { Authorization: `Bearer ${token}` } : {},
     body: formData,
@@ -48,7 +50,7 @@ export async function suggestTags({ title, description }) {
   // thumbnail 제거 - 실제로 AI에서 사용 안 함
 
   const token = tokenStore.getAccess();
-  const res = await fetch('/api/events/suggest-tags', {
+  const res = await fetch(`${backendUrl}/api/events/suggest-tags`, {
     method: 'POST',
     headers: token ? { Authorization: `Bearer ${token}` } : {},
     body: formData,
@@ -63,8 +65,13 @@ export async function suggestTags({ title, description }) {
  * AI 이미지 생성 (썸네일용)
  * POST /ai/image/generate
  */
+
+const aiUrl = process.env.NODE_ENV === 'development'
+  ? 'http://localhost:8000'
+  : '';
+
 export async function generateAiImage({ title, dateRange, fontColor, fontSize, fontStyle, stylePrompt }) {
-  const res = await fetch('/ai/image/generate', {
+  const res = await fetch(`${aiUrl}/ai/image/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

@@ -44,6 +44,14 @@ function toImgUrl(v) {
   return eventThumbUrl(v);
 }
 
+function normalizeStatus(value) {
+  return String(value ?? "")
+    .toUpperCase()
+    .replaceAll("_", "")
+    .replaceAll("-", "")
+    .trim();
+}
+
 // 페이지 버튼 숫자 구성(너무 많으면 ... 처리)
 function buildPageItems(totalPages, current) {
   const last = totalPages - 1;
@@ -189,7 +197,20 @@ export default function AdminReportPage() {
     }
   };
 
-  const goEventDetail = (eventId) => {
+  const goEventDetail = (item) => {
+    const eventId = item?.eventId;
+    const reportStatus = normalizeStatus(item?.reportResult);
+    const eventStatus = normalizeStatus(item?.eventStatus);
+
+    if (
+      reportStatus === "APPROVED" ||
+      eventStatus === "REPORTDELETED" ||
+      eventStatus === "DELETED"
+    ) {
+      alert("이 행사에 대한 신고가 접수되어 삭제 처리 되었습니다.");
+      return;
+    }
+
     if (!eventId) return;
     navigate(`/events/${eventId}`);
   };
@@ -244,10 +265,11 @@ export default function AdminReportPage() {
                       <div
                         role="button"
                         tabIndex={0}
-                        onClick={() => goEventDetail(it.eventId)}
+                        onClick={() => goEventDetail(it)}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" || e.key === " ") {
-                            goEventDetail(it.eventId);
+                            e.preventDefault();
+                            goEventDetail(it);
                           }
                         }}
                         style={{

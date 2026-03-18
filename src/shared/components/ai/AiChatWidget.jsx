@@ -1,9 +1,10 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { tokenStore } from '../../../app/http/tokenStore';
 import { fetchEventDetail } from '../../../features/event/api/EventDetailAPI';
 import eventThumbUrl from '../../utils/eventThumbUrl';
+import { sendAiChat } from '../../api/aiChatApi';
+
 
 const LOCATION_PATTERNS = [
   /((?:서울|부산|대구|인천|광주|대전|울산|세종|제주|경기|강원|충북|충남|전북|전남|경북|경남)\S*)/g,
@@ -273,6 +274,7 @@ function normalizeSingleEvent(item, index) {
     detailUrl: eventId ? `/events/${eventId}` : '',
     applyUrl: applyUrl || '',
     canApply: status === '행사참여모집중',
+    scoreReason: String(pickFirst(source?.scoreReason, item?.scoreReason, '') || ''),
     price: pickNumber(source?.price, item?.price),
   };
 }
@@ -341,6 +343,39 @@ async function enrichEvents(events) {
   return enriched;
 }
 
+
+function normalizeSources(payload) {
+  const list = Array.isArray(payload?.sources) ? payload.sources : [];
+  return list
+    .map((item, index) => ({
+      key: `${item?.type || 'source'}-${index}`,
+      type: String(item?.type || 'source'),
+      title: String(item?.title || '참고 자료'),
+      snippet: String(item?.snippet || ''),
+    }))
+    .filter((item) => item.title || item.snippet);
+}
+
+function normalizeRecommendationReasons(payload) {
+  const list = Array.isArray(payload?.recommendationReasons)
+    ? payload.recommendationReasons
+    : [];
+  return list.map((item, index) => ({ key: `reason-${index}`, text: String(item || '') })).filter((item) => item.text);
+}
+
+function normalizeNextActions(payload) {
+  const list = Array.isArray(payload?.nextActions) ? payload.nextActions : [];
+  return list
+    .map((item, index) => ({
+      key: `action-${index}`,
+      label: String(item?.label || '바로가기'),
+      actionType: String(item?.actionType || 'prompt'),
+      value: String(item?.value || ''),
+      variant: String(item?.variant || 'secondary'),
+    }))
+    .filter((item) => item.label && item.actionType);
+}
+
 function normalizeAnswer(payload) {
   return (
     payload?.answer ||
@@ -361,8 +396,11 @@ export default function AiChatWidget({ pageType = 'board' }) {
   const [messages, setMessages] = useState(() => [
     {
       role: 'assistant',
-      text: `${PAGE_LABEL[pageType] || '행사'} 화면 전용 AI예요. 지역, 일정, 신청 가능 여부, 환불 규정까지 바로 도와드릴게요.`,
+      text: `${PAGE_LABEL[pageType] || '행사'} 화면 전용 AI예요. 지역, 일정, 신청 가능 여부, 환불 규정, 결제/환불/부스 상태까지 바로 도와드릴게요.`,
       events: [],
+      sources: [],
+      reasons: [],
+      nextActions: [],
     },
   ]);
 
@@ -381,19 +419,33 @@ export default function AiChatWidget({ pageType = 'board' }) {
     navigate(`/events/${eventId}/apply`);
   };
 
+  const runNextAction = (action) => {
+    if (!action) return;
+    if (action.actionType === 'navigate') {
+      if (action.value) navigate(action.value);
+      return;
+    }
+    if (action.actionType === 'prompt') {
+      sendMessage(action.value);
+      return;
+    }
+    if (action.actionType === 'link') {
+      if (action.value) window.open(action.value, '_blank', 'noopener,noreferrer');
+    }
+  };
+
   const sendMessage = async (raw) => {
     const question = String(raw || input).trim();
     if (!question || loading) return;
 
     setMessages((prev) => [
       ...prev,
-      { role: 'user', text: question, events: [] },
+      { role: 'user', text: question, events: [], sources: [], reasons: [], nextActions: [] },
     ]);
     setInput('');
     setLoading(true);
 
     try {
-      const accessToken = tokenStore.getAccess();
       const locationKeywords = extractLocationKeywords(question);
       const region = locationKeywords[0] || '';
       const history = messages.slice(-6).map((m) => ({
@@ -402,34 +454,18 @@ export default function AiChatWidget({ pageType = 'board' }) {
       }));
       const sessionId = getAiSessionId();
 
-      const response = await fetch('/api/ai/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-        },
-        body: JSON.stringify({
-          question,
-          message: question,
-          pageType,
-          contextPage: pageType,
-          region,
-          location: region,
-          locationKeywords,
-          filters: { region, locations: locationKeywords },
-          history,
-          sessionId,
-        }),
+      const payload = await sendAiChat({
+        question,
+        message: question,
+        pageType,
+        contextPage: pageType,
+        region,
+        location: region,
+        locationKeywords,
+        filters: { region, locations: locationKeywords },
+        history,
+        sessionId,
       });
-
-      let payload = null;
-      try {
-        payload = await response.json();
-      } catch {
-        payload = null;
-      }
-      if (!response.ok)
-        throw new Error(payload?.message || 'AI 응답 요청에 실패했습니다.');
 
       const normalizedEvents = normalizeEvents(payload);
       const resolvedEvents = await enrichEvents(normalizedEvents);
@@ -439,6 +475,9 @@ export default function AiChatWidget({ pageType = 'board' }) {
           role: 'assistant',
           text: normalizeAnswer(payload),
           events: resolvedEvents,
+          sources: normalizeSources(payload),
+          reasons: normalizeRecommendationReasons(payload),
+          nextActions: normalizeNextActions(payload),
         },
       ]);
     } catch (error) {
@@ -446,8 +485,11 @@ export default function AiChatWidget({ pageType = 'board' }) {
         ...prev,
         {
           role: 'assistant',
-          text: error?.message || 'AI 서버 연결에 실패했습니다.',
+          text: error?.response?.data?.message || error?.response?.data?.detail || error?.message || 'AI 서버 연결에 실패했습니다.',
           events: [],
+          sources: [],
+          reasons: [],
+          nextActions: [],
           isError: true,
         },
       ]);
@@ -736,6 +778,9 @@ export default function AiChatWidget({ pageType = 'board' }) {
                                 )}
 
                                 {event.period && <div>기간 {event.period}</div>}
+                                {event.scoreReason ? (
+                                  <div style={{ marginTop: 6, color: '#92400E' }}>추천 이유 {event.scoreReason}</div>
+                                ) : null}
                               </div>
                               <div
                                 style={{
@@ -785,6 +830,56 @@ export default function AiChatWidget({ pageType = 'board' }) {
                         ))}
                       </div>
                     )}
+                  {Array.isArray(message.reasons) && message.reasons.length > 0 && (
+                    <div style={{ width: '100%', display: 'grid', gap: 8 }}>
+                      <div style={{ maxWidth: '88%', padding: '12px 14px', borderRadius: 16, background: '#FFF7D6', border: '1px solid rgba(245, 158, 11, 0.25)' }}>
+                        <div style={{ fontSize: 12, fontWeight: 900, color: '#92400E', marginBottom: 6 }}>추천 이유</div>
+                        <div style={{ display: 'grid', gap: 6 }}>
+                          {message.reasons.map((reason) => (
+                            <div key={reason.key} style={{ fontSize: 12, fontWeight: 700, color: '#7C2D12' }}>• {reason.text}</div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {Array.isArray(message.sources) && message.sources.length > 0 && (
+                    <div style={{ width: '100%', display: 'grid', gap: 8 }}>
+                      <div style={{ maxWidth: '88%', padding: '12px 14px', borderRadius: 16, background: '#EFF6FF', border: '1px solid rgba(59, 130, 246, 0.18)' }}>
+                        <div style={{ fontSize: 12, fontWeight: 900, color: '#1D4ED8', marginBottom: 8 }}>참고 출처</div>
+                        <div style={{ display: 'grid', gap: 8 }}>
+                          {message.sources.map((source) => (
+                            <div key={source.key} style={{ padding: '10px 12px', borderRadius: 14, background: '#fff', border: '1px solid rgba(17, 24, 39, 0.06)' }}>
+                              <div style={{ fontSize: 12, fontWeight: 900, color: '#111827', marginBottom: 4 }}>{source.title}</div>
+                              <div style={{ fontSize: 12, lineHeight: 1.5, color: '#6B7280' }}>{source.snippet}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {Array.isArray(message.nextActions) && message.nextActions.length > 0 && (
+                    <div style={{ width: '100%', display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                      {message.nextActions.map((action) => (
+                        <button
+                          key={action.key}
+                          type="button"
+                          onClick={() => runNextAction(action)}
+                          style={{
+                            border: action.variant === 'primary' ? 'none' : '1px solid rgba(17, 24, 39, 0.08)',
+                            background: action.variant === 'primary' ? '#111827' : '#fff',
+                            color: action.variant === 'primary' ? '#FFD84D' : '#111827',
+                            borderRadius: 999,
+                            padding: '10px 14px',
+                            fontSize: 12,
+                            fontWeight: 900,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {action.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
               {loading ? (

@@ -5,18 +5,11 @@ import { usePhoneVerification } from '../hooks/usePhoneVerification';
 import { useModal } from '../hooks/usePerInfoTermsModal';
 import SignUpTerms from '../pages/SignUpTerms';
 import styles from '../styles/SignUp.module.css';
+import { apiJson } from '../../../app/http/request';
 
 const Step3CorporateForm = ({ onBack }) => {
   const navigate = useNavigate();
   const { isOpen, openModal, closeModal } = useModal();
-
-  // 사업자 인증 상태
-  const [bizFile,        setBizFile]        = useState(null);
-  const [bizVerified,    setBizVerified]     = useState(false);   // 인증 완료 여부
-  const [bizVerifying,   setBizVerifying]    = useState(false);   // 인증 중
-  const [bizMessage,     setBizMessage]      = useState('');      // 인증 결과 메시지
-  const [bizSuccess,     setBizSuccess]      = useState(null);    // true/false/null
-  const [bizNumber,      setBizNumber]       = useState('');      // 추출된 사업자번호
 
   const {
     formData,
@@ -27,11 +20,19 @@ const Step3CorporateForm = ({ onBack }) => {
     isLoading,
     isPasswordValid,
     err,
+
+    bizFile,
+    bizVerified,
+    bizVerifying,
+    bizMessage,
+    bizSuccess,
+    handleVerifyBiz
   } = useSignupForm({
     email: '',
     userPwd: '',
     name: '',
     businessFile: null,
+    businessNum: '',
     agreement: false,
   });
 
@@ -41,72 +42,10 @@ const Step3CorporateForm = ({ onBack }) => {
     handlePhoneChange, handleCodeChange, sendSms, verifyCode
   } = usePhoneVerification();
 
-  // 파일 선택 핸들러
-  const handleBizFileChange = (e) => {
-    const file = e.target.files[0];
-    setBizFile(file);
-    // 파일 바꾸면 인증 초기화
-    setBizVerified(false);
-    setBizSuccess(null);
-    setBizMessage('');
-    setBizNumber('');
-    // useSignupForm의 businessFile도 동기화
-    handleChange(e);
-  };
-
-  // 인증하기 클릭
-  const handleVerifyBiz = async () => {
-    if (!bizFile) {
-      alert('사업자등록증 파일을 먼저 업로드해주세요.');
-      return;
-    }
-    setBizVerifying(true);
-    setBizMessage('');
-    setBizSuccess(null);
-
-    try {
-      const formData = new FormData();
-      formData.append('businessFile', bizFile);
-
-      const res = await fetch('/api/user/verifyBiz', {
-        method: 'POST',
-        body: formData,
-      });
-      const json = await res.json();
-
-      if (res.ok && json.success) {
-        setBizVerified(true);
-        setBizSuccess(true);
-        setBizNumber(json.data?.businessNumber || '');
-        setBizMessage(`인증 완료! (사업자번호: ${json.data?.businessNumber || ''})`);
-      } else {
-        setBizVerified(false);
-        setBizSuccess(false);
-        setBizMessage(json.message || '유효하지 않은 사업자등록증입니다.');
-      }
-    } catch (e) {
-      setBizVerified(false);
-      setBizSuccess(false);
-      setBizMessage('인증 중 오류가 발생했습니다. 다시 시도해주세요.');
-    } finally {
-      setBizVerifying(false);
-    }
-  };
-
-  // 회원가입 제출 — 인증 완료 여부 추가 체크
-  const handleFormSubmit = (e) => {
-    if (!bizVerified) {
-      e.preventDefault();
-      alert('사업자 인증을 먼저 완료해주세요.');
-      return;
-    }
-    handleSubmit(e, 'COMPANY', navigate, phone, isVerified);
-  };
-
   return (
     <div className={styles.formContainer}>
       <form
-        onSubmit={handleFormSubmit}
+        onSubmit={(e) => handleSubmit(e, 'COMPANY', navigate, phone, isVerified)}
         className={styles.formContainer}
         style={{ gap: '12px' }}
       >
@@ -153,19 +92,6 @@ const Step3CorporateForm = ({ onBack }) => {
           </div>
         </div>
 
-        {/* 회사명 */}
-        <div className={styles.inputRow}>
-          <label className={styles.label}>회사명</label>
-          <input
-            className={styles.input}
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            required
-          />
-        </div>
-
         {/* 사업자등록증 + 인증하기 */}
         <div className={styles.inputRow}>
           <label className={styles.label}>사업자<br/>등록증</label>
@@ -176,7 +102,7 @@ const Step3CorporateForm = ({ onBack }) => {
                 type="file"
                 name="businessFile"
                 accept="image/*,application/pdf"
-                onChange={handleBizFileChange}
+                onChange={handleChange}
                 style={{ minWidth: 0, flex: 1 }}
               />
               <button
@@ -184,14 +110,8 @@ const Step3CorporateForm = ({ onBack }) => {
                 className={styles.actionBtn}
                 onClick={handleVerifyBiz}
                 disabled={bizVerifying || !bizFile}
-                style={{
-                  background: bizVerified ? '#16a34a' : undefined,
-                  color: bizVerified ? '#fff' : undefined,
-                  whiteSpace: 'nowrap',
-                  flexShrink: 0,
-                }}
               >
-                {bizVerifying ? '인증 중...' : bizVerified ? '인증완료 ✓' : '인증하기'}
+                {bizVerifying ? '인증 중...' : bizVerified ? '인증 완료' : '인증하기'}
               </button>
             </div>
 
@@ -199,9 +119,9 @@ const Step3CorporateForm = ({ onBack }) => {
             {bizMessage && (
               <div
                 className={styles.helperText}
-                style={{ color: bizSuccess ? 'green' : 'crimson', fontWeight: 600 }}
+                style={{ color: bizSuccess ? 'green' : 'crimson' }}
               >
-                {bizSuccess ? '✅ ' : '❌ '}{bizMessage}
+                {bizMessage}
               </div>
             )}
 
@@ -219,6 +139,19 @@ const Step3CorporateForm = ({ onBack }) => {
               </div>
             )}
           </div>
+        </div>
+
+        {/* 회사명 */}
+        <div className={styles.inputRow}>
+          <label className={styles.label}>회사명</label>
+          <input
+            className={styles.input}
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            required
+          />
         </div>
 
         {/* 전화번호 */}
@@ -309,13 +242,8 @@ const Step3CorporateForm = ({ onBack }) => {
 
         {err && <div style={{ color: 'crimson', fontSize: 13 }}>{err}</div>}
 
-        {/* 가입 버튼 — 인증 미완료시 흐리게 */}
-        <button
-          type="submit"
-          className={styles.submitBtn}
-          disabled={isLoading || !bizVerified}
-          style={{ opacity: bizVerified ? 1 : 0.5, cursor: bizVerified ? 'pointer' : 'not-allowed' }}
-        >
+        {/* 가입 버튼 */}
+        <button type="submit" className={styles.submitBtn} disabled={isLoading}>
           {isLoading ? '처리 중...' : '회원 가입'}
         </button>
       </form>

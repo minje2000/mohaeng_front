@@ -8,6 +8,8 @@ import { useAuth } from '../../app/providers/AuthProvider';
 import { tokenStore } from '../../app/http/tokenStore';
 import AiChatWidget from '../components/ai/AiChatWidget';
 
+
+
 const REGION_CENTER = {
     서울: { slug: "seoul", id: 1100000000 },
     경기: { slug: "gyeonggi", id: 4100000000 },

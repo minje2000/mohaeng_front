@@ -6,6 +6,8 @@ import { fetchEventDetail } from '../../../features/event/api/EventDetailAPI';
 import eventThumbUrl from '../../utils/eventThumbUrl';
 import { sendAiChat } from '../../api/aiChatApi';
 
+import { backendUrl } from '../../../app/http/axiosInstance';
+
 const LOCATION_PATTERNS = [
   /((?:서울|부산|대구|인천|광주|대전|울산|세종|제주|경기|강원|충북|충남|전북|전남|경북|경남)\S*)/g,
   /((?:[가-힣]+)(?:시|도|군|구|읍|면|동))/g,
@@ -455,8 +457,31 @@ export default function AiChatWidget({ pageType = 'board' }) {
       }));
       const sessionId = getAiSessionId();
 
-      if (!accessToken) {
-        throw new Error('로그인 후 AI 챗봇을 사용할 수 있어요.');
+      const response = await fetch(`${backendUrl}/api/ai/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+        body: JSON.stringify({
+          question,
+          message: question,
+          pageType,
+          contextPage: pageType,
+          region,
+          location: region,
+          locationKeywords,
+          filters: { region, locations: locationKeywords },
+          history,
+          sessionId,
+        }),
+      });
+
+      let payload = null;
+      try {
+        payload = await response.json();
+      } catch {
+        payload = null;
       }
 
       const payload = await sendAiChat({

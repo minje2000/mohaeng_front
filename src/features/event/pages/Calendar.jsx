@@ -2,6 +2,8 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import AiChatWidget from '../../../shared/components/ai/AiChatWidget';
 
+import { backendUrl } from '../../../app/http/axiosInstance';
+
 // ─────────────────────────────────────────────────────────────
 // 아이콘 — Home.jsx 완전 동일
 // ─────────────────────────────────────────────────────────────
@@ -146,7 +148,7 @@ const selectStyle = {
  * 응답: List<{ date: "YYYY-MM-DD", count: number }>
  */
 async function fetchCountsByRegion(regionId) {
-  const res  = await fetch(`/api/events/calendar-counts?regionId=${regionId}`);
+  const res  = await fetch(`${backendUrl}/api/events/calendar-counts?regionId=${regionId}`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json(); // [{ date, count }, ...]
 }

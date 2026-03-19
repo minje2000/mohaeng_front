@@ -5,7 +5,6 @@ import { fetchEventDetail } from '../../../features/event/api/EventDetailAPI';
 import eventThumbUrl from '../../utils/eventThumbUrl';
 import { sendAiChat } from '../../api/aiChatApi';
 
-
 const LOCATION_PATTERNS = [
   /((?:서울|부산|대구|인천|광주|대전|울산|세종|제주|경기|강원|충북|충남|전북|전남|경북|경남)\S*)/g,
   /((?:[가-힣]+)(?:시|도|군|구|읍|면|동))/g,
@@ -274,7 +273,9 @@ function normalizeSingleEvent(item, index) {
     detailUrl: eventId ? `/events/${eventId}` : '',
     applyUrl: applyUrl || '',
     canApply: status === '행사참여모집중',
-    scoreReason: String(pickFirst(source?.scoreReason, item?.scoreReason, '') || ''),
+    scoreReason: String(
+      pickFirst(source?.scoreReason, item?.scoreReason, '') || ''
+    ),
     price: pickNumber(source?.price, item?.price),
   };
 }
@@ -287,7 +288,7 @@ function normalizeEvents(payload) {
     payload?.data?.events,
     payload?.result?.events,
   ].find(Array.isArray);
-  return (candidates || []).slice(0, 6).map(normalizeSingleEvent);
+  return (candidates || []).slice(0, 3).map(normalizeSingleEvent);
 }
 
 async function enrichEvents(events) {
@@ -343,7 +344,6 @@ async function enrichEvents(events) {
   return enriched;
 }
 
-
 function normalizeSources(payload) {
   const list = Array.isArray(payload?.sources) ? payload.sources : [];
   return list
@@ -360,7 +360,12 @@ function normalizeRecommendationReasons(payload) {
   const list = Array.isArray(payload?.recommendationReasons)
     ? payload.recommendationReasons
     : [];
-  return list.map((item, index) => ({ key: `reason-${index}`, text: String(item || '') })).filter((item) => item.text);
+  return list
+    .map((item, index) => ({
+      key: `reason-${index}`,
+      text: String(item || ''),
+    }))
+    .filter((item) => item.text);
 }
 
 function normalizeNextActions(payload) {
@@ -430,7 +435,8 @@ export default function AiChatWidget({ pageType = 'board' }) {
       return;
     }
     if (action.actionType === 'link') {
-      if (action.value) window.open(action.value, '_blank', 'noopener,noreferrer');
+      if (action.value)
+        window.open(action.value, '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -440,7 +446,14 @@ export default function AiChatWidget({ pageType = 'board' }) {
 
     setMessages((prev) => [
       ...prev,
-      { role: 'user', text: question, events: [], sources: [], reasons: [], nextActions: [] },
+      {
+        role: 'user',
+        text: question,
+        events: [],
+        sources: [],
+        reasons: [],
+        nextActions: [],
+      },
     ]);
     setInput('');
     setLoading(true);
@@ -485,7 +498,11 @@ export default function AiChatWidget({ pageType = 'board' }) {
         ...prev,
         {
           role: 'assistant',
-          text: error?.response?.data?.message || error?.response?.data?.detail || error?.message || 'AI 서버 연결에 실패했습니다.',
+          text:
+            error?.response?.data?.message ||
+            error?.response?.data?.detail ||
+            error?.message ||
+            'AI 서버 연결에 실패했습니다.',
           events: [],
           sources: [],
           reasons: [],
@@ -779,7 +796,11 @@ export default function AiChatWidget({ pageType = 'board' }) {
 
                                 {event.period && <div>기간 {event.period}</div>}
                                 {event.scoreReason ? (
-                                  <div style={{ marginTop: 6, color: '#92400E' }}>추천 이유 {event.scoreReason}</div>
+                                  <div
+                                    style={{ marginTop: 6, color: '#92400E' }}
+                                  >
+                                    추천 이유 {event.scoreReason}
+                                  </div>
                                 ) : null}
                               </div>
                               <div
@@ -830,56 +851,143 @@ export default function AiChatWidget({ pageType = 'board' }) {
                         ))}
                       </div>
                     )}
-                  {Array.isArray(message.reasons) && message.reasons.length > 0 && (
-                    <div style={{ width: '100%', display: 'grid', gap: 8 }}>
-                      <div style={{ maxWidth: '88%', padding: '12px 14px', borderRadius: 16, background: '#FFF7D6', border: '1px solid rgba(245, 158, 11, 0.25)' }}>
-                        <div style={{ fontSize: 12, fontWeight: 900, color: '#92400E', marginBottom: 6 }}>추천 이유</div>
-                        <div style={{ display: 'grid', gap: 6 }}>
-                          {message.reasons.map((reason) => (
-                            <div key={reason.key} style={{ fontSize: 12, fontWeight: 700, color: '#7C2D12' }}>• {reason.text}</div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  {Array.isArray(message.sources) && message.sources.length > 0 && (
-                    <div style={{ width: '100%', display: 'grid', gap: 8 }}>
-                      <div style={{ maxWidth: '88%', padding: '12px 14px', borderRadius: 16, background: '#EFF6FF', border: '1px solid rgba(59, 130, 246, 0.18)' }}>
-                        <div style={{ fontSize: 12, fontWeight: 900, color: '#1D4ED8', marginBottom: 8 }}>참고 출처</div>
-                        <div style={{ display: 'grid', gap: 8 }}>
-                          {message.sources.map((source) => (
-                            <div key={source.key} style={{ padding: '10px 12px', borderRadius: 14, background: '#fff', border: '1px solid rgba(17, 24, 39, 0.06)' }}>
-                              <div style={{ fontSize: 12, fontWeight: 900, color: '#111827', marginBottom: 4 }}>{source.title}</div>
-                              <div style={{ fontSize: 12, lineHeight: 1.5, color: '#6B7280' }}>{source.snippet}</div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  {Array.isArray(message.nextActions) && message.nextActions.length > 0 && (
-                    <div style={{ width: '100%', display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                      {message.nextActions.map((action) => (
-                        <button
-                          key={action.key}
-                          type="button"
-                          onClick={() => runNextAction(action)}
+                  {Array.isArray(message.reasons) &&
+                    message.reasons.length > 0 && (
+                      <div style={{ width: '100%', display: 'grid', gap: 8 }}>
+                        <div
                           style={{
-                            border: action.variant === 'primary' ? 'none' : '1px solid rgba(17, 24, 39, 0.08)',
-                            background: action.variant === 'primary' ? '#111827' : '#fff',
-                            color: action.variant === 'primary' ? '#FFD84D' : '#111827',
-                            borderRadius: 999,
-                            padding: '10px 14px',
-                            fontSize: 12,
-                            fontWeight: 900,
-                            cursor: 'pointer',
+                            maxWidth: '88%',
+                            padding: '12px 14px',
+                            borderRadius: 16,
+                            background: '#FFF7D6',
+                            border: '1px solid rgba(245, 158, 11, 0.25)',
                           }}
                         >
-                          {action.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                          <div
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 900,
+                              color: '#92400E',
+                              marginBottom: 6,
+                            }}
+                          >
+                            추천 이유
+                          </div>
+                          <div style={{ display: 'grid', gap: 6 }}>
+                            {message.reasons.map((reason) => (
+                              <div
+                                key={reason.key}
+                                style={{
+                                  fontSize: 12,
+                                  fontWeight: 700,
+                                  color: '#7C2D12',
+                                }}
+                              >
+                                • {reason.text}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  {Array.isArray(message.sources) &&
+                    message.sources.length > 0 && (
+                      <div style={{ width: '100%', display: 'grid', gap: 8 }}>
+                        <div
+                          style={{
+                            maxWidth: '88%',
+                            padding: '12px 14px',
+                            borderRadius: 16,
+                            background: '#EFF6FF',
+                            border: '1px solid rgba(59, 130, 246, 0.18)',
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 900,
+                              color: '#1D4ED8',
+                              marginBottom: 8,
+                            }}
+                          >
+                            참고 출처
+                          </div>
+                          <div style={{ display: 'grid', gap: 8 }}>
+                            {message.sources.map((source) => (
+                              <div
+                                key={source.key}
+                                style={{
+                                  padding: '10px 12px',
+                                  borderRadius: 14,
+                                  background: '#fff',
+                                  border: '1px solid rgba(17, 24, 39, 0.06)',
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    fontSize: 12,
+                                    fontWeight: 900,
+                                    color: '#111827',
+                                    marginBottom: 4,
+                                  }}
+                                >
+                                  {source.title}
+                                </div>
+                                <div
+                                  style={{
+                                    fontSize: 12,
+                                    lineHeight: 1.5,
+                                    color: '#6B7280',
+                                  }}
+                                >
+                                  {source.snippet}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  {Array.isArray(message.nextActions) &&
+                    message.nextActions.length > 0 && (
+                      <div
+                        style={{
+                          width: '100%',
+                          display: 'flex',
+                          flexWrap: 'wrap',
+                          gap: 8,
+                        }}
+                      >
+                        {message.nextActions.map((action) => (
+                          <button
+                            key={action.key}
+                            type="button"
+                            onClick={() => runNextAction(action)}
+                            style={{
+                              border:
+                                action.variant === 'primary'
+                                  ? 'none'
+                                  : '1px solid rgba(17, 24, 39, 0.08)',
+                              background:
+                                action.variant === 'primary'
+                                  ? '#111827'
+                                  : '#fff',
+                              color:
+                                action.variant === 'primary'
+                                  ? '#FFD84D'
+                                  : '#111827',
+                              borderRadius: 999,
+                              padding: '10px 14px',
+                              fontSize: 12,
+                              fontWeight: 900,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            {action.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                 </div>
               ))}
               {loading ? (

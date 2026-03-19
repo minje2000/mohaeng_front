@@ -8,6 +8,6 @@ export const backendUrl = process.env.NODE_ENV === 'development'
 
 export const axiosInstance = axios.create({
   baseURL: backendUrl,
-  timeout: 20000,
+  timeout: 60000,
   withCredentials: true,
 });

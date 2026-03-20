@@ -125,6 +125,12 @@ const EventList = () => {
     const currentRecruitFilter = searchParams.get("recruitFilter") || "";
     const currentPage = parseInt(searchParams.get("page") || "0");
 
+    // ── 키워드 입력 state (URL과 동기화) ──
+    const [keywordInput, setKeywordInput] = useState(currentKeyword);
+    useEffect(() => {
+        setKeywordInput(currentKeyword);
+    }, [currentKeyword]);
+
     useEffect(() => {
         const loadData = async () => {
             setLoading(true);
@@ -229,8 +235,9 @@ const EventList = () => {
                         <input
                             type="text"
                             placeholder="행사 제목, 한줄설명 검색... (입력 후 Enter)"
-                            defaultValue={currentKeyword}
-                            onKeyDown={(e) => e.key === 'Enter' && setFilter("keyword", e.target.value)}
+                            value={keywordInput}
+                            onChange={(e) => setKeywordInput(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && setFilter("keyword", keywordInput)}
                             style={{ width: '420px', flexShrink: 0, padding: '13px 18px', borderRadius: '12px', border: '1px solid #E5E7EB', outline: 'none', fontSize: '15px', boxSizing: 'border-box' }}
                         />
                         <div style={{ width: '1px', height: '36px', backgroundColor: '#E5E7EB', flexShrink: 0 }} />

@@ -7,18 +7,34 @@ const STATUS_ALL = 'all';
 const STATUS_NORMAL = 'normal';
 const STATUS_ERROR = 'error';
 
+function parseAsDate(value) {
+  if (!value) return null;
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value;
+  }
+
+  const text = String(value).trim();
+  if (!text) return null;
+
+  const hasTimezone = /([zZ]|[+-]\d{2}:\d{2})$/.test(text);
+  const normalized = hasTimezone ? text : text.replace(' ', 'T') + 'Z';
+  const date = new Date(normalized);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 function formatDate(value) {
-  if (!value) return '-';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return String(value);
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  const hour = date.getHours();
-  const ampm = hour < 12 ? '오전' : '오후';
-  const hh = String(((hour + 11) % 12) + 1).padStart(2, '0');
-  const mm = String(date.getMinutes()).padStart(2, '0');
-  return `${y}. ${m}. ${d}. ${ampm} ${hh}:${mm}`;
+  const date = parseAsDate(value);
+  if (!date) return value ? String(value) : '-';
+
+  return new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  }).format(date);
 }
 
 function isErrorLog(item) {
@@ -523,35 +539,34 @@ function SummaryCard({
       </div>
       <div
         style={{
-          fontSize: textValue ? 18 : 24,
+          fontSize: textValue ? 28 : 34,
           fontWeight: 800,
-          color: '#0F172A',
-          marginBottom: 10,
-          lineHeight: 1.3,
-          wordBreak: 'break-word',
+          color: danger ? '#B91C1C' : '#0F172A',
+          lineHeight: 1.2,
         }}
       >
-        {String(value ?? '-')}
+        {value}
       </div>
-      <div style={{ fontSize: 13, color: '#94A3B8' }}>{description}</div>
+      <div style={{ marginTop: 10, fontSize: 13, color: '#64748B' }}>
+        {description}
+      </div>
     </div>
   );
 }
 
-function FilterChip({ active, onClick, children }) {
+function FilterChip({ active, children, onClick }) {
   return (
     <button
       type="button"
       onClick={onClick}
       style={{
-        height: 46,
-        padding: '0 20px',
+        height: 44,
         borderRadius: 999,
-        border: active ? '1.5px solid #EAB308' : '1px solid #CBD5E1',
-        background: active ? '#FFF8DB' : '#FFFFFF',
-        color: '#0F172A',
-        fontSize: 15,
+        border: active ? '1px solid #EAB308' : '1px solid #E2E8F0',
+        background: active ? '#FEF3C7' : '#FFFFFF',
+        color: active ? '#92400E' : '#475569',
         fontWeight: 700,
+        padding: '0 18px',
         cursor: 'pointer',
       }}
     >
@@ -561,26 +576,25 @@ function FilterChip({ active, onClick, children }) {
 }
 
 function Pill({ children, kind = 'default' }) {
-  const map = {
-    success: { bg: '#DCFCE7', fg: '#15803D' },
-    error: { bg: '#FEE2E2', fg: '#B91C1C' },
-    default: { bg: '#E2E8F0', fg: '#334155' },
-  };
-  const theme = map[kind] || map.default;
+  const palette =
+    kind === 'success'
+      ? { background: '#DCFCE7', color: '#166534' }
+      : kind === 'error'
+        ? { background: '#FEE2E2', color: '#B91C1C' }
+        : { background: '#E2E8F0', color: '#334155' };
+
   return (
     <span
       style={{
         display: 'inline-flex',
         alignItems: 'center',
         justifyContent: 'center',
-        minWidth: 76,
-        height: 34,
-        padding: '0 14px',
+        padding: '8px 12px',
         borderRadius: 999,
-        background: theme.bg,
-        color: theme.fg,
-        fontSize: 14,
+        fontSize: 13,
         fontWeight: 700,
+        background: palette.background,
+        color: palette.color,
       }}
     >
       {children}
@@ -611,14 +625,12 @@ function InfoRow({ label, value, multiline = false, mono = false }) {
       <div
         style={{
           fontSize: 15,
-          fontWeight: 700,
+          fontWeight: 600,
           color: '#0F172A',
-          lineHeight: multiline ? 1.65 : 1.45,
+          lineHeight: multiline ? 1.7 : 1.5,
           whiteSpace: multiline ? 'pre-wrap' : 'normal',
-          wordBreak: mono ? 'break-all' : 'keep-all',
-          fontFamily: mono
-            ? 'ui-monospace, SFMono-Regular, Menlo, monospace'
-            : 'inherit',
+          wordBreak: 'break-word',
+          fontFamily: mono ? 'ui-monospace, SFMono-Regular, Menlo, monospace' : 'inherit',
         }}
       >
         {value || '-'}
@@ -631,12 +643,12 @@ function StateBox({ text, error = false }) {
   return (
     <div
       style={{
+        borderRadius: 20,
+        padding: '20px 22px',
+        background: error ? '#FEF2F2' : '#F8FAFC',
         border: `1px solid ${error ? '#FECACA' : '#E2E8F0'}`,
-        background: error ? '#FEF2F2' : '#FFFFFF',
-        color: error ? '#B91C1C' : '#64748B',
-        borderRadius: 18,
-        padding: '18px 20px',
-        fontSize: 14,
+        color: error ? '#B91C1C' : '#475569',
+        fontWeight: 600,
       }}
     >
       {text}
@@ -644,33 +656,19 @@ function StateBox({ text, error = false }) {
   );
 }
 
-const searchInputStyle = {
-  height: 46,
-  width: '100%',
-  borderRadius: 16,
-  border: '1px solid #CBD5E1',
-  background: '#FFFFFF',
-  padding: '0 16px',
-  boxSizing: 'border-box',
-  fontSize: 15,
-  color: '#0F172A',
-  outline: 'none',
-};
-
 const panelStyle = {
-  border: '1px solid #CBD5E1',
-  borderRadius: 24,
   background: '#FFFFFF',
+  border: '1px solid #CBD5E1',
+  borderRadius: 26,
   overflow: 'hidden',
 };
 
 const panelHeaderStyle = {
-  padding: '20px 20px 16px',
-  borderBottom: '1px solid #E2E8F0',
   display: 'flex',
-  alignItems: 'flex-start',
   justifyContent: 'space-between',
-  gap: 14,
+  alignItems: 'flex-start',
+  gap: 12,
+  padding: '22px 20px 0',
 };
 
 const listCardStyle = {
@@ -679,5 +677,16 @@ const listCardStyle = {
   padding: 18,
   cursor: 'pointer',
   textAlign: 'left',
+};
+
+const searchInputStyle = {
+  width: '100%',
+  height: 44,
+  borderRadius: 14,
+  border: '1px solid #CBD5E1',
+  padding: '0 14px',
+  fontSize: 14,
+  color: '#0F172A',
+  outline: 'none',
   background: '#FFFFFF',
 };

@@ -27,7 +27,29 @@ function StatCard({ label, value, unit, color = '#111', icon }) {
   );
 }
 
-function CustomTooltip({ active, payload, label }) {
+// 월별 누적 회원 수 전용 툴팁
+function MonthlyUserTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null;
+  const d = payload[0]?.payload;
+  return (
+    <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 10,
+      padding: '10px 14px', fontSize: 13, boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+      <div style={{ fontWeight: 700, marginBottom: 6, color: '#374151' }}>{label}</div>
+      <div style={{ color: '#1D4ED8', fontWeight: 600, marginBottom: 6 }}>
+        누적 회원 수: {fmt(d?.userCount)}명
+      </div>
+      <div style={{ color: '#059669', fontWeight: 700 }}>
+        + {fmt(d?.newUserCount)}
+      </div>
+      <div style={{ color: '#DC2626', fontWeight: 700 }}>
+        - {fmt(d?.monthlyWithdrawalCount)}
+      </div>
+    </div>
+  );
+}
+
+// 휴면계정 차트 전용 툴팁
+function DormantTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   return (
     <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 10,
@@ -43,7 +65,7 @@ function CustomTooltip({ active, payload, label }) {
 }
 
 const currentYear  = new Date().getFullYear();
-const YEAR_OPTIONS = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i); // 5년 전 ~ 4년 후
+const YEAR_OPTIONS = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i);
 const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => i + 1);
 
 export default function UserStats() {
@@ -54,15 +76,13 @@ export default function UserStats() {
 
   const [filterYear, setFilterYear]   = useState(currentYear);
   const [filterMonth, setFilterMonth] = useState(new Date().getMonth() + 1);
-  const [dormantHandle, setDormantHandle]   = useState([]);  // 일별 데이터
+  const [dormantHandle, setDormantHandle]   = useState([]);
   const [dormantLoading, setDormantLoading] = useState(false);
 
-  // 연간 그래프용
   const [graphYear, setGraphYear]         = useState(currentYear);
   const [yearlyDormant, setYearlyDormant] = useState([]);
   const [yearlyLoading, setYearlyLoading] = useState(false);
 
-  // 초기 로드
   useEffect(() => {
     setLoading(true);
     UserStatsApi.getOperateStats()
@@ -75,13 +95,11 @@ export default function UserStats() {
       .finally(() => setLoading(false));
   }, []);
 
-  // 년/월 필터 변경 시 일별 데이터 조회
   useEffect(() => {
     setDormantLoading(true);
     UserStatsApi.getDormantHandleByMonth(filterYear, filterMonth)
       .then(res => {
         const raw = res.data?.data || res.data || [];
-        // 데이터 있는 날짜만
         setDormantHandle(raw.filter(r =>
           (r.dormantNotifiedCount || 0) + (r.dormantWithdrawnCount || 0) > 0
         ));
@@ -90,10 +108,8 @@ export default function UserStats() {
       .finally(() => setDormantLoading(false));
   }, [filterYear, filterMonth]);
 
-  // 선택한 년 전체 월별 데이터 조회
   useEffect(() => {
     setYearlyLoading(true);
-    // 1월~12월 각각 조회해서 월별로 합산
     const months = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
     Promise.all(
       months.map(m =>
@@ -110,7 +126,6 @@ export default function UserStats() {
      .finally(() => setYearlyLoading(false));
   }, [graphYear]);
 
-  // 선택한 년/월 합계 계산
   const totalNotified  = dormantHandle.reduce((s, r) => s + (r.dormantNotifiedCount  || 0), 0);
   const totalWithdrawn = dormantHandle.reduce((s, r) => s + (r.dormantWithdrawnCount || 0), 0);
   const totalAction    = totalNotified + totalWithdrawn;
@@ -130,6 +145,45 @@ export default function UserStats() {
           <StatCard label="개인 회원 수"   value={dashboard?.personalUserCount} unit="명" icon="👤" color="#059669" />
           <StatCard label="기업 회원 수"   value={dashboard?.companyUserCount}  unit="명" icon="🏢" color="#D97706" />
           <StatCard label="휴면 계정 수"   value={dashboard?.totalDormantCount} unit="명" icon="💤" color="#DC2626" />
+
+          {/* 탈퇴자 수 카드 */}
+          <div style={{
+            flex: 1, border: '1px solid #E5E7EB', borderRadius: 14,
+            padding: '20px 22px', background: '#FAFAFA',
+            display: 'flex', flexDirection: 'column', gap: 4,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 20 }}>🚪</span>
+              <span style={{ fontSize: 13, color: '#6B7280', fontWeight: 600 }}>탈퇴자 수</span>
+            </div>
+            <div style={{ fontSize: 30, fontWeight: 900, color: '#374151' }}>
+              {fmt(dashboard?.totalWithdrawalCount)}
+              <span style={{ fontSize: 14, marginLeft: 4, color: '#9CA3AF', fontWeight: 600 }}>명</span>
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 0 }}>
+              <div style={{
+                flex: 1, background: '#FEE2E2', borderRadius: 8, padding: '6px 10px',
+                display: 'flex', flexDirection: 'column', gap: 2,
+              }}>
+                <span style={{ fontSize: 11, color: '#DC2626', fontWeight: 700, whiteSpace: 'nowrap' }}>직접 탈퇴</span>
+                <span style={{ fontSize: 16, fontWeight: 900, color: '#991B1B', whiteSpace: 'nowrap' }}>
+                  {fmt(dashboard?.directWithdrawalCount)}
+                  <span style={{ fontSize: 11, marginLeft: 2, color: '#DC2626', fontWeight: 600 }}>명</span>
+                </span>
+              </div>
+              <div style={{
+                flex: 1, background: '#FEF3C7', borderRadius: 8, padding: '6px 10px',
+                display: 'flex', flexDirection: 'column', gap: 2,
+              }}>
+                <span style={{ fontSize: 11, color: '#D97706', fontWeight: 700, whiteSpace: 'nowrap' }}>휴면 탈퇴</span>
+                <span style={{ fontSize: 16, fontWeight: 900, color: '#92400E', whiteSpace: 'nowrap' }}>
+                  {fmt(dashboard?.dormantWithdrawalCount)}
+                  <span style={{ fontSize: 11, marginLeft: 2, color: '#D97706', fontWeight: 600 }}>명</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
         </div>
       </section>
 
@@ -144,7 +198,7 @@ export default function UserStats() {
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="period" tick={{ fontSize: 12 }} />
               <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-              <Tooltip content={<CustomTooltip />} />
+              <Tooltip content={<MonthlyUserTooltip />} />
               <Line type="monotone" dataKey="userCount" name="누적 회원 수"
                 stroke="#1D4ED8" strokeWidth={2.5} dot={{ r: 5, fill: '#1D4ED8' }} activeDot={{ r: 7 }} />
             </LineChart>
@@ -168,7 +222,7 @@ export default function UserStats() {
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="period" tick={{ fontSize: 11 }} />
               <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-              <Tooltip content={<CustomTooltip />} />
+              <Tooltip content={<DormantTooltip />} />
               <Legend wrapperStyle={{ fontSize: 13, fontWeight: 600 }} />
               <Bar dataKey="dormantNotifiedCount" name="안내 발송" fill="#F59E0B" radius={[4, 4, 0, 0]} />
               <Bar dataKey="dormantWithdrawnCount" name="탈퇴 처리" fill="#EF4444" radius={[4, 4, 0, 0]} />
@@ -179,8 +233,6 @@ export default function UserStats() {
 
       {/* ── 4. 휴면계정 조치 동향 (일별 표) ── */}
       <section style={{ ...sectionStyle, marginTop: 20 }}>
-
-        {/* 헤더 + 드롭다운 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <h3 style={{ ...sectionTitleStyle, marginBottom: 0 }}>휴면계정 조치 동향</h3>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -199,7 +251,6 @@ export default function UserStats() {
           <div style={emptyStyle}>불러오는 중...</div>
         ) : (
           <>
-            {/* 선택 월 요약 카드 3개 */}
             <div style={{ display: 'flex', gap: 14, marginBottom: 24 }}>
               <StatCard
                 label={`${filterYear}년 ${String(filterMonth).padStart(2,'0')}월 총 안내 발송`}
@@ -214,7 +265,6 @@ export default function UserStats() {
                 value={totalAction} unit="건" icon="📋" color="#111"
               />
             </div>
-{/* 일별 상세 표 */}
             {dormantHandle.length === 0 ? (
               <div style={emptyStyle}>
                 {filterYear}년 {String(filterMonth).padStart(2, '0')}월 조치 데이터 없음

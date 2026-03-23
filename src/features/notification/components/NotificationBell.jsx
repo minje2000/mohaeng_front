@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { notificationApi } from "../api/notificationApi";
 import useNotificationCount from "../hooks/useNotificationCount";
 import useNotificationList from "../hooks/useNotificationList";
 import useReadNotification from "../hooks/useReadNotification";
@@ -38,7 +39,7 @@ export default function NotificationBell({ className, BellIcon }) {
     count,
     setCount,
     refetch: refetchCount,
-  } = useNotificationCount({ pollMs: 30000 });
+  } = useNotificationCount({ pollMs: 0 });
 
   const {
     items,
@@ -52,13 +53,41 @@ export default function NotificationBell({ className, BellIcon }) {
   const { readAll, loading: readAllLoading } = useReadAllNotifications();
 
   const wrapRef = useRef(null);
+  const openRef = useRef(false);
   const busy = loading || readLoading || readAllLoading;
 
   const Icon = BellIcon || DefaultBellIcon;
 
-  const refreshList = async () => {
+  useEffect(() => {
+    openRef.current = open;
+  }, [open]);
+
+  const refreshCountOnly = useCallback(async () => {
+    await refetchCount();
+  }, [refetchCount]);
+
+  const refreshAll = useCallback(async () => {
     await Promise.all([refetchCount(), fetchList({ all: true })]);
-  };
+  }, [refetchCount, fetchList]);
+
+  useEffect(() => {
+    refetchCount();
+
+    const unsubscribe = notificationApi.subscribe({
+      onReload: async () => {
+        if (openRef.current) {
+          await refreshAll();
+        } else {
+          await refreshCountOnly();
+        }
+      },
+      onError: (e) => {
+        console.error("알림 SSE 오류:", e);
+      },
+    });
+
+    return () => unsubscribe?.();
+  }, [refetchCount, refreshAll, refreshCountOnly]);
 
   const toggle = async () => {
     if (open) {
@@ -67,7 +96,7 @@ export default function NotificationBell({ className, BellIcon }) {
     }
 
     setOpen(true);
-    await refreshList();
+    await refreshAll();
   };
 
   useEffect(() => {

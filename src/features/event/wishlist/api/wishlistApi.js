@@ -16,7 +16,7 @@ function throwBackend(error) {
 
 // GET /api/user/wishlist
 export async function fetchWishlist({ page = 0, size = 10 } = {}) {
-  console.log("[WISHLIST API] fetchWishlist 호출", { page, size });
+  //console.log("[WISHLIST API] fetchWishlist 호출", { page, size });
 
   try {
     const { data } = await apiJson().get("/api/user/wishlist", {
@@ -26,7 +26,7 @@ export async function fetchWishlist({ page = 0, size = 10 } = {}) {
     //console.log("[WISHLIST API] fetchWishlist 응답 raw(ApiResponse)", data);
 
     const payload = data?.data; //  ApiResponse.data만
-    console.log("[WISHLIST API] fetchWishlist payload", payload);
+    //console.log("[WISHLIST API] fetchWishlist payload", payload);
 
     return { raw: payload, items: pickPageContent(payload) };
   } catch (error) {

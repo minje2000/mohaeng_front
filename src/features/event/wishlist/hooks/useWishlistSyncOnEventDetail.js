@@ -12,21 +12,21 @@ export default function useWishlistSyncOnEventDetail({ eventId, liked, setLiked 
   const pendingRef = useRef(false);
   const desiredLikedRef = useRef(liked);
 
-  // ✅ 초기 복구 중 사용자가 눌렀는지(복구 결과가 덮어쓰지 않게)
+  //  초기 복구 중 사용자가 눌렀는지(복구 결과가 덮어쓰지 않게)
   const userTouchedRef = useRef(false);
 
-  // ✅ 렌더 로그 (이게 안 찍히면 훅이 아예 안 붙은 것)
-  console.log("[WISHLIST HOOK] render", { eventId, liked, ready, syncing });
+  //  렌더 로그 (이게 안 찍히면 훅이 아예 안 붙은 것)
+ // console.log("[WISHLIST HOOK] render", { eventId, liked, ready, syncing });
 
   useEffect(() => {
     desiredLikedRef.current = liked;
   }, [liked]);
 
-  // ✅ ready 되기 전에 liked가 바뀌면(=사용자 클릭) 덮어쓰기 금지
+  //  ready 되기 전에 liked가 바뀌면(=사용자 클릭) 덮어쓰기 금지
   useEffect(() => {
     if (!ready) {
       userTouchedRef.current = true;
-      console.log("[WISHLIST HOOK] userTouchedRef = true (before ready)");
+      //console.log("[WISHLIST HOOK] userTouchedRef = true (before ready)");
     }
   }, [liked, ready]);
 
@@ -34,14 +34,14 @@ export default function useWishlistSyncOnEventDetail({ eventId, liked, setLiked 
   useEffect(() => {
     let alive = true;
 
-    console.log("[WISHLIST HOOK] init effect start", { eventId });
+    //console.log("[WISHLIST HOOK] init effect start", { eventId });
 
     setReady(false);
     wishIdRef.current = null;
     userTouchedRef.current = false;
 
     const access = tokenStore.getAccess?.();
-    console.log("[WISHLIST HOOK] access token exists?", !!access);
+    //console.log("[WISHLIST HOOK] access token exists?", !!access);
 
     if (!access) {
       console.log("[WISHLIST HOOK] no access token => setLiked(false) and ready=true");
@@ -55,18 +55,18 @@ export default function useWishlistSyncOnEventDetail({ eventId, liked, setLiked 
         const res = await fetchWishlist({ page: 0, size: 1000 });
         const items = res?.items ?? [];
 
-        console.log("[WISHLIST HOOK] fetched items length", items.length);
+        //console.log("[WISHLIST HOOK] fetched items length", items.length);
 
         if (!alive) return;
 
         const found = items.find((w) => Number(w.eventId) === Number(eventId));
 
         wishIdRef.current = found ? found.wishId : null;
-        console.log("[WISHLIST HOOK] found?", !!found, "wishIdRef=", wishIdRef.current);
+        //console.log("[WISHLIST HOOK] found?", !!found, "wishIdRef=", wishIdRef.current);
 
-        // ✅ 사용자가 이미 눌렀으면 liked를 덮어쓰지 않음
+        //  사용자가 이미 눌렀으면 liked를 덮어쓰지 않음
         if (!userTouchedRef.current) {
-          console.log("[WISHLIST HOOK] setLiked from server =", !!found);
+          //console.log("[WISHLIST HOOK] setLiked from server =", !!found);
           setLiked(!!found);
         } else {
           console.log("[WISHLIST HOOK] skip setLiked because userTouchedRef=true");
@@ -78,7 +78,7 @@ export default function useWishlistSyncOnEventDetail({ eventId, liked, setLiked 
         if (!userTouchedRef.current) setLiked(false);
       } finally {
         if (alive) {
-          console.log("[WISHLIST HOOK] init effect done => ready=true");
+          //console.log("[WISHLIST HOOK] init effect done => ready=true");
           setReady(true);
         }
       }
@@ -89,7 +89,7 @@ export default function useWishlistSyncOnEventDetail({ eventId, liked, setLiked 
 
   // 2) liked 변경 시 서버 반영(POST/DELETE)
   useEffect(() => {
-    console.log("[WISHLIST HOOK] sync effect fired", { ready, liked, eventId });
+    //console.log("[WISHLIST HOOK] sync effect fired", { ready, liked, eventId });
 
     if (!ready) return;
 
@@ -111,7 +111,7 @@ export default function useWishlistSyncOnEventDetail({ eventId, liked, setLiked 
         const desired = desiredLikedRef.current;
         const currentWishId = wishIdRef.current;
 
-        console.log("[WISHLIST HOOK] syncNow start", { desired, currentWishId, eventId });
+        //console.log("[WISHLIST HOOK] syncNow start", { desired, currentWishId, eventId });
 
         // ON인데 wishId 없으면 -> 등록
         if (desired && !currentWishId) {

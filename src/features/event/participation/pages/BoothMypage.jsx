@@ -143,7 +143,7 @@ export default function BoothMypage() {
 
   const goEventDetail = (row) => {
     if (!row?.eventId) return;
-    const status = (row?.eventStatus ?? '').toString();
+    const status = (row?.eventStatus ?? '').toString().toUpperCase().replace('_', '');
     if (status === 'REPORTDELETED') {
       alert('이 행사에 대한 신고가 접수되어 삭제 처리 되었습니다.');
       return;
@@ -201,7 +201,9 @@ export default function BoothMypage() {
               const kind = row._kind;
               const status = row.status;
               const isPending = status === '대기';
-              const isDeleted = ['DELETED', 'REPORTDELETED'].includes((row?.eventStatus ?? '').toString());
+              const eventStatus = (row?.eventStatus ?? '').toString().toUpperCase().replace('_', '');
+              const isDeleted = ['DELETED', 'REPORTDELETED'].includes(eventStatus);
+              const canAct = isPending && !isDeleted;
               return (
                 <div key={`${kind}-${row.pctBoothId}`} style={{ border: '1px solid #E5E7EB', borderRadius: 18, background: '#fff', boxShadow: '0 10px 22px rgba(17,24,39,0.06)', padding: 16, display: 'grid', gridTemplateColumns: 'minmax(280px, 1.3fr) minmax(220px, 1fr) 120px 180px', gap: 12, alignItems: 'center' }}>
                   <button type="button" onClick={() => goEventDetail(row)} style={{ border: 'none', background: 'transparent', padding: 0, textAlign: 'left', cursor: 'pointer' }}>
@@ -226,11 +228,11 @@ export default function BoothMypage() {
                   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' }}>
                     {kind === 'received' ? (
                       <>
-                        <button type="button" disabled={!isPending} onClick={() => onApprove(row.pctBoothId)} style={{ padding: '9px 12px', borderRadius: 12, border: '1px solid #E5E7EB', background: isPending ? '#111827' : '#F3F4F6', color: isPending ? '#fff' : '#9CA3AF', fontWeight: 900, cursor: isPending ? 'pointer' : 'not-allowed' }}>승인</button>
-                        <button type="button" disabled={!isPending} onClick={() => isPending && openRejectModal(row)} style={{ padding: '9px 12px', borderRadius: 12, border: '1px solid #E5E7EB', background: '#fff', color: isPending ? '#111827' : '#9CA3AF', fontWeight: 900, cursor: isPending ? 'pointer' : 'not-allowed' }}>반려</button>
+                        <button type="button" disabled={!canAct} onClick={() => canAct && onApprove(row.pctBoothId)} style={{ padding: '9px 12px', borderRadius: 12, border: '1px solid #E5E7EB', background: canAct ? '#111827' : '#F3F4F6', color: canAct ? '#fff' : '#9CA3AF', fontWeight: 900, cursor: canAct ? 'pointer' : 'not-allowed' }}>승인</button>
+                        <button type="button" disabled={!canAct} onClick={() => canAct && openRejectModal(row)} style={{ padding: '9px 12px', borderRadius: 12, border: '1px solid #E5E7EB', background: '#fff', color: canAct ? '#111827' : '#9CA3AF', fontWeight: 900, cursor: canAct ? 'pointer' : 'not-allowed' }}>반려</button>
                       </>
                     ) : (
-                      <button type="button" disabled={!isPending} onClick={() => isPending && openCancelModal(row)} style={{ padding: '9px 12px', borderRadius: 12, border: '1px solid #E5E7EB', background: '#fff', color: isPending ? '#111827' : '#9CA3AF', fontWeight: 900, cursor: isPending ? 'pointer' : 'not-allowed' }}>취소</button>
+                      <button type="button" disabled={!canAct} onClick={() => canAct && openCancelModal(row)} style={{ padding: '9px 12px', borderRadius: 12, border: '1px solid #E5E7EB', background: '#fff', color: canAct ? '#111827' : '#9CA3AF', fontWeight: 900, cursor: canAct ? 'pointer' : 'not-allowed' }}>취소</button>
                     )}
                   </div>
                 </div>

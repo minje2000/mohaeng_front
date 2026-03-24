@@ -1,4 +1,5 @@
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect } from "react";
+import { notificationApi } from "../api/notificationApi";
 import useNotificationCount from "../hooks/useNotificationCount";
 import useNotificationList from "../hooks/useNotificationList";
 import useReadNotification from "../hooks/useReadNotification";
@@ -12,23 +13,31 @@ export default function NotificationPage() {
   const { read } = useReadNotification();
   const { readAll } = useReadAllNotifications();
 
-  useEffect(() => {
-    const run = async () => {
-      await Promise.all([refetchCount(), fetchList({ page: 0, size: 20 })]);
-    };
-    run();
+  const refreshPage = useCallback(async () => {
+    await Promise.all([refetchCount(), fetchList({ page: 0, size: 20 })]);
   }, [refetchCount, fetchList]);
 
+  useEffect(() => {
+    refreshPage();
+
+    const unsubscribe = notificationApi.subscribe({
+      onReload: refreshPage,
+      onError: (e) => {
+        console.error("알림 SSE 오류:", e);
+      },
+    });
+
+    return () => unsubscribe?.();
+  }, [refreshPage]);
+
   const onItemClick = async (id) => {
-    const ok = await read(id);
-    if (!ok) return;
+    await read(id);
     setItems((prev) => prev.filter((it) => (it.notificationId ?? it.id) !== id));
     setCount((c) => Math.max(0, Number(c) - 1));
   };
 
   const onReadAll = async () => {
-    const ok = await readAll();
-    if (!ok) return;
+    await readAll();
     setItems([]);
     setCount(0);
   };

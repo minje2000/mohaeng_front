@@ -67,7 +67,7 @@ export function useDormantManage() {
     setError(null);
     try {
       await dormantManageApi.sendDormantUserEmail();
-      alert('안내 메일 발송을 완료했습니다.');
+      alert('안내 메일이 전송되었습니다.\n7일 이내 로그인하지 않은 회원은 자동 탈퇴 처리 됩니다.');
       await loadPage(page, size);
     } catch (e) {
       console.error(e);

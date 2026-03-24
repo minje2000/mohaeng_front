@@ -7,7 +7,7 @@ function pickPageContent(pageData) {
 }
 
 function throwBackend(error) {
-  // ✅ 로그(여기 찍히면 API 호출은 된 것)
+  //  로그(여기 찍히면 API 호출은 된 것)
   console.warn("[WISHLIST API] ERROR", error);
 
   if (error?.response?.data) throw error.response.data;
@@ -23,9 +23,9 @@ export async function fetchWishlist({ page = 0, size = 10 } = {}) {
       params: { page, size },
     });
 
-    console.log("[WISHLIST API] fetchWishlist 응답 raw(ApiResponse)", data);
+    //console.log("[WISHLIST API] fetchWishlist 응답 raw(ApiResponse)", data);
 
-    const payload = data?.data; // ✅ ApiResponse.data만
+    const payload = data?.data; //  ApiResponse.data만
     console.log("[WISHLIST API] fetchWishlist payload", payload);
 
     return { raw: payload, items: pickPageContent(payload) };
@@ -45,7 +45,7 @@ export async function addWishlist(eventId) {
 
     console.log("[WISHLIST API] addWishlist 응답 raw(ApiResponse)", data);
 
-    // ✅ wishId(Long) 기대
+    //  wishId(Long) 기대
     const payload = data?.data;
     console.log("[WISHLIST API] addWishlist payload(wishId 기대)", payload);
 
@@ -74,7 +74,7 @@ export async function removeWishlist(wishId) {
 export async function toggleWishlistNotification(wishId, notificationEnabled) {
   try {
     const { data } = await apiJson().put(`/api/user/wishlist/${wishId}/notification`, {
-      enabled: Boolean(notificationEnabled), // ✅ 핵심: enabled로 보내기
+      enabled: Boolean(notificationEnabled), //  핵심: enabled로 보내기
     });
     return data?.data;
   } catch (error) {

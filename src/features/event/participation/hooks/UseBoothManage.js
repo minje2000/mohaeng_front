@@ -19,8 +19,8 @@ export default function UseBoothManage() {
       const rawAppl = Array.isArray(applRes) ? applRes : (applRes?.data || applRes?.content || []);
 
       // (디버깅용) 콘솔에서 실제 어떤 값이 들어오는지 확인합니다.
-      console.log("백엔드에서 가져온 받은 부스(원본):", rawRecv);
-      console.log("백엔드에서 가져온 신청 부스(원본):", rawAppl);
+      // console.log("백엔드에서 가져온 받은 부스(원본):", rawRecv);
+      // console.log("백엔드에서 가져온 신청 부스(원본):", rawAppl);
 
       // 💡 2. 양옆 공백(trim)을 모두 제거하고 완벽하게 '취소'인 것만 걸러냅니다.
       const filteredRecv = rawRecv.filter((item) => {

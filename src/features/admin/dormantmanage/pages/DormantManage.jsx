@@ -69,14 +69,14 @@ export default function DormantManage() {
             메일 발송
           </button>
 
-          <button
+          {/* <button
             type="button"
             className={styles.actionButton}
             onClick={handleWithdrawal}
             disabled={loading || withdrawing}
           >
             탈퇴 처리
-          </button>
+          </button> */}
         </div>
       </div>
 
@@ -88,6 +88,7 @@ export default function DormantManage() {
               <th>이메일</th>
               <th>마지막 로그인 날짜</th>
               <th>안내 메일 발송일</th>
+              <th>자동 탈퇴 예정일</th>
             </tr>
           </thead>
 
@@ -124,6 +125,7 @@ export default function DormantManage() {
                   <td>{user.email}</td>
                   <td>{formatDate(user.lastLoginAt)}</td>
                   <td>{formatDate(user.notifiedAt)}</td>
+                  <td>{formatDate(user.withdrawnAt)}</td>
                 </tr>
               ))}
           </tbody>

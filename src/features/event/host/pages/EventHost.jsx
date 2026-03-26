@@ -1112,7 +1112,7 @@ export default function EventHost() {
         facilities: hasFacility ? facis.map((f)  => ({ ...f, faciPrice:  Number(f.faciPrice),  totalCount: f.hasCount ? Number(f.totalCount) : null })) : [],
       };
       const newId = await createEvent({ eventData, thumbnail, detailFiles, boothFiles });
-      alert('행사가 등록되었습니다!');
+      alert('행사가 등록되었습니다. 확인 과정을 거친 뒤 공개됩니다.');
       navigate(`/events/${newId}`);
     } catch (e) {
       alert(e.message || '저장에 실패했어요.');

@@ -48,6 +48,8 @@ export const useSignupForm = (initialValues) => {
       setFormData((prev) => ({
         ...prev,
         [name]: file,
+        name: '',           
+        businessNum: ''
       }));
       return;
     }

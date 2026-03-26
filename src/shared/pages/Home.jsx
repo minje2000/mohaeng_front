@@ -126,7 +126,7 @@ export default function Home() {
   const { isAdmin } = useAuth();
   const [loggedIn, setLoggedIn] = useState(() => {
     if (typeof window === "undefined") return false;
-    return Boolean(localStorage.getItem("accessToken"));
+    return Boolean(localStorage.getItem("accessToken") && tokenStore.getUserName());
   });
 
   const onLogout = () => {

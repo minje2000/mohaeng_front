@@ -12,7 +12,7 @@ export default function Header() {
   const navigate = useNavigate();
 
   const [isAuthed, setIsAuthed] = useState(() => {
-    return Boolean(localStorage.getItem("accessToken"));
+    return Boolean(localStorage.getItem("accessToken") && tokenStore.getUserName());
   });
 
   useEffect(() => {

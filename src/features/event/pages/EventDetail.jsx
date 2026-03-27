@@ -71,6 +71,16 @@ const isModerationBlocked = (ev) => {
   return moderationStatus === '승인대기' || moderationStatus === '반려';
 };
 
+const normalizeRole = (value) => {
+  if (!value) return '';
+  return String(value).trim().toUpperCase();
+};
+
+const isAdminRole = (value) => {
+  const role = normalizeRole(value);
+  return role === 'ROLE_ADMIN' || role === 'ADMIN';
+};
+
 const getDisabledActionStyle = (disabled) => ({
   opacity: disabled ? 0.45 : 1,
   cursor: disabled ? 'not-allowed' : 'pointer',
@@ -161,25 +171,22 @@ const SirenIcon = () => (
 // ══════════════════════════════════════════════════════════════
 // 🗺️ AI 여행 코스 추천 컴포넌트
 // ══════════════════════════════════════════════════════════════
-// 숙소·조식 제외 카테고리만
 const CATEGORY_STYLE = {
   축제: { bg: '#FFFBEB', color: '#B45309', dot: 'linear-gradient(135deg,#FDE68A,#F59E0B)', icon: '🎪' },
   맛집: { bg: '#FEE2E2', color: '#DC2626', dot: 'linear-gradient(135deg,#FCA5A5,#EF4444)', icon: '🍽️' },
   카페: { bg: '#ECFDF5', color: '#059669', dot: 'linear-gradient(135deg,#6EE7B7,#059669)', icon: '☕' },
   관광: { bg: '#FEF9C3', color: '#A16207', dot: 'linear-gradient(135deg,#FEF08A,#EAB308)', icon: '🗺️' },
 };
-// 숙소·조식은 렌더링에서 제외
 const EXCLUDED_CATEGORIES = ['숙소', '조식'];
 
 function AiCourseSection({ ev }) {
   const [open,      setOpen]      = useState(false);
-  const [companion, setCompanion] = useState('연인'); // 연인 | 가족 | 혼자
+  const [companion, setCompanion] = useState('연인');
   const [transport, setTransport] = useState('자가용');
   const [loading,   setLoading]   = useState(false);
   const [course,    setCourse]    = useState(null);
   const [error,     setError]     = useState('');
 
-  // 행사 시간 파싱
   const festivalTime = ev?.startTime
     ? `${ev.startTime}${ev.endTime ? ` ~ ${ev.endTime}` : ''}`
     : null;
@@ -210,11 +217,11 @@ function AiCourseSection({ ev }) {
 
       const token = localStorage.getItem("accessToken");
 
-       if (!token) {
-  setError('로그인 후 사용 가능한 서비스입니다.');
-  setLoading(false);
-  return;
-}
+      if (!token) {
+        setError('로그인 후 사용 가능한 서비스입니다.');
+        setLoading(false);
+        return;
+      }
 
       const res = await fetch(`${backendUrl}/api/ai/nearby/course`, {
         method: 'POST',
@@ -232,8 +239,8 @@ function AiCourseSection({ ev }) {
           festival_address:    ev.lotNumberAdr || ev.detailAdr || null,
         }),
       });
-     
-if (!res.ok) throw new Error('코스 생성에 실패했어요. 잠시 후 다시 시도해주세요.');
+
+      if (!res.ok) throw new Error('코스 생성에 실패했어요. 잠시 후 다시 시도해주세요.');
       const data = await res.json();
       setCourse(data);
     } catch (e) {
@@ -532,16 +539,16 @@ export default function EventDetail() {
   }, [eventId]);
 
   useEffect(() => {
-  const token = localStorage.getItem("accessToken");
-  if (!token) return;
+    const token = localStorage.getItem("accessToken");
+    if (!token) return;
 
-  apiJson().get(`/api/eventParticipation/check/${eventId}`)
-    .then(res => {
-      setAlreadyApplied(!!res.data.alreadyApplied);
-      setAlreadyBoothApplied(!!res.data.alreadyBoothApplied);
-    })
-    .catch(() => {});
-}, [eventId]);
+    apiJson().get(`/api/eventParticipation/check/${eventId}`)
+      .then(res => {
+        setAlreadyApplied(!!res.data.alreadyApplied);
+        setAlreadyBoothApplied(!!res.data.alreadyBoothApplied);
+      })
+      .catch(() => {});
+  }, [eventId]);
 
   if (loading) return <LoadingScreen />;
   if (error)   return <ErrorScreen msg={error} />;
@@ -549,8 +556,13 @@ export default function EventDetail() {
 
   const { eventInfo: ev, hostId, hostName, hostEmail, hostPhone, hostPhoto, booths, facilities } = detail;
 
-  const actionDisabled = isModerationBlocked(ev);
-  const disabledActionTitle = actionDisabled ? '승인대기 또는 반려 상태의 행사는 사용할 수 없습니다.' : '';
+  const isAdminUser = isAdminRole(localStorage.getItem('role'));
+  const actionDisabled = isModerationBlocked(ev) || isAdminUser;
+  const disabledActionTitle = isAdminUser
+    ? '관리자는 관심행사, 공유, 신고하기를 사용할 수 없습니다.'
+    : actionDisabled
+      ? '승인대기 또는 반려 상태의 행사는 사용할 수 없습니다.'
+      : '';
 
   const statusUI  = getStatusUI(ev);
   const statusKey = statusUI?.key;
@@ -916,7 +928,7 @@ export default function EventDetail() {
                   if (actionDisabled) return;
                   setLiked((p) => !p);
                 }}
-                title={actionDisabled ? disabledActionTitle : liked ? '관심 취소' : '관심 행사 등록'}
+                title={disabledActionTitle || (liked ? '관심 취소' : '관심 행사 등록')}
                 style={getDisabledActionStyle(actionDisabled)}
               >
                 <HeartIcon filled={liked} />{liked ? '관심 등록됨' : '관심 행사'}
@@ -929,7 +941,7 @@ export default function EventDetail() {
                   if (actionDisabled) return;
                   setShareOpen(true);
                 }}
-                title={actionDisabled ? disabledActionTitle : '공유하기'}
+                title={disabledActionTitle || '공유하기'}
                 style={getDisabledActionStyle(actionDisabled)}
               >
                 <ShareIcon />공유
@@ -938,7 +950,7 @@ export default function EventDetail() {
               <button
                 className="ed-icon-btn"
                 disabled={actionDisabled}
-                title={actionDisabled ? disabledActionTitle : '신고하기'}
+                title={disabledActionTitle || '신고하기'}
                 onClick={(e) => {
                   if (actionDisabled) return;
                   e.stopPropagation();
@@ -949,12 +961,6 @@ export default function EventDetail() {
                 <SirenIcon />신고
               </button>
             </div>
-
-            {actionDisabled ? (
-              <div style={{ padding: '0 26px 18px', fontSize: 12, color: '#DC2626', fontWeight: 700 }}>
-                승인대기 또는 반려 상태의 행사는 관심행사, 공유, 신고가 비활성화됩니다.
-              </div>
-            ) : null}
 
             <ReportModal open={reportOpen} onClose={() => setReportOpen(false)} eventId={Number(eventId)} />
             <ShareModal open={shareOpen} onClose={() => setShareOpen(false)} ev={ev} />

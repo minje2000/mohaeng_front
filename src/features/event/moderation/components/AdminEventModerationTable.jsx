@@ -55,30 +55,38 @@ export default function AdminEventModerationTable({
               </td>
             </tr>
           ) : (
-            items.map((item) => (
-              <tr key={item.eventId}>
-                <td style={{ ...tdStyle, ...titleTdStyle }} title={item.title || "-"}>
-                  {item.title || "-"}
-                </td>
-                <td style={tdStyle}>{item.eventStatus || "-"}</td>
-                <td style={tdStyle}>
-                  <AdminEventModerationStatusBadge
-                    status={item.moderationStatus}
-                  />
-                </td>
-                <td style={tdStyle}>{formatRiskScore(item.aiRiskScore)}</td>
-                <td style={tdStyle}>{formatDate(item.createdAt)}</td>
-                <td style={tdStyle}>
-                  <button
-                    type="button"
-                    onClick={() => onClickDetail(item.eventId)}
-                    style={detailBtnStyle}
-                  >
-                    보기
-                  </button>
-                </td>
-              </tr>
-            ))
+            items.map((item) => {
+              const isDeleted = item.eventStatus === "삭제";
+
+              return (
+                <tr key={item.eventId}>
+                  <td style={{ ...tdStyle, ...titleTdStyle }} title={item.title || "-"}>
+                    {item.title || "-"}
+                  </td>
+                  <td style={tdStyle}>{item.eventStatus || "-"}</td>
+                  <td style={tdStyle}>
+                    <AdminEventModerationStatusBadge
+                      status={item.moderationStatus}
+                    />
+                  </td>
+                  <td style={tdStyle}>{formatRiskScore(item.aiRiskScore)}</td>
+                  <td style={tdStyle}>{formatDate(item.createdAt)}</td>
+                  <td style={tdStyle}>
+                    <button
+                      type="button"
+                      onClick={() => onClickDetail(item.eventId)}
+                      disabled={isDeleted}
+                      style={{
+                        ...detailBtnStyle,
+                        ...(isDeleted ? disabledDetailBtnStyle : {}),
+                      }}
+                    >
+                      보기
+                    </button>
+                  </td>
+                </tr>
+              );
+            })
           )}
         </tbody>
       </table>
@@ -135,4 +143,11 @@ const detailBtnStyle = {
   color: "#1D4ED8",
   fontWeight: 800,
   cursor: "pointer",
+};
+
+const disabledDetailBtnStyle = {
+  border: "1px solid #E5E7EB",
+  background: "#F8FAFC",
+  color: "#94A3B8",
+  cursor: "not-allowed",
 };

@@ -1,70 +1,56 @@
-# Getting Started with Create React App
+# 모행 Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+본 프로젝트는 4인 팀 프로젝트로 진행되었으며,  
+해당 저장소는 개인 포트폴리오 제출을 위해 정리한 사본입니다.
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## 프로젝트 소개
+모행은 누구나 행사를 주최하고 참여할 수 있는 웹 플랫폼입니다.  
+본 저장소는 React 기반 프론트엔드로,  
+사용자 인터페이스 및 사용자 경험을 담당합니다.
 
-### `npm start`
+---
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## 프로젝트 구성
+- Frontend: https://github.com/minje2000/mohaeng_front
+- Backend: https://github.com/minje2000/mohaeng_back
+- AI Server: https://github.com/minje2000/mohaeng_ai
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+---
 
-### `npm test`
+## 기술 스택
+- React
+- JavaScript
+- Axios
+- CSS
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+---
 
-### `npm run build`
+## 담당 역할
+- 리뷰 UI 및 기능 구현
+- 관심행사 UI 및 상태 관리
+- 알림 UI 구현
+- 행사 상세 페이지 구성
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+---
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## 주요 기능
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### 행사 조회
+- 행사 목록 및 상세 페이지
 
-### `npm run eject`
+### 리뷰 기능
+- 리뷰 작성 / 수정 / 삭제 UI
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### 관심행사
+- 찜 기능 및 상태 반영
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### 알림 시스템
+- 알림 목록 표시 및 읽음 처리
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+---
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## API 연동
+- Spring Boot 백엔드와 REST API 통신
+- JWT 기반 인증 처리

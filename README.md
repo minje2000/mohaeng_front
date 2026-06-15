@@ -95,7 +95,8 @@
 
 ### 관리자 검수 페이지
 
-<img width="100%" alt="관리자 검수 페이지" src="이미지주소" />
+<img width="1418" height="840" alt="검수" src="https://github.com/user-attachments/assets/7200b32f-44b7-4e2c-8018-9170b5f0a414" />
+
 
 AI 검수 결과를 확인하고 승인 또는 반려를 처리할 수 있는 관리자 화면
 
@@ -103,7 +104,8 @@ AI 검수 결과를 확인하고 승인 또는 반려를 처리할 수 있는 �
 
 ### 신고 관리 페이지
 
-<img width="100%" alt="신고 관리 페이지" src="이미지주소" />
+<img width="1686" height="693" alt="신고1" src="https://github.com/user-attachments/assets/aac2edbf-f961-4d6d-8294-2989e1b15412" />
+
 
 신고 사유 및 상세 내용을 확인하고 승인 또는 반려를 처리할 수 있는 관리자 화면
 
@@ -111,7 +113,7 @@ AI 검수 결과를 확인하고 승인 또는 반려를 처리할 수 있는 �
 
 ### 알림 드롭다운
 
-<img width="100%" alt="알림 드롭다운" src="이미지주소" />
+<img width="350" height="525" alt="알림 켑쳐" src="https://github.com/user-attachments/assets/d9f26d12-5ad7-4f03-aaaa-b18dfa5a96a1" />
 
 사용자 알림 확인, 읽음 처리 및 전체 읽음 처리를 제공하는 UI
 
@@ -119,7 +121,8 @@ AI 검수 결과를 확인하고 승인 또는 반려를 처리할 수 있는 �
 
 ### 내 리뷰 상단 고정 기능
 
-<img width="100%" alt="내 리뷰 상단 고정" src="이미지주소" />
+<img width="925" height="558" alt="리뷰" src="https://github.com/user-attachments/assets/1f04a1d3-6af6-4638-b63b-afcd5cae70e1" />
+
 
 행사 상세 페이지에서 작성자의 리뷰를 상단에 고정하여 수정 및 삭제 편의성을 제공
 
@@ -127,7 +130,8 @@ AI 검수 결과를 확인하고 승인 또는 반려를 처리할 수 있는 �
 
 ### 관심행사 관리 화면
 
-<img width="100%" alt="관심행사 화면" src="이미지주소" />
+<img width="1681" height="497" alt="관심" src="https://github.com/user-attachments/assets/2d825529-153f-4100-9eb7-4c450034c9f0" />
+
 
 관심행사 등록 및 해제, 관심행사 목록 조회 기능 제공
 
